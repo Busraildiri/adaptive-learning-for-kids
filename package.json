@@ -1,0 +1,23 @@
+{
+  "name": "adaptive-learning-for-kids",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev:mobile": "pnpm --filter @adaptive/mobile start",
+    "dev:admin": "pnpm --filter @adaptive/admin-web dev",
+    "build": "pnpm --filter @adaptive/admin-web build && pnpm --filter @adaptive/mobile build:ios",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "typecheck": "pnpm --recursive --if-present typecheck",
+    "test": "pnpm --recursive --if-present test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "latest",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}
