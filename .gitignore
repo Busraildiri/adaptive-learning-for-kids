@@ -141,3 +141,9 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+.expo/
+apps/mobile/.expo/
+apps/mobile/dist-ci/
+
+!pnpm-lock.yaml

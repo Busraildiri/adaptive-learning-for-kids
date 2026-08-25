@@ -151,6 +151,7 @@ Pedagojik ve gizlilik kararları
 - [x] Büşra’nın backend/AI ve Serenay’ın frontend/mobil sorumluluğunu alması kararlaştırıldı.
 - [x] İlk proje iskeletinin Büşra tarafından kurulması kararlaştırıldı.
 - [x] Serenay’ın Büşra başlangıç vermeden geliştirmeye başlamaması kararlaştırıldı.
+- [x] Monorepo için ilk aşamada Turborepo eklemeden pnpm workspace kullanılması kararlaştırıldı.
 
 ---
 
@@ -161,19 +162,19 @@ Pedagojik ve gizlilik kararları
 Aktif sorumlu: **Büşra**  
 Serenay durumu: **Büşra’nın başlangıç bildirimini bekliyor**
 
-- [ ] **Büşra:** GitHub reposunu yerel bilgisayara clone et.
-- [ ] **Büşra:** Repo klasörünü VS Code’da aç.
+- [x] **Büşra:** GitHub reposunu yerel bilgisayara clone et.
+- [x] **Büşra:** Repo klasörünü VS Code’da aç.
 - [ ] **Büşra:** Serenay’ı GitHub collaborator olarak ekle.
 - [ ] **Büşra:** `main` branch korumasını aç.
 - [ ] **Büşra:** Pull request için en az bir onay zorunluluğu getir.
-- [ ] **Büşra:** `feature/project-foundation` branch’ini oluştur.
-- [ ] **Büşra:** pnpm workspace tabanlı monorepo iskeletini kur.
-- [ ] **Büşra:** `apps/mobile` altında temiz Expo uygulaması oluştur.
-- [ ] **Büşra:** `apps/admin-web` için boş Next.js uygulama iskeleti oluştur.
-- [ ] **Büşra:** Paylaşılan TypeScript config, lint ve format kurallarını ekle.
-- [ ] **Büşra:** GitHub Actions ile typecheck, lint ve build kontrollerini ekle.
-- [ ] **Büşra:** `README.md` ve `roadmap.md` dosyalarının repo kökünde olduğunu doğrula.
-- [ ] **Büşra:** Proje temelini iPhone/iPad ve web build ile doğrula.
+- [x] **Büşra:** `feature/project-foundation` branch’ini oluştur.
+- [x] **Büşra:** pnpm workspace tabanlı monorepo iskeletini kur.
+- [x] **Büşra:** `apps/mobile` altında temiz Expo uygulaması oluştur.
+- [x] **Büşra:** `apps/admin-web` için boş Next.js uygulama iskeleti oluştur.
+- [x] **Büşra:** Paylaşılan TypeScript config, lint ve format kurallarını ekle.
+- [x] **Büşra:** GitHub Actions ile typecheck, lint ve build kontrollerini ekle.
+- [x] **Büşra:** `README.md` ve `roadmap.md` dosyalarının repo kökünde olduğunu doğrula.
+- [x] **Büşra:** Proje temelini iPhone/iPad ve web build ile doğrula.
 - [ ] **Büşra:** Foundation pull request’ini aç ve Serenay’dan inceleme iste.
 - [ ] **Serenay:** Foundation pull request’ini incele; geliştirmeye henüz başlama.
 - [ ] **Büşra:** Foundation merge edildikten sonra Serenay’a başlangıç bildirimi ver.
@@ -388,7 +389,6 @@ Bu maddeler MVP’ye otomatik olarak dahil değildir.
 
 ## Karar bekleyenler
 
-- [!] Monorepo için yalnızca pnpm workspace mi, Turborepo mu kullanılacağı.
 - [!] Görsel üretim sağlayıcısı.
 - [!] TTS sağlayıcısı ve ürün sesi.
 - [!] Desteklenecek minimum iOS sürümü.
