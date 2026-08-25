@@ -20,6 +20,75 @@ Durum göstergeleri:
 - `[ ]` Başlanmadı
 - `[!]` Karar veya dış inceleme bekliyor
 
+## Ekip ve çalışma sırası
+
+### Büşra — Backend, AI ve proje temeli
+
+Büşra’nın birincil sorumlulukları:
+
+- İlk monorepo ve geliştirme iskeletini kurmak.
+- Root `package.json`, pnpm workspace ve ortak TypeScript ayarlarını yönetmek.
+- Supabase ve PostgreSQL altyapısını kurmak.
+- Ebeveyn hesabı, çocuk profili ve izin sistemini geliştirmek.
+- API sözleşmelerini ve etkileşim olaylarının backend tarafını geliştirmek.
+- İçerik şeması, içerik agent’ı ve admin panelini geliştirmek.
+- Kanıt, kişiselleştirme ve insight motorlarının backend tarafını geliştirmek.
+- Ortam değişkenleri, migration’lar, CI ve deployment altyapısını yönetmek.
+
+Büşra’nın ana sahiplik alanları:
+
+```text
+apps/admin-web/
+packages/content-schema/
+packages/content-agent/
+packages/analytics-events/
+supabase/
+Root proje ve CI dosyaları
+```
+
+### Serenay — Frontend ve mobil çocuk deneyimi
+
+Serenay’ın birincil sorumlulukları:
+
+- React Native ve Expo mobil uygulamasını geliştirmek.
+- Çocuk modu ekranlarını hazırlamak.
+- iPhone ve iPad uyumluluğunu sağlamak.
+- Etkinlik durum makinesinin mobil entegrasyonunu yapmak.
+- Ses ve görsel asset’leri uygulamada oynatmak.
+- Yazısız ilerleme, cevap penceresi ve tekrar dinleme akışını geliştirmek.
+- Mobil ebeveyn ekranlarını backend sözleşmelerine göre geliştirmek.
+- Mobil kullanılabilirlik ve cihaz testlerini yürütmek.
+
+Serenay’ın ana sahiplik alanları:
+
+```text
+apps/mobile/
+packages/activity-engine/
+Mobil UI bileşenleri ve mobil testler
+```
+
+### Ortak sahiplik
+
+Şu alanlar iki kişinin ortak incelemesini gerektirir:
+
+```text
+packages/shared-types/
+docs/
+README.md
+roadmap.md
+API sözleşmeleri
+Pedagojik ve gizlilik kararları
+```
+
+### Başlangıç bağımlılığı
+
+- İlk proje iskeletini yalnızca Büşra kuracaktır.
+- Serenay, Büşra açıkça başlangıç vermeden proje kodunda çalışmaya başlamayacaktır.
+- Büşra monorepo, mobil uygulama iskeleti, ortak tipler ve CI temelini hazırlayacaktır.
+- Büşra’nın `feature/project-foundation` pull request’i incelenip `main` dalına alındıktan sonra paralel geliştirme başlayacaktır.
+- Başlangıç verildiğinde Serenay `feature/child-activity-flow`, Büşra ise `feature/content-schema` dalında çalışacaktır.
+- İki kişi aynı root yapılandırma dosyasını eş zamanlı değiştirmeyecektir.
+
 ---
 
 ## Yapılanlar
@@ -79,6 +148,9 @@ Durum göstergeleri:
 - [x] Korumalı `main` ve kısa feature branch yaklaşımı seçildi.
 - [x] Uzun ömürlü `develop` branch’i kullanılmaması kararlaştırıldı.
 - [x] Yaşayan `roadmap.md` belgesi oluşturuldu.
+- [x] Büşra’nın backend/AI ve Serenay’ın frontend/mobil sorumluluğunu alması kararlaştırıldı.
+- [x] İlk proje iskeletinin Büşra tarafından kurulması kararlaştırıldı.
+- [x] Serenay’ın Büşra başlangıç vermeden geliştirmeye başlamaması kararlaştırıldı.
 
 ---
 
@@ -86,18 +158,25 @@ Durum göstergeleri:
 
 ### R0 — Repo ve geliştirme temeli
 
-- [ ] GitHub reposunu yerel bilgisayara clone et.
-- [ ] Repo klasörünü VS Code’da aç.
-- [ ] İkinci geliştiriciyi GitHub collaborator olarak ekle.
-- [ ] `main` branch korumasını aç.
-- [ ] Pull request için en az bir onay zorunluluğu getir.
-- [ ] `feature/project-foundation` branch’ini oluştur.
-- [ ] pnpm workspace tabanlı monorepo iskeletini kur.
-- [ ] `apps/mobile` altında temiz Expo uygulaması oluştur.
-- [ ] `apps/admin-web` için boş Next.js uygulama iskeleti oluştur.
-- [ ] Paylaşılan TypeScript config, lint ve format kurallarını ekle.
-- [ ] GitHub Actions ile typecheck, lint ve build kontrollerini ekle.
-- [ ] `README.md` ve `roadmap.md` dosyalarının repo kökünde olduğunu doğrula.
+Aktif sorumlu: **Büşra**  
+Serenay durumu: **Büşra’nın başlangıç bildirimini bekliyor**
+
+- [ ] **Büşra:** GitHub reposunu yerel bilgisayara clone et.
+- [ ] **Büşra:** Repo klasörünü VS Code’da aç.
+- [ ] **Büşra:** Serenay’ı GitHub collaborator olarak ekle.
+- [ ] **Büşra:** `main` branch korumasını aç.
+- [ ] **Büşra:** Pull request için en az bir onay zorunluluğu getir.
+- [ ] **Büşra:** `feature/project-foundation` branch’ini oluştur.
+- [ ] **Büşra:** pnpm workspace tabanlı monorepo iskeletini kur.
+- [ ] **Büşra:** `apps/mobile` altında temiz Expo uygulaması oluştur.
+- [ ] **Büşra:** `apps/admin-web` için boş Next.js uygulama iskeleti oluştur.
+- [ ] **Büşra:** Paylaşılan TypeScript config, lint ve format kurallarını ekle.
+- [ ] **Büşra:** GitHub Actions ile typecheck, lint ve build kontrollerini ekle.
+- [ ] **Büşra:** `README.md` ve `roadmap.md` dosyalarının repo kökünde olduğunu doğrula.
+- [ ] **Büşra:** Proje temelini iPhone/iPad ve web build ile doğrula.
+- [ ] **Büşra:** Foundation pull request’ini aç ve Serenay’dan inceleme iste.
+- [ ] **Serenay:** Foundation pull request’ini incele; geliştirmeye henüz başlama.
+- [ ] **Büşra:** Foundation merge edildikten sonra Serenay’a başlangıç bildirimi ver.
 
 #### R0 kabul kriterleri
 
@@ -106,12 +185,18 @@ Durum göstergeleri:
 - CI kontrolleri pull request üzerinde çalışır.
 - `main` doğrudan push kabul etmez.
 - `node_modules`, `.expo`, build çıktıları ve gizli dosyalar Git’e girmez.
+- Büşra foundation pull request’ini tamamlamıştır.
+- Serenay repo yapısını ve mobil sorumluluk alanını incelemiştir.
+- Büşra paralel geliştirme için açık başlangıç bildirimi vermiştir.
 
 ---
 
 ## Sıradaki
 
 ### R1 — Çocuk etkinlik motoru
+
+Birincil sorumlu: **Serenay**  
+Başlangıç koşulu: **R0 tamamlanmış ve Büşra başlangıç vermiş olmalıdır.**
 
 - [ ] Etkinlik durum makinesini domain paketi olarak tanımla.
 - [ ] `PLAYING_NARRATION` durumunu uygula.
@@ -135,6 +220,9 @@ Durum göstergeleri:
 - Durum geçişlerinin tamamı testlerle kapsanır.
 
 ### R2 — İçerik şeması
+
+Birincil sorumlu: **Büşra**  
+Başlangıç koşulu: **R0 tamamlanmış olmalıdır.**
 
 - [ ] `packages/content-schema` paketini oluştur.
 - [ ] Activity, choice, asset ve içerik sürümü tiplerini tanımla.
@@ -300,7 +388,6 @@ Bu maddeler MVP’ye otomatik olarak dahil değildir.
 
 ## Karar bekleyenler
 
-- [!] İki geliştiricinin kesin rol paylaşımı ve GitHub kullanıcıları.
 - [!] Monorepo için yalnızca pnpm workspace mi, Turborepo mu kullanılacağı.
 - [!] Görsel üretim sağlayıcısı.
 - [!] TTS sağlayıcısı ve ürün sesi.
