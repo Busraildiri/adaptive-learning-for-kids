@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "noEmit": false,
+    "outDir": ".schema-build",
+    "rootDir": "src"
+  },
+  "include": ["src/schemas.ts"]
+}

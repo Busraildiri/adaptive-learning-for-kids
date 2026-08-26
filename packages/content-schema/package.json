@@ -1,0 +1,23 @@
+{
+  "name": "@adaptive/content-schema",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./content/tr-TR/v1": "./content/tr-TR/content.v1.json"
+  },
+  "scripts": {
+    "generate:json-schema": "tsc --project tsconfig.schema.json && node scripts/generate-json-schema.mjs && biome format --write generated/content-version.schema.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@adaptive/shared-types": "workspace:*",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}
