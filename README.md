@@ -7,7 +7,7 @@
 | Belge durumu | İlk kapsamlı taslak |
 | Tarih | 26 Ağustos 2026 |
 | Hedef platform | iOS öncelikli mobil uygulama: iPhone ve iPad |
-| Hedef yaş | 3–7 yaş |
+| Hedef yaş | 2–7 yaş |
 | Geliştirme ekibi | İki geliştirici ve dönemsel çocuk gelişimi uzmanı |
 | Mobil teknoloji | React Native, Expo, TypeScript |
 | Backend yaklaşımı | Supabase, PostgreSQL ve Edge Functions |
