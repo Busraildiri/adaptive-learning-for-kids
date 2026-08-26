@@ -1,0 +1,821 @@
+{
+  "$id": "https://adaptive-learning-for-kids.dev/schemas/content-version.schema.json",
+  "title": "Adaptive Learning Content Version",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "0.2.0"
+    },
+    "contentVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "locale": {
+      "type": "string",
+      "const": "tr-TR"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "in_review", "published", "archived"]
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+    },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": ["image", "audio", "animation", "symbol"]
+          },
+          "uri": {
+            "type": "string",
+            "minLength": 1
+          },
+          "mimeType": {
+            "type": "string",
+            "minLength": 1
+          },
+          "accessibilityLabel": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": ["id", "type", "uri", "mimeType"],
+        "additionalProperties": false
+      }
+    },
+    "activities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "version": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "ageBands": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string",
+                "enum": ["2-4", "4-7"]
+              }
+            ],
+            "items": {
+              "type": "string",
+              "enum": ["2-4", "4-7"]
+            }
+          },
+          "activityType": {
+            "type": "string",
+            "enum": ["instruction", "guided_practice", "independent_practice", "transfer"]
+          },
+          "targetSkill": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sceneAssetId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "narration": {
+            "type": "string",
+            "minLength": 1
+          },
+          "narrationAudioAssetId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "choices": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "emotion": {
+                    "type": "string",
+                    "enum": ["happy", "sad", "angry", "scared"]
+                  },
+                  "assetId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "supportiveFeedback": {
+                    "type": "object",
+                    "properties": {
+                      "narration": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "audioAssetId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "followUpPrompt": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["narration"],
+                    "additionalProperties": false
+                  }
+                },
+                "required": ["id", "emotion", "assetId", "supportiveFeedback"],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "emotion": {
+                    "type": "string",
+                    "enum": ["happy", "sad", "angry", "scared"]
+                  },
+                  "assetId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "supportiveFeedback": {
+                    "type": "object",
+                    "properties": {
+                      "narration": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "audioAssetId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "followUpPrompt": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "required": ["narration"],
+                    "additionalProperties": false
+                  }
+                },
+                "required": ["id", "emotion", "assetId", "supportiveFeedback"],
+                "additionalProperties": false
+              }
+            ],
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "emotion": {
+                  "type": "string",
+                  "enum": ["happy", "sad", "angry", "scared"]
+                },
+                "assetId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "supportiveFeedback": {
+                  "type": "object",
+                  "properties": {
+                    "narration": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "audioAssetId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "followUpPrompt": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": ["narration"],
+                  "additionalProperties": false
+                }
+              },
+              "required": ["id", "emotion", "assetId", "supportiveFeedback"],
+              "additionalProperties": false
+            }
+          },
+          "storyResolution": {
+            "type": "object",
+            "properties": {
+              "narration": {
+                "type": "string",
+                "minLength": 1
+              },
+              "audioAssetId": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": ["narration"],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "ageBands",
+          "activityType",
+          "targetSkill",
+          "sceneAssetId",
+          "narration",
+          "choices",
+          "storyResolution"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "stories": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "version": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ageBands": {
+            "type": "array",
+            "prefixItems": [
+              {
+                "type": "string",
+                "enum": ["2-4", "4-7"]
+              }
+            ],
+            "items": {
+              "type": "string",
+              "enum": ["2-4", "4-7"]
+            }
+          },
+          "targetSkills": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "greetingTemplate": {
+            "type": "string",
+            "minLength": 1
+          },
+          "characterAssets": {
+            "type": "object",
+            "properties": {
+              "happyAssetId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sadAssetId": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": ["happyAssetId", "sadAssetId"],
+            "additionalProperties": false
+          },
+          "steps": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "type": {
+                      "type": "string",
+                      "const": "choice"
+                    },
+                    "prompt": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "choices": {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "accessibilityLabel": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "visual": {
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "balloon"
+                                    },
+                                    "color": {
+                                      "type": "string",
+                                      "pattern": "^#[0-9a-fA-F]{6}$"
+                                    }
+                                  },
+                                  "required": ["kind", "color"],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "acknowledgement": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": ["id", "accessibilityLabel", "visual", "acknowledgement"],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "accessibilityLabel": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "visual": {
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "kind": {
+                                      "type": "string",
+                                      "const": "balloon"
+                                    },
+                                    "color": {
+                                      "type": "string",
+                                      "pattern": "^#[0-9a-fA-F]{6}$"
+                                    }
+                                  },
+                                  "required": ["kind", "color"],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            },
+                            "acknowledgement": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": ["id", "accessibilityLabel", "visual", "acknowledgement"],
+                          "additionalProperties": false
+                        }
+                      ],
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "accessibilityLabel": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "visual": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "const": "balloon"
+                                  },
+                                  "color": {
+                                    "type": "string",
+                                    "pattern": "^#[0-9a-fA-F]{6}$"
+                                  }
+                                },
+                                "required": ["kind", "color"],
+                                "additionalProperties": false
+                              }
+                            ]
+                          },
+                          "acknowledgement": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": ["id", "accessibilityLabel", "visual", "acknowledgement"],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": ["id", "type", "prompt", "choices"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "type": {
+                      "type": "string",
+                      "const": "tap"
+                    },
+                    "prompt": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "requiredTaps": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 5
+                    },
+                    "completionNarration": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": ["id", "type", "prompt", "requiredTaps", "completionNarration"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "type": {
+                      "type": "string",
+                      "const": "event"
+                    },
+                    "narration": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": ["id", "type", "narration"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "type": {
+                      "type": "string",
+                      "const": "emotion_choice"
+                    },
+                    "prompt": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "choices": {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "emotion": {
+                              "type": "string",
+                              "enum": ["happy", "sad", "angry", "scared"]
+                            },
+                            "accessibilityLabel": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "supportiveFeedback": {
+                              "type": "object",
+                              "properties": {
+                                "narration": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "audioAssetId": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "followUpPrompt": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": ["narration"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": ["id", "emotion", "accessibilityLabel", "supportiveFeedback"],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "emotion": {
+                              "type": "string",
+                              "enum": ["happy", "sad", "angry", "scared"]
+                            },
+                            "accessibilityLabel": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "supportiveFeedback": {
+                              "type": "object",
+                              "properties": {
+                                "narration": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "audioAssetId": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "followUpPrompt": {
+                                  "type": "string",
+                                  "minLength": 1
+                                }
+                              },
+                              "required": ["narration"],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": ["id", "emotion", "accessibilityLabel", "supportiveFeedback"],
+                          "additionalProperties": false
+                        }
+                      ],
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "emotion": {
+                            "type": "string",
+                            "enum": ["happy", "sad", "angry", "scared"]
+                          },
+                          "accessibilityLabel": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "supportiveFeedback": {
+                            "type": "object",
+                            "properties": {
+                              "narration": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "audioAssetId": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "followUpPrompt": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "required": ["narration"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": ["id", "emotion", "accessibilityLabel", "supportiveFeedback"],
+                        "additionalProperties": false
+                      }
+                    },
+                    "storyResolution": {
+                      "type": "object",
+                      "properties": {
+                        "narration": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "audioAssetId": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": ["narration"],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["id", "type", "prompt", "choices", "storyResolution"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "type": {
+                      "type": "string",
+                      "const": "help_choice"
+                    },
+                    "prompt": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "choices": {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "action": {
+                              "type": "string",
+                              "enum": ["hug", "new_balloon", "breathe"]
+                            },
+                            "accessibilityLabel": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "resultNarration": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": ["id", "action", "accessibilityLabel", "resultNarration"],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "action": {
+                              "type": "string",
+                              "enum": ["hug", "new_balloon", "breathe"]
+                            },
+                            "accessibilityLabel": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "resultNarration": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": ["id", "action", "accessibilityLabel", "resultNarration"],
+                          "additionalProperties": false
+                        }
+                      ],
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "action": {
+                            "type": "string",
+                            "enum": ["hug", "new_balloon", "breathe"]
+                          },
+                          "accessibilityLabel": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "resultNarration": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": ["id", "action", "accessibilityLabel", "resultNarration"],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": ["id", "type", "prompt", "choices"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "type": {
+                      "type": "string",
+                      "const": "breathing"
+                    },
+                    "narration": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "cycles": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 3
+                    }
+                  },
+                  "required": ["id", "type", "narration", "cycles"],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "type": {
+                      "type": "string",
+                      "const": "closing"
+                    },
+                    "narration": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": ["id", "type", "narration"],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "title",
+          "ageBands",
+          "targetSkills",
+          "greetingTemplate",
+          "characterAssets",
+          "steps"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "contentVersion",
+    "locale",
+    "status",
+    "createdAt",
+    "assets",
+    "activities",
+    "stories"
+  ],
+  "additionalProperties": false
+}

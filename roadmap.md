@@ -1,6 +1,6 @@
 # Adaptive Learning for Kids — Roadmap
 
-Son güncelleme: 26 Ağustos 2026
+Son güncelleme: 27 Ağustos 2026
 
 Bu belge projenin yaşayan yol haritasıdır. Yapılan işler, devam eden işler, sıradaki işler ve karar bekleyen konular burada takip edilir.
 
@@ -97,10 +97,11 @@ Pedagojik ve gizlilik kararları
 
 - [x] Ürün amacı sosyal-duygusal öğrenme desteği olarak tanımlandı.
 - [x] Ürünün tanı, hastalık ihtimali veya klinik risk üretmeyeceği kararlaştırıldı.
-- [x] Hedef yaş aralığı 3–7 olarak belirlendi.
-- [x] 3–5 ve 5–7 yaş katmanları ayrıldı.
-- [x] 3–5 yaşta bireysel öğrenme insight’ı üretilmemesi kararlaştırıldı.
-- [x] 5–7 yaş insight’larının izin ve veri yeterliliğine bağlı olması kararlaştırıldı.
+- [x] Hedef yaş aralığı 2–7 olarak belirlendi.
+- [x] 2–4 ve 4–7 yaş katmanları ayrıldı.
+- [x] Katman sınırlarının ay yaşıyla belirlenmesi kararlaştırıldı: 2–4 katmanı 24–47 ayı, 4–7 katmanı 48–83 ayı kapsar.
+- [x] 2–4 yaşta bireysel öğrenme insight’ı üretilmemesi kararlaştırıldı.
+- [x] 4–7 yaş insight’larının izin ve veri yeterliliğine bağlı olması kararlaştırıldı.
 - [x] Insight özelliğinin varsayılan olarak kapalı olması kararlaştırıldı.
 - [x] Kişiselleştirme, insight ve anonim ürün geliştirme izinleri birbirinden ayrıldı.
 - [x] Ebeveynin ham olayları standart panelde görmemesi kararlaştırıldı.
@@ -115,12 +116,13 @@ Pedagojik ve gizlilik kararları
 - [x] React Native, Expo ve TypeScript mobil teknoloji temeli olarak seçildi.
 - [x] Çocukla serbest konuşan AI ve çocuk ses kaydı MVP dışına çıkarıldı.
 - [x] Çocuk etkileşiminin hazır ve yapılandırılmış seçeneklerden oluşması kararlaştırıldı.
-- [x] Yazılı “Sonraki” ve “Tekrar dinle” düğmelerinin 3–5 yaş için uygun olmadığı testte gözlemlendi.
+- [x] Yazılı “Sonraki” ve “Tekrar dinle” düğmelerinin 2–4 yaş için uygun olmadığı testte gözlemlendi.
 - [x] Çocuk akışının ses, zaman aşımı ve tam ekran dokunma ile ilerlemesi kararlaştırıldı.
 - [x] Tekrar dinleme sayısı en fazla iki olarak sınırlandı.
 - [x] Tekrar dinleme aşamasında duygu emojilerinin devre dışı olması kararlaştırıldı.
 - [x] Tekrar dokunmasının duygu cevabından ayrı olay olarak kaydedilmesi kararlaştırıldı.
-- [x] Doğru veya yanlış seçimden bağımsız sabit öğretim cümlesi kullanılması kararlaştırıldı.
+- [x] Duygular için tek bir doğru cevap varsayılmaması kararlaştırıldı.
+- [x] Her duygu seçeneğinin, seçimi doğru/yanlış olarak etiketlemeden çocuğun yorumunu kabul eden ve düşünmesini destekleyen kendine özel geri bildirim taşıması kararlaştırıldı.
 
 ### Hesap ve profil kararları
 
@@ -222,24 +224,79 @@ Başlangıç koşulu: **R0 tamamlanmış ve Büşra başlangıç vermiş olmalı
 
 Doğrulama: **26 Ağustos 2026 tarihinde fiziksel iPhone ve Expo Go üzerinde bütün akış başarıyla test edildi.**
 
+### R1.1 — Cihaz testi sonrası çocuk akışı iyileştirmeleri
+
+Birincil sorumlu: **Serenay**
+
+Kaynak: **26 Ağustos 2026 tarihli cihaz testi bulguları**
+
+- [x] “Tekrar dinlemek istersen ekrana dokun.” yönergesini sesli oynat.
+- [x] Üç saniyelik tekrar penceresini sesli yönerge tamamlandıktan sonra başlat.
+- [x] Tekrar sonrasında duygu seçimini yeniden etkinleştir.
+- [x] En fazla iki tekrar sonrasında otomatik ilerle.
+- [x] Tekrar yönergesi ve tekrar penceresinde duygu emojilerini devre dışı bırak.
+- [x] Duygu emojilerini soru tamamlandığında tek seferlik büyüme animasyonuyla vurgula.
+- [x] Seçime özel kabul cümlesini ortak hikâye çözümünden ayır.
+- [x] Cevap verilmediğinde değerlendirme geri bildirimi oynatmadan tekrar yönergesine geç.
+- [x] Yeni durum geçişleri için unit testleri güncelle.
+- [ ] Akışı fiziksel iPhone ve Expo Go üzerinde yeniden doğrula.
+
+#### R1.1 kabul kriterleri
+
+- Çocuk yazılı bir düğmeyi okumadan tekrar dinleyebilir veya sonraki aktiviteye geçebilir.
+- Tekrar penceresindeki dokunma duygu seçimi olarak işlenmez.
+- Tekrar edilen hikâyeden sonra çocuk yeniden duygu seçebilir.
+- İkinci tekrardan sonra yeni bir tekrar döngüsü başlamaz.
+- Seçim doğru veya yanlış olarak etiketlenmeden hikâyenin ortak çözümü açıklanır.
+
 ### R2 — İçerik şeması
 
 Birincil sorumlu: **Büşra**  
 Başlangıç koşulu: **R0 tamamlanmış olmalıdır.**
 
-- [ ] `packages/content-schema` paketini oluştur.
-- [ ] Activity, choice, asset ve içerik sürümü tiplerini tanımla.
-- [ ] Zod doğrulamasını ekle.
-- [ ] JSON Schema çıktısını oluştur.
-- [ ] İlk 5–10 test senaryosunu şemaya taşı.
-- [ ] Geçersiz içeriğin CI kontrolünü durdurmasını sağla.
-- [ ] Öğretim, rehberli alıştırma, bağımsız uygulama ve aktarım türlerini ayır.
+- [x] `packages/content-schema` paketini oluştur.
+- [x] Activity, choice, asset ve içerik sürümü tiplerini tanımla.
+- [x] Yaş katmanlarını `2-4` (24–47 ay) ve `4-7` (48–83 ay) olarak şemaya ekle.
+- [x] Her choice için zorunlu, seçeneğe özel destekleyici geri bildirim alanı tanımla.
+- [x] Duygu choice modelinde `isCorrect`, `correctAnswer` veya tek doğru cevabı ifade eden eşdeğer alanları yasakla.
+- [x] Zod doğrulamasını ekle.
+- [x] JSON Schema çıktısını oluştur.
+- [x] İlk 5–10 test senaryosunu şemaya taşı.
+- [x] Geçersiz içeriğin CI kontrolünü durdurmasını sağla.
+- [x] Öğretim, rehberli alıştırma, bağımsız uygulama ve aktarım türlerini ayır.
 
 #### R2 kabul kriterleri
 
 - Senaryolar `App.tsx` içine gömülü değildir.
 - Mobil uygulama sürümlü içerik dosyalarını okuyabilir.
 - Eksik veya geçersiz içerik yayınlanamaz.
+- Her duygu seçeneği kendine özel destekleyici geri bildirim içerir.
+- Duygu aktiviteleri tek bir doğru cevap tanımlamadan doğrulanabilir ve çalıştırılabilir.
+
+Doğrulama: **26 Ağustos 2026 tarihinde altı sürümlü Türkçe senaryo Zod testlerinden ve Expo iOS export kontrolünden başarıyla geçti.**
+
+### R2.1 — Tek hikâyelik oyun döngüsü prototipi
+
+Birincil amaç: **Soru-cevap zinciri yerine oynanabilir bir dikey kesit doğrulamak**
+
+- [x] “Mino'nun Balonu” adlı tek hikâyeyi sürümlü içerik dosyasına ekle.
+- [x] Çocuğu geçici oturum profili ve adıyla karşıla.
+- [x] Balon seçme, dokunarak şişirme ve patlama sonucunu görme akışını uygula.
+- [x] Hikâye içinde yalnızca bir açık duygu sorusu kullan.
+- [x] Her duygu seçeneğine yargılamayan, seçime özel geri bildirim ekle.
+- [x] Sarılma, yeni balon verme ve birlikte nefes alma yardım eylemlerini ekle.
+- [x] Emoji yerine özgün, şeffaf arka planlı Mino karakter görsellerini kullan.
+- [x] İçerik şemasına `choice`, `tap`, `event`, `emotion_choice`, `help_choice`, `breathing` ve `closing` adımlarını ekle.
+- [ ] Akışı fiziksel iPhone ve Expo Go üzerinde çocuk gözüyle yeniden doğrula.
+
+Not: Bu prototipte `ChildSessionProfile` için geçici veri kullanılır. Gerçek ilk giriş soruları, profil kaydı ve ebeveyn kontrolleri R4 kapsamında eklenecektir; hikâye bu profile bağlanmaya hazırdır.
+
+#### R2.1 kabul kriterleri
+
+- Çocuk art arda duygu soruları yanıtlamadan hikâyeyi tamamlayabilir.
+- Balon seçimi ekrandaki balon rengini değiştirir ve dokunmalar balonu büyütür.
+- Çocuğun yardım seçimi farklı, doğal bir hikâye sonucuna dönüşür.
+- Hikâye okuma bilmeden ses ve büyük görsel hedeflerle oynanabilir.
 
 ### R3 — Görsel ve ses kontrollü testleri
 
@@ -270,6 +327,8 @@ Başlangıç koşulu: **R0 tamamlanmış olmalıdır.**
 - [ ] Ebeveyn PIN’ini güvenli biçimde uygula.
 - [ ] Çocuk profil tablosunu oluştur.
 - [ ] Takma ad, doğum ayı/yılı, cinsiyet ve dil alanlarını ekle.
+- [ ] İlk girişte takma ad, yaş bilgisi, sevilen oyuncaklar, hayvanlar ve ilgi alanlarını soran ebeveyn akışını ekle.
+- [ ] Ebeveyn “başlat” dediğinde profil verisini çocuk oturumuna aktar ve çocuğu adıyla sesli karşıla.
 - [ ] Yaş katmanını ay ve yıldan hesapla.
 - [ ] Row Level Security politikalarını yaz ve test et.
 
@@ -348,7 +407,7 @@ Başlangıç koşulu: **R0 tamamlanmış olmalıdır.**
 
 - [ ] Dört temel duygu için içerik planı oluştur.
 - [ ] 40–60 senaryo üret.
-- [ ] 3–5 ve 5–7 yaş varyasyonlarını hazırla.
+- [ ] 2–4 ve 4–7 yaş varyasyonlarını hazırla.
 - [ ] Görsel ve ses asset’lerini üret.
 - [ ] Bütün içerikleri iki ortak incelemesinden geçir.
 - [ ] Bütün pilot içeriklerini uzman incelemesinden geçir.
@@ -414,4 +473,3 @@ Bu maddeler MVP’ye otomatik olarak dahil değildir.
 - Reklam ve reklam SDK’ları.
 - Agent çıktısının otomatik yayınlanması.
 - Mikroservis ve Kubernetes altyapısı.
-

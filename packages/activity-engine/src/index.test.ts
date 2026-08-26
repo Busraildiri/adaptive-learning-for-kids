@@ -18,33 +18,62 @@ describe("activity engine", () => {
     expect(result.selectedEmotionId).toBe("happy");
   });
 
-  it("treats no response as a valid flow instead of an error", () => {
+  it("skips evaluative feedback when there is no response", () => {
     const result = send(
       createActivityEngine({ responseTimeoutMs: 7_500 }),
       { type: "NARRATION_ENDED" },
       { type: "RESPONSE_TIMED_OUT" },
     );
 
-    expect(result.state).toBe("PLAYING_FEEDBACK");
+    expect(result.state).toBe("PLAYING_REPLAY_PROMPT");
     expect(result.selectedEmotionId).toBeNull();
     expect(result.config.responseTimeoutMs).toBe(7_500);
   });
 
-  it("ignores emotion taps during the replay window", () => {
-    const waitingForReplay = send(
+  it("plays the replay prompt before opening the three-second tap window", () => {
+    const result = send(
+      createActivityEngine(),
+      { type: "NARRATION_ENDED" },
+      { type: "EMOTION_SELECTED", emotionId: "sad" },
+      { type: "FEEDBACK_ENDED" },
+      { type: "REPLAY_PROMPT_ENDED" },
+    );
+
+    expect(result.state).toBe("WAITING_FOR_REPLAY_TAP");
+  });
+
+  it("ignores emotion taps while replay input is active", () => {
+    const playingPrompt = send(
       createActivityEngine(),
       { type: "NARRATION_ENDED" },
       { type: "EMOTION_SELECTED", emotionId: "sad" },
       { type: "FEEDBACK_ENDED" },
     );
+    const waitingForReplay = transition(playingPrompt, { type: "REPLAY_PROMPT_ENDED" });
 
-    const result = transition(waitingForReplay, {
-      type: "EMOTION_SELECTED",
-      emotionId: "happy",
-    });
+    expect(transition(playingPrompt, { type: "EMOTION_SELECTED", emotionId: "happy" })).toBe(
+      playingPrompt,
+    );
+    expect(transition(waitingForReplay, { type: "EMOTION_SELECTED", emotionId: "happy" })).toBe(
+      waitingForReplay,
+    );
+    expect(waitingForReplay.selectedEmotionId).toBe("sad");
+  });
 
-    expect(result).toBe(waitingForReplay);
-    expect(result.selectedEmotionId).toBe("sad");
+  it("reopens emotion selection after replaying the narration", () => {
+    const result = send(
+      createActivityEngine(),
+      { type: "NARRATION_ENDED" },
+      { type: "EMOTION_SELECTED", emotionId: "sad" },
+      { type: "FEEDBACK_ENDED" },
+      { type: "REPLAY_PROMPT_ENDED" },
+      { type: "REPLAY_TAPPED" },
+      { type: "REPLAY_ENDED" },
+    );
+
+    expect(result.state).toBe("WAITING_FOR_EMOTION");
+    expect(result.replayCount).toBe(1);
+    expect(result.selectedEmotionId).toBeNull();
   });
 
   it("moves on when the three-second replay window expires", () => {
@@ -52,7 +81,7 @@ describe("activity engine", () => {
       createActivityEngine({ replayWindowMs: 3_000 }),
       { type: "NARRATION_ENDED" },
       { type: "RESPONSE_TIMED_OUT" },
-      { type: "FEEDBACK_ENDED" },
+      { type: "REPLAY_PROMPT_ENDED" },
       { type: "REPLAY_WINDOW_EXPIRED" },
     );
 
@@ -66,14 +95,50 @@ describe("activity engine", () => {
       { type: "NARRATION_ENDED" },
       { type: "EMOTION_SELECTED", emotionId: "angry" },
       { type: "FEEDBACK_ENDED" },
+      { type: "REPLAY_PROMPT_ENDED" },
       { type: "REPLAY_TAPPED" },
       { type: "REPLAY_ENDED" },
+      { type: "EMOTION_SELECTED", emotionId: "sad" },
+      { type: "FEEDBACK_ENDED" },
+      { type: "REPLAY_PROMPT_ENDED" },
       { type: "REPLAY_TAPPED" },
       { type: "REPLAY_ENDED" },
+      { type: "EMOTION_SELECTED", emotionId: "sad" },
+      { type: "FEEDBACK_ENDED" },
     );
 
     expect(result.state).toBe("TRANSITIONING");
     expect(result.replayCount).toBe(2);
+  });
+
+  it("automatically transitions after a timeout on the second replay", () => {
+    const result = send(
+      createActivityEngine(),
+      { type: "NARRATION_ENDED" },
+      { type: "RESPONSE_TIMED_OUT" },
+      { type: "REPLAY_PROMPT_ENDED" },
+      { type: "REPLAY_TAPPED" },
+      { type: "REPLAY_ENDED" },
+      { type: "RESPONSE_TIMED_OUT" },
+      { type: "REPLAY_PROMPT_ENDED" },
+      { type: "REPLAY_TAPPED" },
+      { type: "REPLAY_ENDED" },
+      { type: "RESPONSE_TIMED_OUT" },
+    );
+
+    expect(result.state).toBe("TRANSITIONING");
+    expect(result.replayCount).toBe(2);
+  });
+
+  it("does not offer replay when replay is disabled", () => {
+    const result = send(
+      createActivityEngine({ maxReplayCount: 0 }),
+      { type: "NARRATION_ENDED" },
+      { type: "EMOTION_SELECTED", emotionId: "happy" },
+      { type: "FEEDBACK_ENDED" },
+    );
+
+    expect(result.state).toBe("TRANSITIONING");
   });
 
   it("starts the next activity with a fresh snapshot", () => {
@@ -81,7 +146,7 @@ describe("activity engine", () => {
       createActivityEngine(),
       { type: "NARRATION_ENDED" },
       { type: "RESPONSE_TIMED_OUT" },
-      { type: "FEEDBACK_ENDED" },
+      { type: "REPLAY_PROMPT_ENDED" },
       { type: "REPLAY_WINDOW_EXPIRED" },
     );
 

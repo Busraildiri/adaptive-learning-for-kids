@@ -1,0 +1,392 @@
+{
+  "schemaVersion": "0.2.0",
+  "contentVersion": "1.1.0",
+  "locale": "tr-TR",
+  "status": "draft",
+  "createdAt": "2026-08-26T12:00:00.000Z",
+  "assets": [
+    {
+      "id": "character-mino-happy",
+      "type": "image",
+      "uri": "app-assets:characters/mino-happy.png",
+      "mimeType": "image/png",
+      "accessibilityLabel": "Oynamaya hazır neşeli tavşan Mino"
+    },
+    {
+      "id": "character-mino-sad",
+      "type": "image",
+      "uri": "app-assets:characters/mino-sad-v2.png",
+      "mimeType": "image/png",
+      "accessibilityLabel": "Balonu patladığı için üzgün görünen tavşan Mino"
+    },
+    {
+      "id": "scene-lost-toy",
+      "type": "symbol",
+      "uri": "emoji:🧸",
+      "mimeType": "text/plain",
+      "accessibilityLabel": "Oyuncağı yere düşen ayıcık"
+    },
+    {
+      "id": "scene-birthday-balloons",
+      "type": "symbol",
+      "uri": "emoji:🎈",
+      "mimeType": "text/plain",
+      "accessibilityLabel": "Doğum günü balonları"
+    },
+    {
+      "id": "scene-block-tower",
+      "type": "symbol",
+      "uri": "emoji:🧱",
+      "mimeType": "text/plain",
+      "accessibilityLabel": "Yıkılan oyuncak blok kulesi"
+    },
+    {
+      "id": "scene-thunder",
+      "type": "symbol",
+      "uri": "emoji:⛈️",
+      "mimeType": "text/plain",
+      "accessibilityLabel": "Gök gürültülü hava"
+    },
+    {
+      "id": "scene-friend-goodbye",
+      "type": "symbol",
+      "uri": "emoji:👋",
+      "mimeType": "text/plain",
+      "accessibilityLabel": "Arkadaşına el sallayan çocuk"
+    },
+    {
+      "id": "scene-shared-crayons",
+      "type": "symbol",
+      "uri": "emoji:🖍️",
+      "mimeType": "text/plain",
+      "accessibilityLabel": "Paylaşılan boya kalemleri"
+    },
+    {
+      "id": "emotion-happy",
+      "type": "symbol",
+      "uri": "emoji:😊",
+      "mimeType": "text/plain",
+      "accessibilityLabel": "Mutlu yüz"
+    },
+    {
+      "id": "emotion-sad",
+      "type": "symbol",
+      "uri": "emoji:😢",
+      "mimeType": "text/plain",
+      "accessibilityLabel": "Üzgün yüz"
+    },
+    {
+      "id": "emotion-angry",
+      "type": "symbol",
+      "uri": "emoji:😠",
+      "mimeType": "text/plain",
+      "accessibilityLabel": "Kızgın yüz"
+    },
+    {
+      "id": "emotion-scared",
+      "type": "symbol",
+      "uri": "emoji:😨",
+      "mimeType": "text/plain",
+      "accessibilityLabel": "Korkmuş yüz"
+    }
+  ],
+  "activities": [
+    {
+      "id": "lost-toy-emotions",
+      "version": 1,
+      "ageBands": ["2-4", "4-7"],
+      "activityType": "instruction",
+      "targetSkill": "emotion_recognition",
+      "sceneAssetId": "scene-lost-toy",
+      "narration": "Ece'nin oyuncağı yere düştü. Sence Ece nasıl hissediyor?",
+      "choices": [
+        {
+          "id": "sad",
+          "emotion": "sad",
+          "assetId": "emotion-sad",
+          "supportiveFeedback": {
+            "narration": "Üzgün olabileceğini düşündün."
+          }
+        },
+        {
+          "id": "angry",
+          "emotion": "angry",
+          "assetId": "emotion-angry",
+          "supportiveFeedback": {
+            "narration": "Kızgın olabileceğini düşündün."
+          }
+        }
+      ],
+      "storyResolution": {
+        "narration": "Bu hikâyede Ece, oyuncağı yere düştüğü için üzgün hissediyor."
+      }
+    },
+    {
+      "id": "birthday-surprise-emotions",
+      "version": 1,
+      "ageBands": ["2-4", "4-7"],
+      "activityType": "guided_practice",
+      "targetSkill": "emotion_recognition",
+      "sceneAssetId": "scene-birthday-balloons",
+      "narration": "Mert odaya girdi ve bir sürü balon gördü. Sence Mert nasıl hissediyor?",
+      "choices": [
+        {
+          "id": "happy",
+          "emotion": "happy",
+          "assetId": "emotion-happy",
+          "supportiveFeedback": {
+            "narration": "Mutlu olabileceğini düşündün."
+          }
+        },
+        {
+          "id": "scared",
+          "emotion": "scared",
+          "assetId": "emotion-scared",
+          "supportiveFeedback": {
+            "narration": "Korkmuş olabileceğini düşündün."
+          }
+        }
+      ],
+      "storyResolution": {
+        "narration": "Bu hikâyede Mert, doğum günü sürprizini görünce mutlu hissediyor."
+      }
+    },
+    {
+      "id": "fallen-tower-emotions",
+      "version": 1,
+      "ageBands": ["2-4", "4-7"],
+      "activityType": "guided_practice",
+      "targetSkill": "emotion_cause",
+      "sceneAssetId": "scene-block-tower",
+      "narration": "Deniz'in yaptığı blok kulesi yıkıldı. Sence Deniz nasıl hissediyor?",
+      "choices": [
+        {
+          "id": "angry",
+          "emotion": "angry",
+          "assetId": "emotion-angry",
+          "supportiveFeedback": {
+            "narration": "Kızgın olabileceğini düşündün."
+          }
+        },
+        {
+          "id": "sad",
+          "emotion": "sad",
+          "assetId": "emotion-sad",
+          "supportiveFeedback": {
+            "narration": "Üzgün olabileceğini düşündün."
+          }
+        }
+      ],
+      "storyResolution": {
+        "narration": "Bu hikâyede Deniz, yaptığı kule yıkıldığı için kızgın hissediyor."
+      }
+    },
+    {
+      "id": "thunder-emotions",
+      "version": 1,
+      "ageBands": ["2-4", "4-7"],
+      "activityType": "independent_practice",
+      "targetSkill": "emotion_cause",
+      "sceneAssetId": "scene-thunder",
+      "narration": "Dışarıdan çok yüksek bir gök gürültüsü geldi. Sence Ada nasıl hissediyor?",
+      "choices": [
+        {
+          "id": "scared",
+          "emotion": "scared",
+          "assetId": "emotion-scared",
+          "supportiveFeedback": {
+            "narration": "Korkmuş olabileceğini düşündün."
+          }
+        },
+        {
+          "id": "angry",
+          "emotion": "angry",
+          "assetId": "emotion-angry",
+          "supportiveFeedback": {
+            "narration": "Kızgın olabileceğini düşündün."
+          }
+        }
+      ],
+      "storyResolution": {
+        "narration": "Bu hikâyede Ada, yüksek gök gürültüsünü duyunca korkmuş hissediyor."
+      }
+    },
+    {
+      "id": "friend-goodbye-emotions",
+      "version": 1,
+      "ageBands": ["2-4", "4-7"],
+      "activityType": "independent_practice",
+      "targetSkill": "perspective_taking",
+      "sceneAssetId": "scene-friend-goodbye",
+      "narration": "Ege'nin arkadaşı oyundan sonra evine gidiyor. Sence Ege nasıl hissediyor?",
+      "choices": [
+        {
+          "id": "sad",
+          "emotion": "sad",
+          "assetId": "emotion-sad",
+          "supportiveFeedback": {
+            "narration": "Üzgün olabileceğini düşündün."
+          }
+        },
+        {
+          "id": "happy",
+          "emotion": "happy",
+          "assetId": "emotion-happy",
+          "supportiveFeedback": {
+            "narration": "Mutlu olabileceğini düşündün."
+          }
+        }
+      ],
+      "storyResolution": {
+        "narration": "Bu hikâyede Ege, arkadaşı eve gittiği için üzgün hissediyor."
+      }
+    },
+    {
+      "id": "shared-crayons-emotions",
+      "version": 1,
+      "ageBands": ["2-4", "4-7"],
+      "activityType": "transfer",
+      "targetSkill": "social_situation_interpretation",
+      "sceneAssetId": "scene-shared-crayons",
+      "narration": "Lina resim yaparken arkadaşı kırmızı kalemi aldı. Sence Lina nasıl hissediyor?",
+      "choices": [
+        {
+          "id": "angry",
+          "emotion": "angry",
+          "assetId": "emotion-angry",
+          "supportiveFeedback": {
+            "narration": "Kızgın olabileceğini düşündün."
+          }
+        },
+        {
+          "id": "sad",
+          "emotion": "sad",
+          "assetId": "emotion-sad",
+          "supportiveFeedback": {
+            "narration": "Üzgün olabileceğini düşündün."
+          }
+        },
+        {
+          "id": "happy",
+          "emotion": "happy",
+          "assetId": "emotion-happy",
+          "supportiveFeedback": {
+            "narration": "Mutlu olabileceğini düşündün."
+          }
+        }
+      ],
+      "storyResolution": {
+        "narration": "Bu hikâyede Lina, kırmızı kalemi kullanamadığı için kızgın hissediyor."
+      }
+    }
+  ],
+  "stories": [
+    {
+      "id": "mino-balloon-story",
+      "version": 1,
+      "title": "Mino'nun Balonu",
+      "ageBands": ["2-4"],
+      "targetSkills": ["emotion_recognition", "helping", "co_regulation"],
+      "greetingTemplate": "Merhaba {{childName}}! Ben Mino. Benimle balon oynar mısın?",
+      "characterAssets": {
+        "happyAssetId": "character-mino-happy",
+        "sadAssetId": "character-mino-sad"
+      },
+      "steps": [
+        {
+          "id": "choose-balloon",
+          "type": "choice",
+          "prompt": "Mino'ya bir balon seçelim. Hangisini istersin?",
+          "choices": [
+            {
+              "id": "coral-balloon",
+              "accessibilityLabel": "Mercan kırmızısı balon",
+              "visual": { "kind": "balloon", "color": "#F46F5E" },
+              "acknowledgement": "Bu balonu seçtin. Haydi birlikte şişirelim!"
+            },
+            {
+              "id": "blue-balloon",
+              "accessibilityLabel": "Mavi balon",
+              "visual": { "kind": "balloon", "color": "#55A9D6" },
+              "acknowledgement": "Bu balonu seçtin. Haydi birlikte şişirelim!"
+            }
+          ]
+        },
+        {
+          "id": "inflate-balloon",
+          "type": "tap",
+          "prompt": "Balonu şişirmek için ekrana iki kez dokun.",
+          "requiredTaps": 2,
+          "completionNarration": "Balon büyüdü!"
+        },
+        {
+          "id": "balloon-pops",
+          "type": "event",
+          "narration": "Pat! Mino'nun balonu patladı. Mino'ya bakalım."
+        },
+        {
+          "id": "notice-emotion",
+          "type": "emotion_choice",
+          "prompt": "Sence Mino nasıl hissediyor olabilir?",
+          "choices": [
+            {
+              "id": "sad",
+              "emotion": "sad",
+              "accessibilityLabel": "Üzgün yüz",
+              "supportiveFeedback": {
+                "narration": "Üzgün olabileceğini düşündün."
+              }
+            },
+            {
+              "id": "scared",
+              "emotion": "scared",
+              "accessibilityLabel": "Korkmuş yüz",
+              "supportiveFeedback": {
+                "narration": "Patlama sesinden korkmuş olabileceğini düşündün."
+              }
+            }
+          ],
+          "storyResolution": {
+            "narration": "Bu hikâyede Mino, balonu patladığı için üzgün hissediyor."
+          }
+        },
+        {
+          "id": "help-mino",
+          "type": "help_choice",
+          "prompt": "Mino'ya sarılabilir, yeni bir balon verebilir ya da onunla nefes alabilirsin. Hangisini istersin?",
+          "choices": [
+            {
+              "id": "hug-mino",
+              "action": "hug",
+              "accessibilityLabel": "Mino'ya sarıl",
+              "resultNarration": "Mino'ya sıcacık sarıldın. Yanında olduğunu hissetti."
+            },
+            {
+              "id": "give-balloon",
+              "action": "new_balloon",
+              "accessibilityLabel": "Mino'ya yeni balon ver",
+              "resultNarration": "Mino'ya yeni bir balon verdin. Mino teşekkür ediyor."
+            },
+            {
+              "id": "breathe-together",
+              "action": "breathe",
+              "accessibilityLabel": "Mino ile nefes al",
+              "resultNarration": "Mino'yla birlikte yavaşça nefes almaya başladın."
+            }
+          ]
+        },
+        {
+          "id": "calm-together",
+          "type": "breathing",
+          "narration": "Şimdi Mino'yla bir kez yavaşça nefes alalım. İçeri... ve dışarı...",
+          "cycles": 1
+        },
+        {
+          "id": "story-finished",
+          "type": "closing",
+          "narration": "Mino şimdi kendini biraz daha iyi hissediyor. Ona yardım ettiğin için teşekkür ederim!"
+        }
+      ]
+    }
+  ]
+}

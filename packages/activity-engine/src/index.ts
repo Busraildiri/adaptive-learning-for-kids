@@ -2,6 +2,7 @@ export type ActivityState =
   | "PLAYING_NARRATION"
   | "WAITING_FOR_EMOTION"
   | "PLAYING_FEEDBACK"
+  | "PLAYING_REPLAY_PROMPT"
   | "WAITING_FOR_REPLAY_TAP"
   | "REPLAYING"
   | "TRANSITIONING"
@@ -25,6 +26,7 @@ export type ActivityEngineEvent =
   | { type: "EMOTION_SELECTED"; emotionId: string }
   | { type: "RESPONSE_TIMED_OUT" }
   | { type: "FEEDBACK_ENDED" }
+  | { type: "REPLAY_PROMPT_ENDED" }
   | { type: "REPLAY_TAPPED" }
   | { type: "REPLAY_WINDOW_EXPIRED" }
   | { type: "REPLAY_ENDED" }
@@ -72,7 +74,14 @@ export function transition(
         return { ...snapshot, state: "PLAYING_FEEDBACK", selectedEmotionId: event.emotionId };
       }
       return event.type === "RESPONSE_TIMED_OUT"
-        ? { ...snapshot, state: "PLAYING_FEEDBACK", selectedEmotionId: null }
+        ? {
+            ...snapshot,
+            state:
+              snapshot.replayCount >= snapshot.config.maxReplayCount
+                ? "TRANSITIONING"
+                : "PLAYING_REPLAY_PROMPT",
+            selectedEmotionId: null,
+          }
         : snapshot;
 
     case "PLAYING_FEEDBACK":
@@ -80,27 +89,34 @@ export function transition(
         ? {
             ...snapshot,
             state:
-              snapshot.config.maxReplayCount === 0 ? "TRANSITIONING" : "WAITING_FOR_REPLAY_TAP",
+              snapshot.replayCount >= snapshot.config.maxReplayCount
+                ? "TRANSITIONING"
+                : "PLAYING_REPLAY_PROMPT",
           }
+        : snapshot;
+
+    case "PLAYING_REPLAY_PROMPT":
+      return event.type === "REPLAY_PROMPT_ENDED"
+        ? { ...snapshot, state: "WAITING_FOR_REPLAY_TAP" }
         : snapshot;
 
     case "WAITING_FOR_REPLAY_TAP":
       if (event.type === "REPLAY_TAPPED" && snapshot.replayCount < snapshot.config.maxReplayCount) {
-        return { ...snapshot, state: "REPLAYING", replayCount: snapshot.replayCount + 1 };
+        return {
+          ...snapshot,
+          state: "REPLAYING",
+          replayCount: snapshot.replayCount + 1,
+          selectedEmotionId: null,
+        };
       }
       return event.type === "REPLAY_WINDOW_EXPIRED"
         ? { ...snapshot, state: "TRANSITIONING" }
         : snapshot;
 
     case "REPLAYING":
-      if (event.type !== "REPLAY_ENDED") return snapshot;
-      return {
-        ...snapshot,
-        state:
-          snapshot.replayCount >= snapshot.config.maxReplayCount
-            ? "TRANSITIONING"
-            : "WAITING_FOR_REPLAY_TAP",
-      };
+      return event.type === "REPLAY_ENDED"
+        ? { ...snapshot, state: "WAITING_FOR_EMOTION" }
+        : snapshot;
 
     case "TRANSITIONING":
       if (event.type !== "TRANSITION_ENDED") return snapshot;

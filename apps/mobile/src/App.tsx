@@ -1,48 +1,168 @@
 import {
-  type ActivityEngineEvent,
-  type ActivityEngineSnapshot,
-  createActivityEngine,
-  transition,
-} from "@adaptive/activity-engine";
+  contentVersionSchema,
+  type EmotionId,
+  type HelpAction,
+  type StoryStep,
+} from "@adaptive/content-schema";
+import contentV1 from "@adaptive/content-schema/content/tr-TR/v1";
+import type { ChildSessionProfile } from "@adaptive/shared-types";
 import * as Speech from "expo-speech";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useReducer, useState } from "react";
-import { Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Image,
+  type ImageSourcePropType,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-const activities = [
-  {
-    scene: "🧸",
-    narration: "Ece'nin oyuncağı yere düştü. Sence Ece nasıl hissediyor?",
-    feedback: "Oyuncağı düşününce üzgün hissetmesi anlaşılır.",
-  },
-  {
-    scene: "🎈",
-    narration: "Mert doğum günü balonlarını gördü. Sence Mert nasıl hissediyor?",
-    feedback: "Sevdiğimiz bir sürpriz bizi mutlu edebilir.",
-  },
-] as const;
+const content = contentVersionSchema.parse(contentV1);
+const story = content.stories[0];
 
-const emotions = [
-  { id: "happy", emoji: "😊", color: "#f6c453" },
-  { id: "sad", emoji: "😢", color: "#79b8d1" },
-  { id: "angry", emoji: "😠", color: "#e7826f" },
-  { id: "scared", emoji: "😨", color: "#a78bcc" },
-] as const;
+if (!story) {
+  throw new Error("The mobile prototype requires one playable story.");
+}
 
-const TRANSITION_DURATION_MS = 600;
+const DEMO_CHILD: ChildSessionProfile = {
+  nickname: "Ece",
+  ageBand: "2-4",
+  favoriteAnimals: ["tavşan"],
+  favoriteToys: ["balon"],
+  interests: ["renkler"],
+};
+
+const CHARACTER_ASSETS: Record<string, ImageSourcePropType> = {
+  "character-mino-happy": require("../assets/characters/mino-happy.png"),
+  "character-mino-sad": require("../assets/characters/mino-sad-v2.png"),
+};
+
 const PREFERRED_TURKISH_VOICE_NAMES = ["yelda", "seda"];
+const POP_STEP_INDEX = story.steps.findIndex((step) => step.type === "event");
+const HELP_STEP_INDEX = story.steps.findIndex((step) => step.type === "help_choice");
 
-function reducer(snapshot: ActivityEngineSnapshot, event: ActivityEngineEvent) {
-  return transition(snapshot, event);
+type PlayerMode =
+  | "GREETING"
+  | "PLAYING_PROMPT"
+  | "WAITING_FOR_INPUT"
+  | "PLAYING_RESPONSE"
+  | "BREATHING"
+  | "COMPLETED";
+
+function renderTemplate(template: string, child: ChildSessionProfile): string {
+  return template.replaceAll("{{childName}}", child.nickname);
+}
+
+function getStepNarration(step: StoryStep): string {
+  switch (step.type) {
+    case "choice":
+    case "tap":
+    case "emotion_choice":
+    case "help_choice":
+      return step.prompt;
+    case "event":
+    case "breathing":
+    case "closing":
+      return step.narration;
+  }
+}
+
+function getCharacterAsset(assetId: string): ImageSourcePropType {
+  const source = CHARACTER_ASSETS[assetId];
+
+  if (!source) {
+    throw new Error(`Missing bundled character asset: ${assetId}`);
+  }
+
+  return source;
+}
+
+function Balloon({ color, scale = 1 }: { color: string; scale?: number }) {
+  return (
+    <View style={[styles.balloonWrap, { transform: [{ scale }] }]}>
+      <View style={[styles.balloon, { backgroundColor: color }]} />
+      <View style={[styles.balloonKnot, { borderTopColor: color }]} />
+      <View style={styles.balloonString} />
+    </View>
+  );
+}
+
+function EmotionFace({ emotion }: { emotion: EmotionId }) {
+  const isSad = emotion === "sad";
+
+  return (
+    <View style={[styles.face, { backgroundColor: isSad ? "#9CCFE3" : "#C4A9E8" }]}>
+      <View style={styles.eyesRow}>
+        <View style={styles.eye} />
+        <View style={styles.eye} />
+      </View>
+      <View style={isSad ? styles.sadMouth : styles.scaredMouth} />
+    </View>
+  );
+}
+
+function HelpVisual({ action }: { action: HelpAction }) {
+  if (action === "hug") {
+    return <Text style={styles.heart}>♥</Text>;
+  }
+
+  if (action === "new_balloon") {
+    return <Balloon color="#F46F5E" scale={0.55} />;
+  }
+
+  return (
+    <View style={styles.breatheIcon}>
+      <View style={styles.breatheFace}>
+        <View style={styles.closedEyesRow}>
+          <View style={styles.closedEye} />
+          <View style={styles.closedEye} />
+        </View>
+        <View style={styles.breatheMouth} />
+      </View>
+      <View style={styles.breathLines}>
+        <View style={styles.breathLineShort} />
+        <View style={styles.breathLineLong} />
+        <View style={styles.breathLineShort} />
+      </View>
+    </View>
+  );
 }
 
 export default function App() {
-  const [snapshot, dispatch] = useReducer(reducer, undefined, () =>
-    createActivityEngine({ responseTimeoutMs: 8_000 }),
-  );
-  const [activityIndex, setActivityIndex] = useState(0);
+  const [mode, setMode] = useState<PlayerMode>("GREETING");
+  const [stepIndex, setStepIndex] = useState(-1);
+  const [pendingNarration, setPendingNarration] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState("#F46F5E");
+  const [selectedHelp, setSelectedHelp] = useState<HelpAction | null>(null);
+  const [tapCount, setTapCount] = useState(0);
   const [voiceIdentifier, setVoiceIdentifier] = useState<string | null | undefined>(undefined);
-  const activity = activities[activityIndex];
+  const balloonBounce = useRef(new Animated.Value(0.74)).current;
+  const breathScale = useRef(new Animated.Value(0.7)).current;
+  const currentStep = stepIndex >= 0 ? story.steps[stepIndex] : undefined;
+
+  const advanceStep = useCallback(() => {
+    setPendingNarration(null);
+    setTapCount(0);
+    setStepIndex((current) => {
+      const next = current + 1;
+
+      if (next >= story.steps.length) {
+        setMode("COMPLETED");
+        return current;
+      }
+
+      setMode("PLAYING_PROMPT");
+      return next;
+    });
+  }, []);
+
+  const playResponse = (narration: string) => {
+    setPendingNarration(narration);
+    setMode("PLAYING_RESPONSE");
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -71,212 +191,523 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (voiceIdentifier === undefined) return;
-
-    let cancelled = false;
-    let event: ActivityEngineEvent | null = null;
-    let delay = 0;
-
-    const speak = (text: string, completionEvent: ActivityEngineEvent) => {
-      Speech.speak(text, {
-        language: "tr-TR",
-        pitch: 1.08,
-        rate: 1,
-        voice: voiceIdentifier ?? undefined,
-        onDone: () => {
-          if (!cancelled) dispatch(completionEvent);
-        },
-        onError: () => {
-          if (!cancelled) dispatch(completionEvent);
-        },
-      });
-    };
-
-    switch (snapshot.state) {
-      case "PLAYING_NARRATION":
-        speak(activity.narration, { type: "NARRATION_ENDED" });
-        return () => {
-          cancelled = true;
-          void Speech.stop();
-        };
-      case "WAITING_FOR_EMOTION":
-        event = { type: "RESPONSE_TIMED_OUT" };
-        delay = snapshot.config.responseTimeoutMs;
-        break;
-      case "PLAYING_FEEDBACK":
-        speak(activity.feedback, { type: "FEEDBACK_ENDED" });
-        return () => {
-          cancelled = true;
-          void Speech.stop();
-        };
-      case "WAITING_FOR_REPLAY_TAP":
-        event = { type: "REPLAY_WINDOW_EXPIRED" };
-        delay = snapshot.config.replayWindowMs;
-        break;
-      case "REPLAYING":
-        speak(activity.narration, { type: "REPLAY_ENDED" });
-        return () => {
-          cancelled = true;
-          void Speech.stop();
-        };
-      case "TRANSITIONING":
-        event = {
-          type: "TRANSITION_ENDED",
-          hasNextActivity: activityIndex < activities.length - 1,
-        };
-        delay = TRANSITION_DURATION_MS;
-        break;
+    if (voiceIdentifier === undefined || mode === "WAITING_FOR_INPUT" || mode === "BREATHING") {
+      return;
     }
 
-    if (!event) return;
-    const timer = setTimeout(() => {
-      if (event.type === "TRANSITION_ENDED" && event.hasNextActivity) {
-        setActivityIndex((current) => current + 1);
+    if (mode === "COMPLETED") return;
+
+    const narration =
+      mode === "GREETING"
+        ? renderTemplate(story.greetingTemplate, DEMO_CHILD)
+        : mode === "PLAYING_RESPONSE"
+          ? pendingNarration
+          : currentStep
+            ? getStepNarration(currentStep)
+            : null;
+
+    if (!narration) return;
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const onNarrationEnded = () => {
+      if (cancelled) return;
+
+      if (mode === "GREETING") {
+        setStepIndex(0);
+        setMode("PLAYING_PROMPT");
+        return;
       }
-      dispatch(event);
-    }, delay);
+
+      if (mode === "PLAYING_RESPONSE") {
+        advanceStep();
+        return;
+      }
+
+      if (!currentStep) return;
+
+      if (currentStep.type === "event") {
+        timer = setTimeout(advanceStep, 650);
+      } else if (currentStep.type === "breathing") {
+        setMode("BREATHING");
+      } else if (currentStep.type === "closing") {
+        setMode("COMPLETED");
+      } else {
+        setMode("WAITING_FOR_INPUT");
+      }
+    };
+
+    Speech.speak(narration, {
+      language: "tr-TR",
+      pitch: 1.07,
+      rate: 0.94,
+      voice: voiceIdentifier ?? undefined,
+      onDone: onNarrationEnded,
+      onError: onNarrationEnded,
+    });
 
     return () => {
       cancelled = true;
-      clearTimeout(timer);
+      if (timer) clearTimeout(timer);
+      void Speech.stop();
     };
-  }, [activityIndex, snapshot, voiceIdentifier]);
+  }, [advanceStep, currentStep, mode, pendingNarration, voiceIdentifier]);
 
-  const canChooseEmotion = snapshot.state === "WAITING_FOR_EMOTION";
-  const canReplay = snapshot.state === "WAITING_FOR_REPLAY_TAP";
-  const isNarrating = snapshot.state === "PLAYING_NARRATION" || snapshot.state === "REPLAYING";
+  useEffect(() => {
+    if (mode !== "BREATHING" || currentStep?.type !== "breathing") return;
+
+    breathScale.setValue(0.7);
+    const movements = Array.from({ length: currentStep.cycles }, () => [
+      Animated.timing(breathScale, {
+        toValue: 1.18,
+        duration: 1_700,
+        useNativeDriver: true,
+      }),
+      Animated.timing(breathScale, {
+        toValue: 0.7,
+        duration: 1_700,
+        useNativeDriver: true,
+      }),
+    ]).flat();
+    const animation = Animated.sequence(movements);
+
+    animation.start(({ finished }) => {
+      if (finished) advanceStep();
+    });
+
+    return () => animation.stop();
+  }, [advanceStep, breathScale, currentStep, mode]);
+
+  const handlePump = () => {
+    if (mode !== "WAITING_FOR_INPUT" || currentStep?.type !== "tap") return;
+
+    const nextTapCount = Math.min(tapCount + 1, currentStep.requiredTaps);
+    setTapCount(nextTapCount);
+    Animated.spring(balloonBounce, {
+      toValue: 0.74 + nextTapCount * 0.18,
+      friction: 5,
+      tension: 100,
+      useNativeDriver: true,
+    }).start();
+
+    if (nextTapCount === currentStep.requiredTaps) {
+      playResponse(currentStep.completionNarration);
+    }
+  };
+
+  const resetStory = () => {
+    void Speech.stop();
+    setStepIndex(-1);
+    setPendingNarration(null);
+    setSelectedColor("#F46F5E");
+    setSelectedHelp(null);
+    setTapCount(0);
+    balloonBounce.setValue(0.74);
+    breathScale.setValue(0.7);
+    setMode("GREETING");
+  };
+
+  const isSad =
+    stepIndex >= POP_STEP_INDEX && stepIndex <= HELP_STEP_INDEX && selectedHelp === null;
+  const characterAssetId = isSad
+    ? story.characterAssets.sadAssetId
+    : story.characterAssets.happyAssetId;
+  const characterLabel = content.assets.find(
+    (asset) => asset.id === characterAssetId,
+  )?.accessibilityLabel;
+  const prompt = currentStep ? getStepNarration(currentStep) : "";
+  const isSpeaking =
+    mode === "GREETING" || mode === "PLAYING_PROMPT" || mode === "PLAYING_RESPONSE";
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
-      <View style={styles.container}>
-        <View style={styles.progressTrack}>
-          <View
-            style={[
-              styles.progressFill,
-              { width: `${((activityIndex + 1) / activities.length) * 100}%` },
-            ]}
-          />
-        </View>
+      <Pressable
+        accessibilityLabel="Balonu şişirmek için ekrana dokun"
+        accessibilityRole="button"
+        disabled={currentStep?.type !== "tap" || mode !== "WAITING_FOR_INPUT"}
+        onPress={handlePump}
+        style={styles.container}
+      >
+        <View style={styles.backgroundBlobTop} />
+        <View style={styles.backgroundBlobBottom} />
 
-        <View style={styles.sceneCard}>
-          <Text style={styles.scene}>{activity.scene}</Text>
-          <Text style={styles.narration}>{activity.narration}</Text>
-          {isNarrating && <Text style={styles.audioIndicator}>🔊</Text>}
-          {snapshot.state === "PLAYING_FEEDBACK" && (
-            <Text style={styles.feedback}>{activity.feedback}</Text>
-          )}
-        </View>
-
-        <View
-          accessibilityElementsHidden={!canChooseEmotion}
-          importantForAccessibility={canChooseEmotion ? "auto" : "no-hide-descendants"}
-          pointerEvents={canChooseEmotion ? "auto" : "none"}
-          style={[styles.emotionGrid, !canChooseEmotion && styles.disabled]}
-        >
-          {emotions.map((emotion) => (
-            <Pressable
-              accessibilityLabel={emotion.id}
-              accessibilityRole="button"
-              key={emotion.id}
-              onPress={() => dispatch({ type: "EMOTION_SELECTED", emotionId: emotion.id })}
-              style={({ pressed }) => [
-                styles.emotionButton,
-                { backgroundColor: emotion.color },
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.emotion}>{emotion.emoji}</Text>
-            </Pressable>
+        <View style={styles.progressRow}>
+          {story.steps.map((step, index) => (
+            <View
+              key={step.id}
+              style={[styles.progressDot, index <= stepIndex && styles.progressDotActive]}
+            />
           ))}
         </View>
 
-        {snapshot.state === "COMPLETED" && (
-          <View style={styles.completedCard}>
-            <Text style={styles.completedEmoji}>🌟</Text>
-            <Text style={styles.completedText}>Harika!</Text>
+        <View style={styles.scene}>
+          <Image
+            accessibilityLabel={characterLabel}
+            resizeMode="contain"
+            source={getCharacterAsset(characterAssetId)}
+            style={styles.character}
+          />
+
+          {currentStep?.type === "tap" && (
+            <View pointerEvents="none" style={styles.pumpTarget}>
+              <Animated.View style={{ transform: [{ scale: balloonBounce }] }}>
+                <Balloon color={selectedColor} />
+              </Animated.View>
+            </View>
+          )}
+
+          {currentStep?.type === "event" && <View style={styles.popBurst} />}
+
+          {mode === "BREATHING" && (
+            <Animated.View style={[styles.breathBubble, { transform: [{ scale: breathScale }] }]} />
+          )}
+        </View>
+
+        <View style={styles.promptCard}>
+          <Text style={styles.promptText}>
+            {mode === "GREETING" ? renderTemplate(story.greetingTemplate, DEMO_CHILD) : prompt}
+          </Text>
+          {isSpeaking && <View style={styles.speakingPulse} />}
+        </View>
+
+        {currentStep?.type === "choice" && (
+          <View style={styles.choiceRow}>
+            {currentStep.choices.map((choice) => (
+              <Pressable
+                accessibilityLabel={choice.accessibilityLabel}
+                accessibilityRole="button"
+                disabled={mode !== "WAITING_FOR_INPUT"}
+                key={choice.id}
+                onPress={() => {
+                  setSelectedColor(choice.visual.color);
+                  playResponse(choice.acknowledgement);
+                }}
+                style={({ pressed }) => [
+                  styles.visualChoice,
+                  mode !== "WAITING_FOR_INPUT" && styles.disabledChoice,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Balloon color={choice.visual.color} scale={0.78} />
+              </Pressable>
+            ))}
           </View>
         )}
 
-        {canReplay && (
+        {currentStep?.type === "emotion_choice" && (
+          <View style={styles.choiceRow}>
+            {currentStep.choices.map((choice) => (
+              <Pressable
+                accessibilityLabel={choice.accessibilityLabel}
+                accessibilityRole="button"
+                disabled={mode !== "WAITING_FOR_INPUT"}
+                key={choice.id}
+                onPress={() =>
+                  playResponse(
+                    `${choice.supportiveFeedback.narration} ${currentStep.storyResolution.narration}`,
+                  )
+                }
+                style={({ pressed }) => [
+                  styles.visualChoice,
+                  mode !== "WAITING_FOR_INPUT" && styles.disabledChoice,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <EmotionFace emotion={choice.emotion} />
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {currentStep?.type === "help_choice" && (
+          <View style={styles.helpRow}>
+            {currentStep.choices.map((choice) => (
+              <Pressable
+                accessibilityLabel={choice.accessibilityLabel}
+                accessibilityRole="button"
+                disabled={mode !== "WAITING_FOR_INPUT"}
+                key={choice.id}
+                onPress={() => {
+                  setSelectedHelp(choice.action);
+                  playResponse(choice.resultNarration);
+                }}
+                style={({ pressed }) => [
+                  styles.helpChoice,
+                  mode !== "WAITING_FOR_INPUT" && styles.disabledChoice,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <HelpVisual action={choice.action} />
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {mode === "COMPLETED" && (
           <Pressable
-            accessibilityLabel="Hikâyeyi tekrar dinle"
+            accessibilityLabel="Hikâyeyi yeniden oyna"
             accessibilityRole="button"
-            onPress={() => dispatch({ type: "REPLAY_TAPPED" })}
-            style={({ pressed }) => [styles.replayOverlay, pressed && styles.replayPressed]}
+            onPress={resetStory}
+            style={({ pressed }) => [styles.completedOverlay, pressed && styles.completedPressed]}
           >
-            <Text style={styles.replayIcon}>👆</Text>
-            <Text style={styles.replayCount}>{snapshot.replayCount + 1}/2</Text>
+            <Image
+              resizeMode="contain"
+              source={getCharacterAsset(story.characterAssets.happyAssetId)}
+              style={styles.completedCharacter}
+            />
+            <View style={styles.replayCircle}>
+              <Text style={styles.replaySymbol}>↻</Text>
+            </View>
           </Pressable>
         )}
-      </View>
+      </Pressable>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#fff8eb" },
-  container: { flex: 1, padding: 24 },
-  progressTrack: {
-    height: 10,
-    overflow: "hidden",
-    borderRadius: 8,
-    backgroundColor: "#e8ddca",
-  },
-  progressFill: { height: "100%", borderRadius: 8, backgroundColor: "#4e9f8d" },
-  sceneCard: {
+  safeArea: { flex: 1, backgroundColor: "#FFF6E8" },
+  container: {
     flex: 1,
     alignItems: "center",
+    overflow: "hidden",
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    paddingBottom: 20,
+  },
+  backgroundBlobTop: {
+    position: "absolute",
+    top: -150,
+    right: -110,
+    width: 330,
+    height: 330,
+    borderRadius: 165,
+    backgroundColor: "#FFD9C8",
+  },
+  backgroundBlobBottom: {
+    position: "absolute",
+    bottom: -190,
+    left: -140,
+    width: 390,
+    height: 390,
+    borderRadius: 195,
+    backgroundColor: "#CDEBE4",
+  },
+  progressRow: { flexDirection: "row", gap: 7, zIndex: 2 },
+  progressDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: "#DDCFBE" },
+  progressDotActive: { width: 24, backgroundColor: "#2D8C7C" },
+  scene: {
+    flex: 1,
+    width: "100%",
+    minHeight: 300,
+    alignItems: "center",
     justifyContent: "center",
-    marginVertical: 20,
-    padding: 24,
+  },
+  character: { width: "80%", height: "95%" },
+  pumpTarget: { position: "absolute", right: "5%", top: "13%", padding: 18 },
+  balloonWrap: { width: 105, height: 155, alignItems: "center" },
+  balloon: {
+    width: 94,
+    height: 112,
+    borderRadius: 52,
+    borderWidth: 4,
+    borderColor: "#FFFFFF99",
+  },
+  balloonKnot: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 9,
+    borderRightWidth: 9,
+    borderTopWidth: 16,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+  },
+  balloonString: { width: 2, height: 35, backgroundColor: "#947965" },
+  popBurst: {
+    position: "absolute",
+    right: "17%",
+    top: "23%",
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 10,
+    borderColor: "#F6B94D",
+  },
+  breathBubble: {
+    position: "absolute",
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    borderWidth: 12,
+    borderColor: "#7EC9BB",
+    backgroundColor: "#CDEBE499",
+  },
+  promptCard: {
+    minHeight: 82,
+    width: "100%",
+    maxWidth: 620,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 26,
+    backgroundColor: "#FFFFFFE8",
+    shadowColor: "#7B6149",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  promptText: {
+    color: "#463A31",
+    fontSize: 22,
+    fontWeight: "800",
+    lineHeight: 29,
+    textAlign: "center",
+  },
+  speakingPulse: {
+    width: 38,
+    height: 5,
+    marginTop: 9,
+    borderRadius: 3,
+    backgroundColor: "#2D8C7C",
+  },
+  choiceRow: {
+    minHeight: 145,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 20,
+    paddingTop: 12,
+  },
+  visualChoice: {
+    width: 142,
+    height: 142,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 4,
+    borderColor: "#FFFFFF",
+    borderRadius: 38,
+    backgroundColor: "#FFFDF8",
+    shadowColor: "#765C44",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  helpRow: {
+    minHeight: 132,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingTop: 12,
+  },
+  helpChoice: {
+    width: 104,
+    height: 104,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    borderWidth: 4,
+    borderColor: "#FFFFFF",
     borderRadius: 32,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#FFFDF8",
+    shadowColor: "#765C44",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.16,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  scene: { fontSize: 116 },
-  narration: {
-    maxWidth: 560,
-    marginTop: 22,
-    color: "#3e3429",
-    fontSize: 25,
-    fontWeight: "700",
-    lineHeight: 35,
-    textAlign: "center",
+  disabledChoice: { opacity: 0.48 },
+  pressed: { transform: [{ scale: 0.92 }] },
+  face: {
+    width: 102,
+    height: 102,
+    alignItems: "center",
+    borderRadius: 51,
+    paddingTop: 30,
   },
-  audioIndicator: { marginTop: 16, fontSize: 32 },
-  feedback: {
-    marginTop: 18,
-    color: "#246b63",
-    fontSize: 20,
-    fontWeight: "700",
-    textAlign: "center",
+  eyesRow: { flexDirection: "row", gap: 25 },
+  eye: { width: 10, height: 15, borderRadius: 7, backgroundColor: "#3C342E" },
+  sadMouth: {
+    width: 38,
+    height: 21,
+    marginTop: 19,
+    borderTopWidth: 5,
+    borderTopColor: "#3C342E",
+    borderRadius: 20,
   },
-  emotionGrid: { flexDirection: "row", justifyContent: "center", gap: 12 },
-  disabled: { opacity: 0.35 },
-  emotionButton: {
-    width: 72,
-    height: 72,
+  scaredMouth: {
+    width: 19,
+    height: 25,
+    marginTop: 13,
+    borderRadius: 12,
+    backgroundColor: "#3C342E",
+  },
+  heart: { color: "#EF6A73", fontSize: 76, lineHeight: 84 },
+  breatheIcon: {
+    width: 94,
+    height: 78,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 36,
   },
-  pressed: { transform: [{ scale: 0.9 }] },
-  emotion: { fontSize: 42 },
-  replayOverlay: {
+  breatheFace: {
+    width: 58,
+    height: 58,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 29,
+    backgroundColor: "#F8D7A9",
+  },
+  closedEyesRow: { flexDirection: "row", gap: 13 },
+  closedEye: {
+    width: 13,
+    height: 7,
+    borderTopWidth: 3,
+    borderTopColor: "#463A31",
+    borderRadius: 7,
+  },
+  breatheMouth: {
+    width: 9,
+    height: 9,
+    marginTop: 7,
+    borderRadius: 5,
+    backgroundColor: "#463A31",
+  },
+  breathLines: { width: 30, gap: 6, marginLeft: 3 },
+  breathLineShort: {
+    width: 18,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "#55A9D6",
+  },
+  breathLineLong: {
+    width: 28,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "#55A9D6",
+  },
+  completedOverlay: {
     ...StyleSheet.absoluteFillObject,
+    zIndex: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(36, 107, 99, 0.88)",
+    backgroundColor: "#FFF6E8",
   },
-  replayPressed: { backgroundColor: "rgba(28, 82, 76, 0.94)" },
-  replayIcon: { fontSize: 92 },
-  replayCount: { marginTop: 16, color: "#ffffff", fontSize: 24, fontWeight: "800" },
-  completedCard: {
-    ...StyleSheet.absoluteFillObject,
+  completedPressed: { backgroundColor: "#F8ECD9" },
+  completedCharacter: { width: "78%", height: "66%" },
+  replayCircle: {
+    width: 94,
+    height: 94,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fff8eb",
+    marginTop: 10,
+    borderRadius: 47,
+    backgroundColor: "#2D8C7C",
   },
-  completedEmoji: { fontSize: 120 },
-  completedText: { marginTop: 16, color: "#246b63", fontSize: 42, fontWeight: "900" },
+  replaySymbol: { color: "#FFFFFF", fontSize: 62, fontWeight: "900", lineHeight: 70 },
 });
