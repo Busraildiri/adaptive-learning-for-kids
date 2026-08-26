@@ -175,8 +175,8 @@ Serenay durumu: **Büşra’nın başlangıç bildirimini bekliyor**
 - [x] **Büşra:** GitHub Actions ile typecheck, lint ve build kontrollerini ekle.
 - [x] **Büşra:** `README.md` ve `roadmap.md` dosyalarının repo kökünde olduğunu doğrula.
 - [x] **Büşra:** Proje temelini iPhone/iPad ve web build ile doğrula.
-- [ ] **Büşra:** Foundation pull request’ini aç ve Serenay’dan inceleme iste.
-- [ ] **Serenay:** Foundation pull request’ini incele; geliştirmeye henüz başlama.
+- [x] **Büşra:** Foundation pull request’ini aç ve Serenay’dan inceleme iste.
+- [x] **Serenay:** Foundation pull request’ini incele; geliştirmeye henüz başlama.
 - [ ] **Büşra:** Foundation merge edildikten sonra Serenay’a başlangıç bildirimi ver.
 
 #### R0 kabul kriterleri
@@ -199,18 +199,18 @@ Serenay durumu: **Büşra’nın başlangıç bildirimini bekliyor**
 Birincil sorumlu: **Serenay**  
 Başlangıç koşulu: **R0 tamamlanmış ve Büşra başlangıç vermiş olmalıdır.**
 
-- [ ] Etkinlik durum makinesini domain paketi olarak tanımla.
-- [ ] `PLAYING_NARRATION` durumunu uygula.
-- [ ] `WAITING_FOR_EMOTION` durumunu uygula.
-- [ ] `PLAYING_FEEDBACK` durumunu uygula.
-- [ ] `WAITING_FOR_REPLAY_TAP` durumunu uygula.
-- [ ] `REPLAYING` ve `TRANSITIONING` durumlarını uygula.
-- [ ] Cevap zaman aşımını yapılandırılabilir yap.
-- [ ] Üç saniyelik tekrar penceresini uygula.
-- [ ] En fazla iki tekrar sınırını uygula.
-- [ ] Tekrar aşamasında emoji dokunmalarını devre dışı bırak.
-- [ ] Yazılı “Sonraki” düğmesi olmadan otomatik ilerlemeyi uygula.
-- [ ] Durum geçişleri için unit test yaz.
+- [x] Etkinlik durum makinesini domain paketi olarak tanımla.
+- [x] `PLAYING_NARRATION` durumunu uygula.
+- [x] `WAITING_FOR_EMOTION` durumunu uygula.
+- [x] `PLAYING_FEEDBACK` durumunu uygula.
+- [x] `WAITING_FOR_REPLAY_TAP` durumunu uygula.
+- [x] `REPLAYING` ve `TRANSITIONING` durumlarını uygula.
+- [x] Cevap zaman aşımını yapılandırılabilir yap.
+- [x] Üç saniyelik tekrar penceresini uygula.
+- [x] En fazla iki tekrar sınırını uygula.
+- [x] Tekrar aşamasında emoji dokunmalarını devre dışı bırak.
+- [x] Yazılı “Sonraki” düğmesi olmadan otomatik ilerlemeyi uygula.
+- [x] Durum geçişleri için unit test yaz.
 
 #### R1 kabul kriterleri
 
@@ -219,6 +219,8 @@ Başlangıç koşulu: **R0 tamamlanmış ve Büşra başlangıç vermiş olmalı
 - Tekrar dokunması duygu seçimi olarak işlenmez.
 - İkinci tekrardan sonra etkinlik otomatik ilerler.
 - Durum geçişlerinin tamamı testlerle kapsanır.
+
+Doğrulama: **26 Ağustos 2026 tarihinde fiziksel iPhone ve Expo Go üzerinde bütün akış başarıyla test edildi.**
 
 ### R2 — İçerik şeması
 
