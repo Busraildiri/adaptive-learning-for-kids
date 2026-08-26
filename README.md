@@ -18,7 +18,7 @@
 
 ## 1. Belgenin amacı
 
-Bu belge, 3–7 yaş arasındaki çocukların temel duyguları ve günlük sosyal durumları anlamasını destekleyen mobil uygulamanın ürün, tasarım, teknoloji, veri, güvenlik ve geliştirme gereksinimlerini tanımlar.
+Bu belge, 2–7 yaş arasındaki çocukların temel duyguları ve günlük sosyal durumları anlamasını destekleyen mobil uygulamanın ürün, tasarım, teknoloji, veri, güvenlik ve geliştirme gereksinimlerini tanımlar.
 
 Belge şu amaçlarla kullanılacaktır:
 
