@@ -324,7 +324,9 @@ Not: Prototip artık R4'te oluşturulan gerçek `ChildSessionProfile` verisini k
 - [-] Yerel ve staging yapılandırmalarını ayır; production projesini pilot öncesinde ayrıca oluştur.
 - [x] E-posta/şifre kayıt akışını geliştir ve staging projesinde fiziksel cihazla doğrula.
 - [x] Google OAuth ebeveyn kayıt/giriş düğmesini, güvenli tarayıcı dönüşünü ve oturum kurulumunu ekle.
-- [ ] Google Cloud OAuth istemcisini oluştur, Supabase Google sağlayıcısını etkinleştir ve development build’de doğrula.
+- [x] Google Cloud OAuth istemcisini oluştur ve Supabase Google sağlayıcısını etkinleştir.
+- [-] Google OAuth akışını development build ile fiziksel iPhone'da doğrula; EAS development profili
+      hazırlandı, Apple imzalama ve cihaz testi ertelendi.
 - [x] E-posta doğrulamasını zorunlu yap ve doğrulama bağlantısını fiziksel cihazda test et.
 - [-] Ebeveyn/yasal temsilci beyanını ekle; geliştirme taslağını pilot öncesi hukuki incelemeye gönder.
 - [x] Ebeveyn/yasal temsilci ve gizlilik beyanlarını ayrı, görünür ve zorunlu onaylar olarak uygula.
@@ -339,6 +341,19 @@ Not: Prototip artık R4'te oluşturulan gerçek `ChildSessionProfile` verisini k
 - [x] Aktif çocuk modunu cihazın güvenli deposunda sakla; uygulama yeniden açıldığında PIN kapısının atlanmasını engelle.
 
 Doğrulama notu: **Mobil lint, TypeScript, 28 unit test ve Expo iOS export başarılıdır. `20260826222303_parent_child_profiles.sql` migration'ı `adaptive-kids-staging` projesine uygulanmış; fiziksel cihazda kayıt ve e-posta doğrulama akışı tamamlanmıştır. Supabase pgTAP runner uzak proje seçilse bile yerel Docker çalıştırıcısı istediği için 13 maddelik otomatik RLS testi henüz yürütülememiştir.**
+
+#### R4 eksikler
+
+- Google Cloud OAuth istemcisi ve Supabase Google provider yapılandırıldı; ancak Google hesabıyla
+  uygulama içi giriş iPhone'da uçtan uca tamamlanmadı. Expo Go bu deep-link akışı için yeterli
+  değildir; fiziksel iPhone testi Apple imzalı development build ve dolayısıyla aktif Apple Developer
+  Program üyeliği gerektirir. Bu doğrulama tamamlanana kadar Google girişi kullanıma hazır kabul edilmez.
+- Staging SMTP, Resend deneme göndericisi `onboarding@resend.dev` ile sınırlıdır. Resend hesap
+  sahibinin/test kullanıcısının adresi dışındaki uygulama üyeleri e-posta doğrulama ve parola
+  sıfırlama mesajlarını alamaz. Dış kullanıcı testi için bir alan adı, doğrulanmış auth
+  gönderim alt alanı ve bu alana ait gönderen adresi zorunludur.
+- iOS fiziksel cihaz giriş testi ve dağıtılabilir development build henüz yoktur; EAS profili
+  hazırdır fakat Apple imzalama ve cihaz kaydı tamamlanmamıştır.
 
 #### R4 kabul kriterleri
 

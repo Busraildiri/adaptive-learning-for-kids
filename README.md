@@ -235,6 +235,12 @@ Google OAuth, `adaptivekids://auth/callback` dönüşünü kullanır. Bu akış 
 test edilemediği için development build veya paketlenmiş uygulama gerektirir. İlk Google girişi de
 ebeveyn/yasal temsilci ve gizlilik onaylarını atlamaz; ebeveyn onboarding akışına yönlendirilir.
 
+Fiziksel iOS cihazında development build oluşturmak için `apps/mobile` dizininde `eas login`, ardından
+`pnpm build:development:ios` çalıştırılır. Build cihaza kurulduktan sonra
+Metro `pnpm start:dev-client` ile başlatılır. Google Cloud istemci sırrı yalnızca Supabase Dashboard'daki
+Google provider alanında saklanır; uygulamanın `.env` dosyasına veya EAS environment variable'larına
+eklenmez.
+
 Sonraki aşamada değerlendirilebilecekler:
 
 - Apple ile giriş.
