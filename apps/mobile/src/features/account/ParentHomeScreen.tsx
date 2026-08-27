@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { signOutParent } from "../../services/account";
 import { AccountShell } from "./AccountShell";
+import { ChildConsentSettingsScreen } from "./ChildConsentSettingsScreen";
 import { ChildProfileForm } from "./ChildProfileForm";
 import { formStyles } from "./formStyles";
 
@@ -10,16 +11,32 @@ export function ParentHomeScreen({
   parentId,
   children,
   onChildCreated,
+  onChildUpdated,
   onStartChildMode,
 }: {
   parentId: string;
   children: ChildProfile[];
   onChildCreated: (profile: ChildProfile) => void;
+  onChildUpdated: (profile: ChildProfile) => void;
   onStartChildMode: (profile: ChildProfile) => Promise<void>;
 }) {
   const [showForm, setShowForm] = useState(children.length === 0);
+  const [settingsChild, setSettingsChild] = useState<ChildProfile | null>(null);
   const [startingChildId, setStartingChildId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  if (settingsChild) {
+    return (
+      <ChildConsentSettingsScreen
+        child={settingsChild}
+        onBack={() => setSettingsChild(null)}
+        onSaved={(profile) => {
+          onChildUpdated(profile);
+          setSettingsChild(null);
+        }}
+      />
+    );
+  }
 
   if (showForm) {
     return (
@@ -32,6 +49,7 @@ export function ParentHomeScreen({
           onCreated={(profile) => {
             onChildCreated(profile);
             setShowForm(false);
+            setSettingsChild(profile);
           }}
           parentId={parentId}
         />
@@ -61,28 +79,33 @@ export function ParentHomeScreen({
                 {ageInMonths} aylık · {ageBand ?? "desteklenmiyor"}
               </Text>
             </View>
-            <Pressable
-              disabled={!canStart || startingChildId !== null}
-              onPress={() => {
-                setError(null);
-                setStartingChildId(child.id);
-                void onStartChildMode(child)
-                  .catch((startError) =>
-                    setError(
-                      startError instanceof Error ? startError.message : "Çocuk modu açılamadı.",
-                    ),
-                  )
-                  .finally(() => setStartingChildId(null));
-              }}
-              style={[
-                styles.startButton,
-                (!canStart || startingChildId !== null) && formStyles.disabled,
-              ]}
-            >
-              <Text style={styles.startButtonText}>
-                {startingChildId === child.id ? "Açılıyor..." : canStart ? "Başlat" : "Yakında"}
-              </Text>
-            </Pressable>
+            <View style={styles.childActions}>
+              <Pressable onPress={() => setSettingsChild(child)} style={styles.settingsButton}>
+                <Text style={styles.settingsButtonText}>İzinler</Text>
+              </Pressable>
+              <Pressable
+                disabled={!canStart || startingChildId !== null}
+                onPress={() => {
+                  setError(null);
+                  setStartingChildId(child.id);
+                  void onStartChildMode(child)
+                    .catch((startError) =>
+                      setError(
+                        startError instanceof Error ? startError.message : "Çocuk modu açılamadı.",
+                      ),
+                    )
+                    .finally(() => setStartingChildId(null));
+                }}
+                style={[
+                  styles.startButton,
+                  (!canStart || startingChildId !== null) && formStyles.disabled,
+                ]}
+              >
+                <Text style={styles.startButtonText}>
+                  {startingChildId === child.id ? "Açılıyor..." : canStart ? "Başlat" : "Yakında"}
+                </Text>
+              </Pressable>
+            </View>
           </View>
         );
       })}
@@ -129,6 +152,15 @@ const styles = StyleSheet.create({
   childInfo: { flex: 1 },
   childName: { color: "#3F352E", fontSize: 19, fontWeight: "900" },
   childAge: { marginTop: 3, color: "#75685E", fontSize: 13 },
+  childActions: { gap: 7 },
+  settingsButton: {
+    alignItems: "center",
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: "#EAF5F2",
+  },
+  settingsButtonText: { color: "#216D61", fontSize: 12, fontWeight: "900" },
   startButton: {
     paddingHorizontal: 16,
     paddingVertical: 12,

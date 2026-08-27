@@ -72,7 +72,7 @@ Bu belge klinik protokol veya hukuki görüş değildir. Pilot ve mağaza yayın
 
 Çocuğa “yanlış” denmeyecek, çocuk puanlanmayacak ve çocuk hakkında tanısal sonuç üretilmeyecektir. Sistem, önceden onaylanmış öğretim cümleleriyle hedef kavramı sakin biçimde açıklayacaktır.
 
-Ebeveyn isterse ve yeterli güvenilir kanıt oluşursa, 4–7 yaş grubunda tanısal olmayan öğrenme gözlemleri görebilecektir. Bu özellik varsayılan olarak kapalı olacaktır.
+Ebeveyn isterse ve yeterli güvenilir kanıt oluşursa, 2–4 ve 4–7 yaş gruplarında tanısal olmayan öğrenme gözlemleri görebilecektir. Yeni profillerde bu tercih açık başlar; ebeveyn istediği zaman kapatabilir.
 
 ### 2.1 Temel değer önerisi
 
@@ -247,6 +247,10 @@ type ChildProfile = {
 };
 ```
 
+Takma ad, doğum ayı/yılı ve içerik dili temel profil alanlarıdır. `favoriteAnimals`,
+`favoriteToys` ve `interests` yalnızca ebeveyn çocuk bazında kişiselleştirmeyi açıkça
+etkinleştirdikten sonra istenir ve saklanır; izin geri çekildiğinde bu üç alan silinir.
+
 Toplanmayacak alanlar:
 
 - Soyadı.
@@ -283,6 +287,9 @@ Kullanım amaçları:
 
 ### 7.1 Öğrenme deneyimini kişiselleştirme
 
+- Yeni çocuk profillerinde açık başlar, her çocuk için ayrı yönetilir ve ebeveyn tarafından kapatılabilir.
+- Açılmadan önce sevilen hayvan, oyuncak ve ilgi alanı verileri istenmez.
+
 Açıksa:
 
 - Etkinlik sırası geçmiş etkileşimlere göre ayarlanabilir.
@@ -295,9 +302,11 @@ Kapalıysa:
 
 ### 7.2 Öğrenme gözlemleri
 
-- Varsayılan olarak kapalıdır.
-- 2–4 yaş grubunda beceri insight’ı üretmez.
-- 4–7 yaş grubunda yalnızca uygunluk koşulları karşılanırsa üretilebilir.
+- Yeni çocuk profillerinde açık başlar; mevcut eski profiller kapalı kalır.
+- 2–4 ve 4–7 yaş gruplarında ebeveyn tarafından çocuk bazında etkinleştirilebilir.
+- Ebeveyn izni gerekli fakat tek başına yeterli değildir. Yalnızca yeterli sayıda oturuma
+  yayılan güvenilir kanıt varsa bağlamsal ve betimleyici gözlem üretilebilir.
+- Tanı/tahmin, beceri puanı, akran karşılaştırması veya kalıcı yetersizlik iddiası üretilemez.
 - Kapatıldığında yeni bireysel beceri gözlemi oluşturulmaz.
 - Önceki gözlemler için saklama veya silme seçenekleri hukuki değerlendirmeye uygun biçimde sunulur.
 
@@ -317,8 +326,8 @@ type ConsentRecord = {
   parentAccountId: string;
   childProfileId: string;
   consentType:
-    | 'adaptive_learning'
-    | 'learning_insights'
+    | 'personalization'
+    | 'learning_observations'
     | 'anonymous_product_improvement';
   status: 'granted' | 'withdrawn';
   noticeVersion: string;
@@ -327,6 +336,8 @@ type ConsentRecord = {
 ```
 
 Her izin için metin sürümü, verilme tarihi ve geri çekilme tarihi saklanacaktır.
+Güncel durum çocuk profilinden ayrı bir tabloda, her değişiklik ise mobil istemciye kapalı,
+eklemeli bir audit log’da tutulacaktır.
 
 ---
 

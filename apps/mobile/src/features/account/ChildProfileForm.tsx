@@ -4,17 +4,6 @@ import { Pressable, Text, TextInput, View } from "react-native";
 import { createChildProfile } from "../../services/account";
 import { formStyles } from "./formStyles";
 
-function parseList(value: string): string[] {
-  return [
-    ...new Set(
-      value
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
-    ),
-  ].slice(0, 10);
-}
-
 export function ChildProfileForm({
   parentId,
   onCreated,
@@ -27,9 +16,6 @@ export function ChildProfileForm({
   const [nickname, setNickname] = useState("");
   const [birthMonth, setBirthMonth] = useState("");
   const [birthYear, setBirthYear] = useState("");
-  const [favoriteAnimals, setFavoriteAnimals] = useState("");
-  const [favoriteToys, setFavoriteToys] = useState("");
-  const [interests, setInterests] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,9 +47,9 @@ export function ChildProfileForm({
       birthMonth: month,
       birthYear: year,
       contentLocale: "tr-TR",
-      favoriteAnimals: parseList(favoriteAnimals),
-      favoriteToys: parseList(favoriteToys),
-      interests: parseList(interests),
+      favoriteAnimals: [],
+      favoriteToys: [],
+      interests: [],
     };
 
     setBusy(true);
@@ -121,36 +107,10 @@ export function ChildProfileForm({
         </View>
       </View>
 
-      <Text style={formStyles.fieldLabel}>Sevdiği hayvanlar</Text>
-      <TextInput
-        editable={!busy}
-        maxLength={500}
-        onChangeText={setFavoriteAnimals}
-        placeholder="tavşan, kedi"
-        style={formStyles.input}
-        value={favoriteAnimals}
-      />
-
-      <Text style={formStyles.fieldLabel}>Sevdiği oyuncaklar</Text>
-      <TextInput
-        editable={!busy}
-        maxLength={500}
-        onChangeText={setFavoriteToys}
-        placeholder="balon, bloklar"
-        style={formStyles.input}
-        value={favoriteToys}
-      />
-
-      <Text style={formStyles.fieldLabel}>İlgi alanları</Text>
-      <TextInput
-        editable={!busy}
-        maxLength={500}
-        onChangeText={setInterests}
-        placeholder="renkler, araçlar"
-        style={formStyles.input}
-        value={interests}
-      />
-      <Text style={formStyles.helper}>Birden fazla değeri virgülle ayırabilirsiniz.</Text>
+      <Text style={formStyles.helper}>
+        Sevdiği hayvanlar, oyuncaklar ve ilgi alanları yalnızca kişiselleştirmeyi açarsanız sonraki
+        ekranda istenir.
+      </Text>
 
       <Pressable
         disabled={busy}

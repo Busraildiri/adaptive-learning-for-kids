@@ -21,6 +21,7 @@ import {
   getPersistedActiveChildId,
   persistActiveChildId,
 } from "./services/childMode";
+import { loadChildConsentSettings } from "./services/consents";
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -48,7 +49,12 @@ export default function App() {
         persistedChild &&
         resolveAgeBand(persistedChild.birthMonth, persistedChild.birthYear) === "2-4"
       ) {
-        setActiveChild(createChildSessionProfile(persistedChild));
+        const consentSettings = await loadChildConsentSettings(persistedChild.id);
+        setActiveChild(
+          createChildSessionProfile(persistedChild, {
+            personalizationEnabled: consentSettings.personalization,
+          }),
+        );
       } else {
         setActiveChild(null);
         if (activeChildId) await clearPersistedActiveChildId();
@@ -144,9 +150,19 @@ export default function App() {
     <ParentHomeScreen
       children={children}
       onChildCreated={(profile) => setChildren((current) => [...current, profile])}
+      onChildUpdated={(profile) =>
+        setChildren((current) =>
+          current.map((child) => (child.id === profile.id ? profile : child)),
+        )
+      }
       onStartChildMode={async (profile) => {
+        const consentSettings = await loadChildConsentSettings(profile.id);
         await persistActiveChildId(profile.id);
-        setActiveChild(createChildSessionProfile(profile));
+        setActiveChild(
+          createChildSessionProfile(profile, {
+            personalizationEnabled: consentSettings.personalization,
+          }),
+        );
       }}
       parentId={session.user.id}
     />

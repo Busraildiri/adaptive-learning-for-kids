@@ -20,9 +20,15 @@ export interface ChildSessionProfile {
   nickname: string;
   ageBand: AgeBand;
   contentLocale: ContentLocale;
+  personalizationEnabled: boolean;
   favoriteAnimals: string[];
   favoriteToys: string[];
   interests: string[];
+}
+
+export interface ChildSessionProfileOptions {
+  personalizationEnabled: boolean;
+  today?: Date;
 }
 
 export function calculateAgeInMonths(
@@ -55,8 +61,9 @@ export function resolveAgeBand(
 
 export function createChildSessionProfile(
   profile: ChildProfile,
-  today = new Date(),
+  options: ChildSessionProfileOptions,
 ): ChildSessionProfile {
+  const { personalizationEnabled, today = new Date() } = options;
   const ageBand = resolveAgeBand(profile.birthMonth, profile.birthYear, today);
 
   if (!ageBand) {
@@ -68,13 +75,44 @@ export function createChildSessionProfile(
     nickname: profile.nickname,
     ageBand,
     contentLocale: profile.contentLocale,
-    favoriteAnimals: profile.favoriteAnimals,
-    favoriteToys: profile.favoriteToys,
-    interests: profile.interests,
+    personalizationEnabled,
+    favoriteAnimals: personalizationEnabled ? [...profile.favoriteAnimals] : [],
+    favoriteToys: personalizationEnabled ? [...profile.favoriteToys] : [],
+    interests: personalizationEnabled ? [...profile.interests] : [],
   };
 }
 
-export type ConsentType =
-  | "adaptive_learning"
-  | "learning_insights"
-  | "anonymous_product_improvement";
+export const CONSENT_NOTICE_VERSIONS = {
+  personalization: "personalization-v1",
+  learning_observations: "learning-observations-v1",
+  anonymous_product_improvement: "anonymous-product-improvement-v1",
+} as const;
+
+export type ConsentType = keyof typeof CONSENT_NOTICE_VERSIONS;
+
+export interface ChildConsentPreference {
+  childId: string;
+  parentId: string;
+  consentType: ConsentType;
+  enabled: boolean;
+  noticeVersion: string;
+  grantedAt: string | null;
+  withdrawnAt: string | null;
+  updatedAt: string;
+}
+
+export type ChildConsentSettings = Record<ConsentType, boolean>;
+
+export const NEW_CHILD_CONSENT_DEFAULTS: ChildConsentSettings = {
+  personalization: true,
+  learning_observations: true,
+  anonymous_product_improvement: true,
+};
+
+export function createFailClosedChildConsentSettings(): ChildConsentSettings {
+  return {
+    personalization: false,
+    learning_observations: false,
+    anonymous_product_improvement: false,
+  };
+}
