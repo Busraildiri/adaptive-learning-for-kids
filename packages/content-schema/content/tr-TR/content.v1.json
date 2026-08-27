@@ -110,6 +110,23 @@
       "id": "scene-lost-toy",
       "type": "symbol",
       "uri": "emoji:🧸",
+      "semantic": {
+        "character": "mino",
+        "object": "toy-bear",
+        "eventState": "lost-and-found",
+        "emotion": "neutral",
+        "allowedNarrativeTerms": ["oyuncak ayı", "ayıcık", "ayıyı arıyor", "ayıyı buldu"],
+        "prohibitedNarrativeTerms": ["tren", "araba", "top", "balon", "blok"],
+        "reviewStatus": "approved",
+        "rightsStatus": "cleared",
+        "provenance": {
+          "source": "owned",
+          "aiGenerated": false,
+          "generatedByUser": false,
+          "thirdPartyReferencesDeclared": false,
+          "disclosure": "Standart Unicode oyuncak ayı emoji sembolü"
+        }
+      },
       "mimeType": "text/plain",
       "accessibilityLabel": "Oyuncağı yere düşen ayıcık"
     },

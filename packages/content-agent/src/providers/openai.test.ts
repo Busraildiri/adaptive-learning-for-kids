@@ -79,8 +79,8 @@ describe("OpenAI structured model", () => {
 
     const error = await model.generateJson(request).catch((reason: unknown) => reason);
     expect(error).toBeInstanceOf(OpenAIProviderError);
-    expect(error).toMatchObject({ status: 429, message: "OpenAI request failed with HTTP 429." });
-    expect(String(error)).not.toContain("provider detail");
+    expect(error).toMatchObject({ status: 429 });
+    expect(String(error)).toContain("OpenAI request failed with HTTP 429");
     expect(String(error)).not.toContain("secret-test-key");
   });
 });

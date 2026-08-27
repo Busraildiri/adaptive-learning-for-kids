@@ -591,7 +591,7 @@ istemcisine verilmez; kök sunucu ortamında kalır.**
 
 #### R9 sonraki editoryal araçlar
 
-- [ ] İçerik üretim talebi ekranı.
+- [x] İçerik üretim talebi ekranı.
 - [ ] Taslak düzenleme ekranı.
 - [ ] Otomatik kontrol sonuçları.
 - [ ] Görsel varyasyon karşılaştırması.
@@ -599,6 +599,25 @@ istemcisine verilmez; kök sunucu ortamında kalır.**
 - [ ] Ortak onayı.
 - [ ] Uzman onayı.
 - [ ] Yayın arşivleme ve sürüm geri alma.
+
+### R9.1 — Yönetim panelinden kontrollü hikâye üretimi
+
+- [x] Yönetici allowlist kontrolünden sonra erişilen “Yeni hikâye üret” formunu ekle.
+- [x] Tema, hedef duygu, mevcut hikâye mekaniği ve onaylı sahne asset'i seçimlerini sınırla.
+- [x] OpenAI üretici ve bağımsız denetleyici çağrılarını yalnızca Next.js sunucu route'unda çalıştır.
+- [x] API ve service-role anahtarlarının tarayıcıya veya mobil uygulamaya aktarılmasını engelle.
+- [x] Üretilen taslağı mevcut şema, çocuk güvenliği ve asset-anlatı tutarlılığı kontrollerinden geçir.
+- [x] Audit kaydını publication işleminden önce private ve eklemeli tabloda sakla.
+- [x] Başarılı taslağı yayın havuzuna, kuşkulu veya özellikle işaretlenen taslağı 15 günlük inceleme
+      kuyruğuna yönlendir.
+- [x] Yetkisiz mobil veya tarayıcı istemcisinin generation audit RPC'sini çağırmasını engelle.
+- [x] Gerçek OpenAI anahtarıyla yerel panelden bir kontrollü üretim smoke testi yap.
+- [x] `20260827223000_content_generation_api.sql` migration'ını staging'e uygula.
+
+Doğrulama notu: **Kod, soyut olay akışı formu, server-only üretim route'u, model denetimi,
+audit-before-publication bağlantısı ve service-role erişim sınırı tamamlandı. OpenAI `gpt-5.4-mini`
+ile gerçek üretici/denetleyici smoke testi yapıldı; üretilen taslak isteğe uygun biçimde 15 günlük
+inceleme kuyruğuna düştü. Generation audit migration'ı staging projesine uygulandı.**
 
 ### R10 — MVP içerik paketi
 
