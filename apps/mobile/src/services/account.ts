@@ -5,6 +5,11 @@ import { requireSupabase } from "../lib/supabase";
 export const GUARDIAN_DECLARATION_VERSION = "guardian-v1";
 export const PRIVACY_NOTICE_VERSION = "privacy-v1";
 
+export interface GuardianAcceptances {
+  guardianAccepted: boolean;
+  privacyAccepted: boolean;
+}
+
 type ParentProfileRow = Database["public"]["Tables"]["parent_profiles"]["Row"];
 type ChildProfileRow = Database["public"]["Tables"]["child_profiles"]["Row"];
 
@@ -34,6 +39,71 @@ export async function signInParent(email: string, password: string) {
   return data;
 }
 
+export async function requestParentPasswordReset(
+  email: string,
+  redirectTo?: string,
+): Promise<void> {
+  const client = requireSupabase();
+  const { error } = redirectTo
+    ? await client.auth.resetPasswordForEmail(email, { redirectTo })
+    : await client.auth.resetPasswordForEmail(email);
+  if (error) throw error;
+}
+
+export async function requestCurrentParentPasswordReset(redirectTo?: string): Promise<string> {
+  const client = requireSupabase();
+  const { data, error: userError } = await client.auth.getUser();
+  if (userError) throw userError;
+  if (!data.user.email) throw new Error("Hesaba bağlı bir e-posta adresi bulunamadı.");
+
+  const email = data.user.email.trim().toLowerCase();
+  const { error } = redirectTo
+    ? await client.auth.resetPasswordForEmail(email, { redirectTo })
+    : await client.auth.resetPasswordForEmail(email);
+  if (error) throw error;
+  return email;
+}
+
+export async function verifyParentPasswordRecoveryOtp(email: string, token: string): Promise<void> {
+  const { error } = await requireSupabase().auth.verifyOtp({
+    email: email.trim().toLowerCase(),
+    token,
+    type: "recovery",
+  });
+  if (error) throw error;
+}
+
+export async function updateRecoveredParentPassword(password: string): Promise<void> {
+  const { error } = await requireSupabase().auth.updateUser({ password });
+  if (error) throw error;
+}
+
+export async function changeParentPassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  const client = requireSupabase();
+  const { data: currentUserData, error: userError } = await client.auth.getUser();
+  if (userError) throw userError;
+  if (!currentUserData.user.email) {
+    throw new Error("Hesaba bağlı bir e-posta adresi bulunamadı.");
+  }
+
+  const { error: verificationError } = await client.auth.signInWithPassword({
+    email: currentUserData.user.email,
+    password: currentPassword,
+  });
+  if (verificationError) {
+    throw new Error("Mevcut parola doğrulanamadı. Parolanızı kontrol edip tekrar deneyin.");
+  }
+
+  const { error } = await client.auth.updateUser({
+    password: newPassword,
+    current_password: currentPassword,
+  });
+  if (error) throw error;
+}
+
 export async function signOutParent(): Promise<void> {
   const { error } = await requireSupabase().auth.signOut();
   if (error) throw error;
@@ -50,7 +120,15 @@ export async function loadParentProfile(userId: string): Promise<ParentProfileRo
   return data;
 }
 
-export async function completeParentOnboarding(userId: string, pin: string): Promise<void> {
+export async function completeParentOnboarding(
+  userId: string,
+  pin: string,
+  acceptances: GuardianAcceptances,
+): Promise<void> {
+  if (!acceptances.guardianAccepted || !acceptances.privacyAccepted) {
+    throw new Error("İki zorunlu ebeveyn onayı da verilmelidir.");
+  }
+
   const client = requireSupabase();
   const existingProfile = await loadParentProfile(userId);
 

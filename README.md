@@ -214,12 +214,26 @@ Ebeveyn hesabı zorunludur. Hesap kurulumu tamamlanmadan çocuk moduna erişilem
 İlk sürüm gereksinimleri:
 
 - E-posta ve şifre ile kayıt.
+- Google hesabıyla ebeveyn kaydı ve girişi.
 - E-posta doğrulama.
 - Şifre sıfırlama.
 - 18 yaşından büyük olma beyanı.
 - Çocuk için ebeveyn veya yasal temsilci yetkisi beyanı.
 - Ebeveyn alanı için dört veya altı haneli PIN.
 - PIN sıfırlama işleminin doğrulanmış e-posta üzerinden yapılması.
+
+Parola yenileme isteği hesap bulunup bulunmadığını açıklamayan tek tip bir sonuç gösterir. Expo Go
+testinde tarayıcı dönüşüne güvenilmez; e-postadaki altı haneli kod uygulamada doğrulanır ve ebeveyn
+yeni parolasını belirler. Bunun için Supabase Reset password şablonunda `{{ .Token }}` yer almalı ve
+özel SMTP etkin olmalıdır. Paketlenmiş uygulama için `adaptivekids://**` deep-link desteği korunur.
+Oturum içinden parola değişikliğinde mevcut parola hem yeniden girişle hem Supabase’in sunucu
+politikasıyla doğrulanır; recovery oturumları bu kontrolden muaftır. Mevcut parolasını unutan ebeveyn
+kayıtlı adresine gönderilen kodu kullanabilir. Production ortamında wildcard yerine kesin uygulama
+adresi ve uygulamaya ait alan adıyla çalışan güvenilir bir SMTP sağlayıcısı tanımlanmalıdır.
+
+Google OAuth, `adaptivekids://auth/callback` dönüşünü kullanır. Bu akış Expo Go’da kararlı biçimde
+test edilemediği için development build veya paketlenmiş uygulama gerektirir. İlk Google girişi de
+ebeveyn/yasal temsilci ve gizlilik onaylarını atlamaz; ebeveyn onboarding akışına yönlendirilir.
 
 Sonraki aşamada değerlendirilebilecekler:
 

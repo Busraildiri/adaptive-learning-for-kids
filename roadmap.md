@@ -323,8 +323,11 @@ Not: Prototip artık R4'te oluşturulan gerçek `ChildSessionProfile` verisini k
 - [x] Ortak `adaptive-kids-staging` Supabase projesini oluştur.
 - [-] Yerel ve staging yapılandırmalarını ayır; production projesini pilot öncesinde ayrıca oluştur.
 - [x] E-posta/şifre kayıt akışını geliştir ve staging projesinde fiziksel cihazla doğrula.
+- [x] Google OAuth ebeveyn kayıt/giriş düğmesini, güvenli tarayıcı dönüşünü ve oturum kurulumunu ekle.
+- [ ] Google Cloud OAuth istemcisini oluştur, Supabase Google sağlayıcısını etkinleştir ve development build’de doğrula.
 - [x] E-posta doğrulamasını zorunlu yap ve doğrulama bağlantısını fiziksel cihazda test et.
 - [-] Ebeveyn/yasal temsilci beyanını ekle; geliştirme taslağını pilot öncesi hukuki incelemeye gönder.
+- [x] Ebeveyn/yasal temsilci ve gizlilik beyanlarını ayrı, görünür ve zorunlu onaylar olarak uygula.
 - [-] Ebeveyn PIN’ini ayrı private tabloda hash’lenmiş biçimde uygula; yerel SQL testini çalıştır.
 - [-] Çocuk profil tablosunu migration olarak oluştur ve staging veritabanına uygula; Docker kurulduğunda yerel reseti de doğrula.
 - [x] Takma ad, doğum ayı/yılı ve dili temel profile ekle; sevilen oyuncak/hayvan ve ilgi alanlarını R5 kişiselleştirme iznine bağla.
@@ -342,6 +345,37 @@ Doğrulama notu: **Mobil lint, TypeScript, 28 unit test ve Expo iOS export başa
 - Doğrulanmamış hesap çocuk moduna geçemez.
 - Ebeveyn alanı PIN korumalıdır.
 - Bir ebeveyn başka ebeveynin çocuk profilini okuyamaz.
+
+#### R4.1 — Parola kurtarma ve değiştirme
+
+- [x] Giriş ekranına hesap varlığını açıklamayan “Parolamı unuttum” akışını ekle.
+- [x] Paketlenmiş uygulama deep-link dönüşünü işle ve ilerideki development build için koru.
+- [x] E-posta bağlantısından gelen recovery oturumunda yeni parola ekranını zorunlu göster.
+- [x] Oturum açıkken mevcut parolayı doğrulayarak parola değiştirme ekranını ekle.
+- [x] Staging’de mevcut parola doğrulamasını sunucu tarafında zorunlu kıl ve istemcide yeniden kimlik doğrula.
+- [x] Expo Go için altı haneli recovery kodu doğrulama akışını ekle.
+- [x] Oturumu açık fakat parolasını unutmuş ebeveyne kayıtlı adresine kod gönderme seçeneği ekle.
+- [x] Deep-link ayrıştırması, parola politikası ve recovery kodu için unit testleri yaz.
+- [x] Supabase staging redirect allowlist’ine `adaptivekids://**` ve `exp://**` adreslerini kaydet.
+- [x] Staging e-posta OTP uzunluğunu uygulamayla uyumlu biçimde altı hane olarak ayarla.
+- [x] Staging için özel SMTP’yi Resend deneme göndericisi (`onboarding@resend.dev`) ile kur;
+      bu yapılandırmayı yalnızca Resend hesap sahibinin adresindeki geliştirme testlerinde kullan.
+- [x] Reset password şablonunda `{{ .Token }}` kodunu göster.
+- [x] Fiziksel cihazda parola yenileme kodunu Expo Go üzerinde doğrula.
+- [ ] Dış kullanıcılarla kapalı test başlamadan önce uygun bir alan adı satın al, auth e-postaları
+      için ayrı bir gönderim alt alanını (ör. `auth.alanadi.com`) Resend'de DNS kayıtlarıyla doğrula
+      ve Supabase gönderen adresini bu alana taşı.
+- [ ] Doğrulanmış alan adıyla farklı e-posta sağlayıcılarına kayıt doğrulama ve parola yenileme
+      e-postalarının teslimini test et; Resend deneme göndericisini pilot veya production'da kullanma.
+
+Doğrulama notu: **Expo, kararlı kimlik doğrulama yönlendirmeleri için Expo Go yerine development
+build önerir. Bu nedenle Expo Go cihaz testinde e-posta kodu, development/production build’de
+`adaptivekids://` deep link kullanılacaktır. Production’da `exp://**` wildcard’ı ve kişisel SMTP
+hesabı kullanılmayacaktır. Alan adı satın alma ve DNS doğrulaması maliyet nedeniyle ertelenmiştir;
+Resend deneme göndericisi dış kullanıcı testini destekleyen kalıcı çözüm sayılmayacaktır. 27 Ağustos
+2026 tarihinde Supabase parola yenileme isteği Resend üzerinden gönderilmiş ve teslimat günlüğünde
+`opened` durumuna ulaşmıştır. Aynı tarihte altı haneli kod doğrulama, parola değiştirme ve yeni
+parolayla yeniden giriş akışı fiziksel cihazda Expo Go üzerinde başarıyla tamamlanmıştır.**
 
 ### R5 — İzin yönetimi
 

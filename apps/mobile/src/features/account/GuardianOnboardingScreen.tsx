@@ -33,7 +33,7 @@ export function GuardianOnboardingScreen({
 
     setBusy(true);
     try {
-      await completeParentOnboarding(userId, pin);
+      await completeParentOnboarding(userId, pin, { guardianAccepted, privacyAccepted });
       await onCompleted();
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : "İşlem tamamlanamadı.");
@@ -50,22 +50,34 @@ export function GuardianOnboardingScreen({
       {error ? <Text style={formStyles.error}>{error}</Text> : null}
 
       <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: guardianAccepted, disabled: busy }}
+        disabled={busy}
         onPress={() => setGuardianAccepted((current) => !current)}
         style={styles.acceptance}
       >
-        <View style={[styles.checkbox, guardianAccepted && styles.checkboxSelected]} />
+        <View style={[styles.checkbox, guardianAccepted && styles.checkboxSelected]}>
+          {guardianAccepted ? <Text style={styles.checkmark}>✓</Text> : null}
+        </View>
         <Text style={styles.acceptanceText}>
+          <Text style={styles.requiredLabel}>Zorunlu: </Text>
           Bu hesapta oluşturacağım çocuk profilleri için ebeveyn veya yasal temsilci olduğumu beyan
           ediyorum.
         </Text>
       </Pressable>
 
       <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: privacyAccepted, disabled: busy }}
+        disabled={busy}
         onPress={() => setPrivacyAccepted((current) => !current)}
         style={styles.acceptance}
       >
-        <View style={[styles.checkbox, privacyAccepted && styles.checkboxSelected]} />
+        <View style={[styles.checkbox, privacyAccepted && styles.checkboxSelected]}>
+          {privacyAccepted ? <Text style={styles.checkmark}>✓</Text> : null}
+        </View>
         <Text style={styles.acceptanceText}>
+          <Text style={styles.requiredLabel}>Zorunlu: </Text>
           Geliştirme sürümündeki gizlilik bilgilendirmesini okudum. Tam ad, ses ve görüntü
           kaydedilmediğini anladım.
         </Text>
@@ -97,9 +109,12 @@ export function GuardianOnboardingScreen({
       />
 
       <Pressable
-        disabled={busy}
+        disabled={busy || !guardianAccepted || !privacyAccepted}
         onPress={() => void submit()}
-        style={[formStyles.primaryButton, busy && formStyles.disabled]}
+        style={[
+          formStyles.primaryButton,
+          (busy || !guardianAccepted || !privacyAccepted) && formStyles.disabled,
+        ]}
       >
         <Text style={formStyles.primaryButtonText}>{busy ? "Kaydediliyor..." : "Devam et"}</Text>
       </Pressable>
@@ -116,9 +131,13 @@ const styles = StyleSheet.create({
     borderColor: "#B8A896",
     borderRadius: 8,
     backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  checkboxSelected: { borderWidth: 7, borderColor: "#2D8C7C", backgroundColor: "#FFFFFF" },
+  checkboxSelected: { borderColor: "#2D8C7C", backgroundColor: "#2D8C7C" },
+  checkmark: { color: "#FFFFFF", fontSize: 17, fontWeight: "900", lineHeight: 20 },
   acceptanceText: { flex: 1, color: "#51463D", fontSize: 15, lineHeight: 21 },
+  requiredLabel: { color: "#8A3838", fontWeight: "900" },
   draftNotice: {
     marginBottom: 20,
     padding: 11,
