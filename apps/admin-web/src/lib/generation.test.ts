@@ -16,9 +16,50 @@ describe("manual content generation", () => {
         theme: "yağmurlu bir gün",
         targetEmotion: "sad",
         sceneAssetId: "scene-thunder",
+        flowAssetIds: ["character-mino-happy", "character-mino-sad"],
+        ageBands: ["2-4"],
         sendToReview: true,
       }),
     ).toMatchObject({ theme: "yağmurlu bir gün", sendToReview: true });
+  });
+
+  it("accepts a single content item and requires at least one", () => {
+    expect(
+      parseManualGenerationInput({
+        flowId: "surprise-and-support",
+        theme: "yağmurlu bir gün",
+        targetEmotion: "sad",
+        sceneAssetId: "scene-thunder",
+        flowAssetIds: ["character-mino-happy"],
+        ageBands: ["2-4"],
+        sendToReview: true,
+      }),
+    ).toMatchObject({ flowAssetIds: ["character-mino-happy"] });
+    expect(() =>
+      parseManualGenerationInput({
+        flowId: "surprise-and-support",
+        theme: "yağmurlu bir gün",
+        targetEmotion: "sad",
+        sceneAssetId: "scene-thunder",
+        flowAssetIds: [],
+        ageBands: ["2-4"],
+        sendToReview: true,
+      }),
+    ).toThrow("En az bir içerik");
+  });
+
+  it("requires at least one age band", () => {
+    expect(() =>
+      parseManualGenerationInput({
+        flowId: "surprise-and-support",
+        theme: "yağmurlu bir gün",
+        targetEmotion: "sad",
+        sceneAssetId: "scene-thunder",
+        flowAssetIds: ["character-mino-happy"],
+        ageBands: [],
+        sendToReview: true,
+      }),
+    ).toThrow("En az bir yaş aralığı");
   });
 
   it("rejects missing or oversized free text", () => {
@@ -65,11 +106,46 @@ describe("manual content generation", () => {
       steps: [{ id: "end", type: "closing", narration: "Bitti." }],
     });
     expect(
-      buildGenerationSkeleton({ template, sceneAssetId: "new-scene", requestId: "12345678-abcd" }),
+      buildGenerationSkeleton({
+        template,
+        sceneAssetId: "new-scene",
+        flowAssetIds: ["happy", "sad"],
+        ageBands: ["4-7"],
+        requestId: "12345678-abcd",
+      }),
     ).toMatchObject({
       id: "template-v-12345678",
       sceneAssetId: "new-scene",
+      flowAssetIds: ["happy", "sad"],
+      ageBands: ["4-7"],
+      characterAssets: { happyAssetId: "happy", sadAssetId: "sad" },
       steps: template.steps,
+    });
+  });
+
+  it("falls back sadAssetId to the single provided content item", () => {
+    const template = storySchema.parse({
+      id: "template",
+      version: 1,
+      title: "Başlık",
+      ageBands: ["2-4"],
+      targetSkills: ["emotion_recognition"],
+      greetingTemplate: "Merhaba {{childName}}",
+      sceneAssetId: "old-scene",
+      characterAssets: { happyAssetId: "happy", sadAssetId: "sad" },
+      steps: [{ id: "end", type: "closing", narration: "Bitti." }],
+    });
+    expect(
+      buildGenerationSkeleton({
+        template,
+        sceneAssetId: "new-scene",
+        flowAssetIds: ["only-one"],
+        ageBands: ["2-4"],
+        requestId: "12345678-abcd",
+      }),
+    ).toMatchObject({
+      flowAssetIds: ["only-one"],
+      characterAssets: { happyAssetId: "only-one", sadAssetId: "only-one" },
     });
   });
 });

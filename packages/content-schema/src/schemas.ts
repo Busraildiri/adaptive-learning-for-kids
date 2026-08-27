@@ -162,7 +162,9 @@ export const storySchema = z.strictObject({
   characterAssets: z.strictObject({
     happyAssetId: z.string().trim().min(1),
     sadAssetId: z.string().trim().min(1),
+    angryAssetId: z.string().trim().min(1).optional(),
   }),
+  flowAssetIds: z.array(z.string().trim().min(1)).min(1).max(4).optional(),
   steps: z.array(storyStepSchema).min(1),
 });
 

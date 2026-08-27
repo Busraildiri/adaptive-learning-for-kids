@@ -1,10 +1,16 @@
 "use client";
 
-import { contentVersionSchema } from "@adaptive/content-schema";
+import { type AgeBand, type Asset, contentVersionSchema } from "@adaptive/content-schema";
 import contentJson from "@adaptive/content-schema/content/tr-TR/v1";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type FormEvent, useMemo, useState } from "react";
-import { isAllowedSceneAsset, themeConflictsWithAsset } from "../lib/generation";
+import { resolveAssetUri } from "../lib/assetUri";
+import {
+  AGE_BANDS,
+  isAllowedSceneAsset,
+  isUsableFlowAsset,
+  themeConflictsWithAsset,
+} from "../lib/generation";
 import { storyBlueprints } from "../lib/storyBlueprints";
 
 const content = contentVersionSchema.parse(contentJson);
@@ -15,6 +21,68 @@ interface GenerationResponse {
   rejectionReasons?: string[];
   technicalError?: string;
   error?: string;
+}
+
+function FlowAssetField({
+  label,
+  busy,
+  value,
+  onChange,
+  options,
+  selected,
+  allowEmpty,
+}: {
+  label: string;
+  busy: boolean;
+  value: string;
+  onChange: (assetId: string) => void;
+  options: Asset[];
+  selected: Asset | undefined;
+  allowEmpty?: boolean;
+}) {
+  return (
+    <label>
+      {label}
+      <select disabled={busy} onChange={(event) => onChange(event.target.value)} value={value}>
+        {allowEmpty ? <option value="">Seçilmedi</option> : null}
+        {options.map((asset) => (
+          <option key={asset.id} value={asset.id}>
+            {asset.id}
+          </option>
+        ))}
+      </select>
+      {selected ? (
+        <div className="asset-preview" aria-label={`Seçilen ${label.toLocaleLowerCase("tr-TR")}`}>
+          {selected.uri.startsWith("emoji:") ? (
+            <span aria-hidden="true" className="asset-preview-symbol">
+              {selected.uri.slice("emoji:".length)}
+            </span>
+          ) : selected.type === "video" ? (
+            <video
+              className="asset-preview-image"
+              controls
+              muted
+              src={resolveAssetUri(selected.uri)}
+            >
+              <track kind="captions" />
+            </video>
+          ) : selected.type === "image" ? (
+            <img
+              alt={selected.accessibilityLabel}
+              className="asset-preview-image"
+              src={resolveAssetUri(selected.uri)}
+            />
+          ) : (
+            <span className="asset-preview-unavailable">Bu asset için önizleme yok.</span>
+          )}
+          <span>
+            <strong>{selected.accessibilityLabel}</strong>
+            <small>{selected.id}</small>
+          </span>
+        </div>
+      ) : null}
+    </label>
+  );
 }
 
 export function GenerationPanel({
@@ -31,6 +99,7 @@ export function GenerationPanel({
     () => content.assets.filter((asset) => template && isAllowedSceneAsset(asset, template)),
     [template],
   );
+  const flowAssets = useMemo(() => content.assets.filter(isUsableFlowAsset), []);
   const emotions = useMemo(
     () => [
       ...new Set(
@@ -49,6 +118,16 @@ export function GenerationPanel({
       "",
   );
   const selectedSceneAsset = sceneAssets.find((asset) => asset.id === sceneAssetId);
+  const [happyAssetId, setHappyAssetId] = useState(template?.characterAssets.happyAssetId ?? "");
+  const [sadAssetId, setSadAssetId] = useState(template?.characterAssets.sadAssetId ?? "");
+  const selectedHappyAsset = flowAssets.find((asset) => asset.id === happyAssetId);
+  const selectedSadAsset = flowAssets.find((asset) => asset.id === sadAssetId);
+  const [ageBands, setAgeBands] = useState<AgeBand[]>(template?.ageBands ?? ["2-4"]);
+  const toggleAgeBand = (ageBand: AgeBand, checked: boolean) => {
+    setAgeBands((current) =>
+      checked ? [...current, ageBand] : current.filter((value) => value !== ageBand),
+    );
+  };
   const [sendToReview, setSendToReview] = useState(false);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -75,6 +154,8 @@ export function GenerationPanel({
           theme,
           targetEmotion: targetEmotion || emotions[0],
           sceneAssetId,
+          flowAssetIds: [happyAssetId, sadAssetId],
+          ageBands,
           sendToReview,
         }),
       });
@@ -135,6 +216,9 @@ export function GenerationPanel({
                   nextAssets[0]?.id ??
                   "",
               );
+              setHappyAssetId(nextTemplate?.characterAssets.happyAssetId ?? "");
+              setSadAssetId(nextTemplate?.characterAssets.sadAssetId ?? "");
+              setAgeBands(nextTemplate?.ageBands ?? ["2-4"]);
             }}
             value={flowId}
           >
@@ -161,6 +245,20 @@ export function GenerationPanel({
             value={theme}
           />
         </label>
+        <fieldset className="checkbox-group">
+          <legend>Hangi yaş aralığına gösterilsin</legend>
+          {AGE_BANDS.map((ageBand) => (
+            <label className="checkbox-row" key={ageBand}>
+              <input
+                checked={ageBands.includes(ageBand)}
+                disabled={busy}
+                onChange={(event) => toggleAgeBand(ageBand, event.target.checked)}
+                type="checkbox"
+              />
+              {ageBand}
+            </label>
+          ))}
+        </fieldset>
         <label>
           Hedef duygu
           <select
@@ -198,10 +296,12 @@ export function GenerationPanel({
                 <img
                   alt={selectedSceneAsset.accessibilityLabel}
                   className="asset-preview-image"
-                  src={selectedSceneAsset.uri}
+                  src={resolveAssetUri(selectedSceneAsset.uri)}
                 />
               ) : (
-                <span className="asset-preview-unavailable">Bu asset için görsel önizleme yok.</span>
+                <span className="asset-preview-unavailable">
+                  Bu asset için görsel önizleme yok.
+                </span>
               )}
               <span>
                 <strong>{selectedSceneAsset.accessibilityLabel}</strong>
@@ -216,6 +316,27 @@ export function GenerationPanel({
             </small>
           ) : null}
         </label>
+        <p className="generation-help">
+          Bu iki görsel, çocuğun gerçekte göreceği tek şey: hikâye başlarken ve yardım seçilene
+          kadar "mutlu" görsel, kötü olaydan sonra "üzgün" görsel gösterilir — sonra otomatik olarak
+          tekrar mutlu'ya döner. Ara adımlar arasında farklı görsel geçişi şu an desteklenmiyor.
+        </p>
+        <FlowAssetField
+          busy={busy}
+          label="Mutlu görsel"
+          onChange={setHappyAssetId}
+          options={flowAssets}
+          selected={selectedHappyAsset}
+          value={happyAssetId}
+        />
+        <FlowAssetField
+          busy={busy}
+          label="Üzgün görsel"
+          onChange={setSadAssetId}
+          options={flowAssets}
+          selected={selectedSadAsset}
+          value={sadAssetId}
+        />
         <label className="checkbox-row">
           <input
             checked={sendToReview}
@@ -225,7 +346,13 @@ export function GenerationPanel({
           />
           Bu test üretimini doğrudan inceleme kuyruğuna gönder
         </label>
-        <button className="primary" disabled={busy || emotions.length === 0} type="submit">
+        <button
+          className="primary"
+          disabled={
+            busy || emotions.length === 0 || !happyAssetId || !sadAssetId || ageBands.length === 0
+          }
+          type="submit"
+        >
           {busy ? "Üretiliyor ve denetleniyor…" : "Hikâye üret"}
         </button>
       </form>

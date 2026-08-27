@@ -129,6 +129,8 @@ export function reviewAssetNarrativeConsistency(
     story.introVideoAssetId,
     story.characterAssets.happyAssetId,
     story.characterAssets.sadAssetId,
+    story.characterAssets.angryAssetId,
+    ...(story.flowAssetIds ?? []),
   ]);
   for (const asset of assetCatalog) {
     if (!referencedIds.has(asset.id) || !asset.semantic) continue;
@@ -163,7 +165,13 @@ function removeEmptyOptionalAssetIds(value: unknown): unknown {
   if (!value || typeof value !== "object") return value;
   const normalized: Record<string, unknown> = {};
   for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
-    if ((key === "introVideoAssetId" || key === "audioAssetId") && child === "") continue;
+    if (
+      (key === "introVideoAssetId" || key === "audioAssetId" || key === "angryAssetId") &&
+      child === ""
+    ) {
+      continue;
+    }
+    if (key === "flowAssetIds" && Array.isArray(child) && child.length === 0) continue;
     normalized[key] = removeEmptyOptionalAssetIds(child);
   }
   return normalized;
@@ -381,6 +389,8 @@ export function deterministicStoryReview(
     candidate.introVideoAssetId,
     candidate.characterAssets.happyAssetId,
     candidate.characterAssets.sadAssetId,
+    candidate.characterAssets.angryAssetId,
+    ...(candidate.flowAssetIds ?? []),
     ...candidate.steps.flatMap((step) => {
       const assets: Array<string | undefined> = [];
       if ("storyResolution" in step) assets.push(step.storyResolution.audioAssetId);
@@ -431,7 +441,7 @@ function buildGeneratorPrompt(
       outputStatus: "draft",
       noCorrectEmotion: true,
       optionalAssetFields:
-        "Kullanılmayan introVideoAssetId ve audioAssetId alanlarını boş yazma; tamamen atla.",
+        "Kullanılmayan introVideoAssetId, audioAssetId, angryAssetId ve flowAssetIds alanlarını boş yazma; tamamen atla.",
       narrativeVariation: request.requireNarrativeVariation
         ? "Başlığı ve anlatı alanlarının en az yüzde 40'ını yeni temaya göre değiştir. Şablon başlığını aynen kullanma."
         : "Mekanikleri koru.",
@@ -458,6 +468,8 @@ function buildSupervisorPrompt(
             candidate.introVideoAssetId,
             candidate.characterAssets.happyAssetId,
             candidate.characterAssets.sadAssetId,
+            candidate.characterAssets.angryAssetId,
+            ...(candidate.flowAssetIds ?? []),
           ].includes(asset.id),
         )
         .map((asset) => [asset.id, asset.semantic ?? null]),

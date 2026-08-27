@@ -1,16 +1,25 @@
 "use client";
 
-import { contentVersionSchema, storySchema, type Story } from "@adaptive/content-schema";
+import {
+  type Asset,
+  contentVersionSchema,
+  type Story,
+  storySchema,
+} from "@adaptive/content-schema";
 import contentJson from "@adaptive/content-schema/content/tr-TR/v1";
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { resolveAssetUri } from "../lib/assetUri";
 import {
   daysUntilExpiry,
   pendingReviewItems,
   type ReviewItem,
   storyTitle,
 } from "../lib/reviewQueue";
+import { GamePanel } from "./GamePanel";
 import { GenerationPanel } from "./GenerationPanel";
+
+type Screen = "stories" | "games";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -34,6 +43,36 @@ function storyNarratives(story: Story): string[] {
   });
 }
 
+function findAssetById(assets: Asset[], id: string | undefined): Asset | undefined {
+  return assets.find((asset) => asset.id === id);
+}
+
+function AssetFrame({ label, asset }: { label: string; asset: Asset | undefined }) {
+  return (
+    <div className="story-flow-frame">
+      {!asset ? (
+        <p>Bu kare için asset bulunamadı.</p>
+      ) : asset.type === "video" ? (
+        <video controls preload="metadata" src={resolveAssetUri(asset.uri)}>
+          <track kind="captions" />
+        </video>
+      ) : asset.uri.startsWith("emoji:") ? (
+        <span aria-hidden="true" className="review-media-symbol">
+          {asset.uri.slice("emoji:".length)}
+        </span>
+      ) : asset.type === "image" ? (
+        <img alt={asset.accessibilityLabel} src={resolveAssetUri(asset.uri)} />
+      ) : (
+        <p>Bu taslak için görüntülenebilir bir medya asset’i yok.</p>
+      )}
+      <small>
+        {label}
+        {asset?.accessibilityLabel ? ` · ${asset.accessibilityLabel}` : ""}
+      </small>
+    </div>
+  );
+}
+
 function createBrowserClient(): SupabaseClient | null {
   if (!supabaseUrl || !supabaseKey) return null;
   return createClient(supabaseUrl, supabaseKey, {
@@ -51,6 +90,7 @@ export default function HomePage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [screen, setScreen] = useState<Screen>("stories");
 
   const loadQueue = useCallback(async () => {
     if (!supabase) return;
@@ -185,12 +225,35 @@ export default function HomePage() {
   const selected = items.find((item) => item.id === selectedId) ?? null;
   const parsedSelectedStory = selected?.story ? storySchema.safeParse(selected.story) : null;
   const selectedStory = parsedSelectedStory?.success ? parsedSelectedStory.data : null;
-  const selectedSceneAsset = content.assets.find(
-    (asset) => asset.id === selectedStory?.sceneAssetId,
-  );
-  const selectedVideoAsset = content.assets.find(
-    (asset) => asset.id === selectedStory?.introVideoAssetId && asset.type === "video",
-  );
+  const storyFlowFrames = selectedStory
+    ? selectedStory.flowAssetIds && selectedStory.flowAssetIds.length > 0
+      ? selectedStory.flowAssetIds.map((assetId, index) => ({
+          key: assetId,
+          label: `${index + 1}. içerik`,
+          asset: findAssetById(content.assets, assetId),
+        }))
+      : (() => {
+          const introVideoAsset = content.assets.find(
+            (asset) => asset.id === selectedStory.introVideoAssetId && asset.type === "video",
+          );
+          const happyAsset = findAssetById(
+            content.assets,
+            selectedStory.characterAssets.happyAssetId,
+          );
+          const sadAsset = findAssetById(content.assets, selectedStory.characterAssets.sadAssetId);
+          const angryAsset = findAssetById(
+            content.assets,
+            selectedStory.characterAssets.angryAssetId,
+          );
+          return [
+            introVideoAsset
+              ? { key: "intro", label: "Başlangıç · Video", asset: introVideoAsset }
+              : { key: "intro", label: "Başlangıç · Mutlu", asset: happyAsset },
+            { key: "sad", label: "Olay sonrası · Üzgün", asset: sadAsset },
+            ...(angryAsset ? [{ key: "angry", label: "Kızgın", asset: angryAsset }] : []),
+          ];
+        })()
+    : [];
 
   return (
     <main className="dashboard-shell">
@@ -203,128 +266,145 @@ export default function HomePage() {
           Çıkış
         </button>
       </header>
+      <nav className="screen-tabs">
+        <button
+          className={screen === "stories" ? "selected" : ""}
+          onClick={() => setScreen("stories")}
+          type="button"
+        >
+          Hikâye Üretimi
+        </button>
+        <button
+          className={screen === "games" ? "selected" : ""}
+          onClick={() => setScreen("games")}
+          type="button"
+        >
+          Oyun Üretimi
+        </button>
+      </nav>
       {message && <p className="alert global-alert">{message}</p>}
-      <GenerationPanel onGenerated={loadQueue} supabase={supabase} />
-      <section className="summary-grid">
-        <article className="summary-card">
-          <strong>{pending.length}</strong>
-          <span>Bekleyen kuşkulu içerik</span>
-        </article>
-        <article className="summary-card">
-          <strong>{items.filter((item) => item.status === "approved").length}</strong>
-          <span>Onaylanan</span>
-        </article>
-        <article className="summary-card">
-          <strong>
-            {items.filter((item) => item.status === "rejected" || item.status === "expired").length}
-          </strong>
-          <span>Silinen / süresi dolan</span>
-        </article>
-      </section>
-      <section className="workspace">
-        <aside className="queue-panel">
-          <div className="section-heading">
-            <h2>İnceleme kuyruğu</h2>
-            <button className="quiet" onClick={loadQueue}>
-              Yenile
-            </button>
-          </div>
-          {loading ? (
-            <p>Yükleniyor…</p>
-          ) : pending.length === 0 ? (
-            <div className="empty">
-              <span>✓</span>
-              <p>Bekleyen kuşkulu içerik yok.</p>
-            </div>
-          ) : (
-            pending.map((item) => (
-              <button
-                key={item.id}
-                className={`queue-item ${selectedId === item.id ? "selected" : ""}`}
-                onClick={() => setSelectedId(item.id)}
-              >
-                <strong>{storyTitle(item)}</strong>
-                <span>{item.suspicion_reasons.join(" · ")}</span>
-                <small>{daysUntilExpiry(item.expires_at)} gün kaldı</small>
-              </button>
-            ))
-          )}
-        </aside>
-        <article className="preview-panel">
-          {!selected ? (
-            <div className="empty large">
-              <span>☰</span>
-              <h2>İncelemek için bir hikâye seç</h2>
-              <p>Yalnızca otomatik kontrollerin kuşkulu bulduğu taslaklar burada görünür.</p>
-            </div>
-          ) : (
-            <>
+      {screen === "games" ? (
+        <GamePanel />
+      ) : (
+        <>
+          <GenerationPanel onGenerated={loadQueue} supabase={supabase} />
+          <section className="summary-grid">
+            <article className="summary-card">
+              <strong>{pending.length}</strong>
+              <span>Bekleyen kuşkulu içerik</span>
+            </article>
+            <article className="summary-card">
+              <strong>{items.filter((item) => item.status === "approved").length}</strong>
+              <span>Onaylanan</span>
+            </article>
+            <article className="summary-card">
+              <strong>
+                {
+                  items.filter((item) => item.status === "rejected" || item.status === "expired")
+                    .length
+                }
+              </strong>
+              <span>Silinen / süresi dolan</span>
+            </article>
+          </section>
+          <section className="workspace">
+            <aside className="queue-panel">
               <div className="section-heading">
-                <div>
-                  <p className="eyebrow">KUŞKULU TASLAK</p>
-                  <h2>{storyTitle(selected)}</h2>
+                <h2>İnceleme kuyruğu</h2>
+                <button className="quiet" onClick={loadQueue}>
+                  Yenile
+                </button>
+              </div>
+              {loading ? (
+                <p>Yükleniyor…</p>
+              ) : pending.length === 0 ? (
+                <div className="empty">
+                  <span>✓</span>
+                  <p>Bekleyen kuşkulu içerik yok.</p>
                 </div>
-                <span className="deadline">{daysUntilExpiry(selected.expires_at)} gün kaldı</span>
-              </div>
-              <div className="reason-box">
-                <strong>İnceleme nedenleri</strong>
-                <ul>
-                  {selected.suspicion_reasons.map((reason) => (
-                    <li key={reason}>{reason}</li>
-                  ))}
-                </ul>
-              </div>
-              {selectedStory ? (
-                <div className="story-review-preview">
-                  <div className="review-media">
-                    {selectedVideoAsset ? (
-                      <video controls preload="metadata" src={selectedVideoAsset.uri}>
-                        <track kind="captions" />
-                      </video>
-                    ) : selectedSceneAsset?.uri.startsWith("emoji:") ? (
-                      <span aria-hidden="true" className="review-media-symbol">
-                        {selectedSceneAsset.uri.slice("emoji:".length)}
-                      </span>
-                    ) : selectedSceneAsset?.type === "image" ? (
-                      <img
-                        alt={selectedSceneAsset.accessibilityLabel}
-                        src={selectedSceneAsset.uri}
-                      />
-                    ) : (
-                      <p>Bu taslak için görüntülenebilir bir medya asset’i yok.</p>
-                    )}
-                    <small>
-                      {selectedVideoAsset
-                        ? selectedVideoAsset.accessibilityLabel
-                        : selectedSceneAsset?.accessibilityLabel}
-                    </small>
+              ) : (
+                pending.map((item) => (
+                  <button
+                    key={item.id}
+                    className={`queue-item ${selectedId === item.id ? "selected" : ""}`}
+                    onClick={() => setSelectedId(item.id)}
+                  >
+                    <strong>{storyTitle(item)}</strong>
+                    <span>{item.suspicion_reasons.join(" · ")}</span>
+                    <small>{daysUntilExpiry(item.expires_at)} gün kaldı</small>
+                  </button>
+                ))
+              )}
+            </aside>
+            <article className="preview-panel">
+              {!selected ? (
+                <div className="empty large">
+                  <span>☰</span>
+                  <h2>İncelemek için bir hikâye seç</h2>
+                  <p>Yalnızca otomatik kontrollerin kuşkulu bulduğu taslaklar burada görünür.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="section-heading">
+                    <div>
+                      <p className="eyebrow">KUŞKULU TASLAK</p>
+                      <h2>{storyTitle(selected)}</h2>
+                    </div>
+                    <span className="deadline">
+                      {daysUntilExpiry(selected.expires_at)} gün kaldı
+                    </span>
                   </div>
-                  <div className="review-story-copy">
-                    <p className="review-greeting">{selectedStory.greetingTemplate}</p>
-                    <ol>
-                      {storyNarratives(selectedStory).map((narrative, index) => (
-                        <li key={`${index}-${narrative}`}>{narrative}</li>
+                  <div className="reason-box">
+                    <strong>İnceleme nedenleri</strong>
+                    <ul>
+                      {selected.suspicion_reasons.map((reason) => (
+                        <li key={reason}>{reason}</li>
                       ))}
-                    </ol>
+                    </ul>
                   </div>
-                </div>
-              ) : null}
-              <details className="technical-story-json">
-                <summary>Teknik JSON’u göster</summary>
-                <pre>{JSON.stringify(selected.story, null, 2)}</pre>
-              </details>
-              <div className="decision-bar">
-                <button className="danger" onClick={() => decide("rejected")} disabled={loading}>
-                  Reddet ve sil
-                </button>
-                <button className="primary" onClick={() => decide("approved")} disabled={loading}>
-                  Onayla ve yayınla
-                </button>
-              </div>
-            </>
-          )}
-        </article>
-      </section>
+                  {selectedStory ? (
+                    <div className="story-review-preview">
+                      <div className="story-flow-preview" aria-label="Video konsept önizlemesi">
+                        {storyFlowFrames.map((frame) => (
+                          <AssetFrame asset={frame.asset} key={frame.key} label={frame.label} />
+                        ))}
+                      </div>
+                      <div className="review-story-copy">
+                        <p className="review-greeting">{selectedStory.greetingTemplate}</p>
+                        <ol>
+                          {storyNarratives(selectedStory).map((narrative, index) => (
+                            <li key={`${index}-${narrative}`}>{narrative}</li>
+                          ))}
+                        </ol>
+                      </div>
+                    </div>
+                  ) : null}
+                  <details className="technical-story-json">
+                    <summary>Teknik JSON’u göster</summary>
+                    <pre>{JSON.stringify(selected.story, null, 2)}</pre>
+                  </details>
+                  <div className="decision-bar">
+                    <button
+                      className="danger"
+                      disabled={loading}
+                      onClick={() => decide("rejected")}
+                    >
+                      Reddet ve sil
+                    </button>
+                    <button
+                      className="primary"
+                      disabled={loading}
+                      onClick={() => decide("approved")}
+                    >
+                      Onayla ve yayınla
+                    </button>
+                  </div>
+                </>
+              )}
+            </article>
+          </section>
+        </>
+      )}
     </main>
   );
 }

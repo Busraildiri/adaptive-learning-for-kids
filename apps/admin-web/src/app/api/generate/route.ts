@@ -14,6 +14,7 @@ import { NextResponse } from "next/server";
 import {
   buildGenerationSkeleton,
   isAllowedSceneAsset,
+  isUsableFlowAsset,
   isUsableGenerationAsset,
   parseManualGenerationInput,
   themeConflictsWithAsset,
@@ -66,6 +67,12 @@ export async function POST(request: Request) {
     if (themeConflictsWithAsset(input.theme, asset)) {
       throw new Error("Tema seçilen sahne asset’iyle anlamsal olarak çelişiyor.");
     }
+    for (const flowAssetId of input.flowAssetIds) {
+      const flowAsset = content.assets.find((candidate) => candidate.id === flowAssetId);
+      if (!flowAsset || !isUsableFlowAsset(flowAsset)) {
+        throw new Error(`Seçilen içerik (${flowAssetId}) üretim için onaylı değil.`);
+      }
+    }
     const supportedEmotions = template.steps
       .filter((step) => step.type === "emotion_choice")
       .flatMap((step) => step.choices.map((choice) => choice.emotion));
@@ -77,6 +84,8 @@ export async function POST(request: Request) {
     const skeleton = buildGenerationSkeleton({
       template,
       sceneAssetId: input.sceneAssetId,
+      flowAssetIds: input.flowAssetIds,
+      ageBands: input.ageBands,
       requestId,
     });
     const models = createOpenAIContentModelsFromEnv(process.env);
