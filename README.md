@@ -285,6 +285,14 @@ oturumda tekrar seçimi veya yardım tercihi aranır. Koşullar sağlanmazsa sis
 rotasyonuna döner. Son kararın gözlenebilir gerekçesi ebeveyn oturum özetinde gösterilir ve sürümlü
 private audit kaydında saklanır.
 
+### Yönetim panelinden kontrollü hikâye üretimi
+
+Admin panelindeki “Yeni hikâye üret” formu mevcut bir oyun mekaniği, tema, hedef duygu ve onaylı
+sahne asset'i seçer. OpenAI üretici ve denetleyici çağrıları yalnızca Next.js sunucu route'unda yapılır;
+API ile service-role anahtarları tarayıcıya ve mobil uygulamaya gönderilmez. Taslak önce içerik şeması,
+deterministik çocuk güvenliği ve asset-anlatı tutarlılığı kontrollerinden geçer. Audit kaydı
+oluşturulduktan sonra güvenli taslak yayın havuzuna, kuşkulu taslak 15 günlük inceleme kuyruğuna gider.
+
 Sonraki aşamada değerlendirilebilecekler:
 
 - Apple ile giriş.

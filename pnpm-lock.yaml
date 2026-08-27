@@ -23,6 +23,12 @@ importers:
 
   apps/admin-web:
     dependencies:
+      '@adaptive/content-agent':
+        specifier: workspace:*
+        version: link:../../packages/content-agent
+      '@adaptive/content-schema':
+        specifier: workspace:*
+        version: link:../../packages/content-schema
       '@supabase/supabase-js':
         specifier: ^2.57.4
         version: 2.112.4

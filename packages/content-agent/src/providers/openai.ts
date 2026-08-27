@@ -18,6 +18,52 @@ interface OpenAIResponse {
   status?: string;
 }
 
+interface OpenAIErrorResponse {
+  error?: {
+    message?: string;
+    code?: string | null;
+    param?: string | null;
+  };
+}
+
+function safeProviderMessage(value: unknown, apiKey: string): string | null {
+  if (!value || typeof value !== "object") return null;
+  const response = value as OpenAIErrorResponse;
+  const message = response.error?.message;
+  if (!message) return null;
+  return message
+    .replaceAll(apiKey, "[redacted-openai-key]")
+    .replace(/sk-[A-Za-z0-9_-]+/gu, "[redacted-openai-key]")
+    .slice(0, 500);
+}
+
+function normalizeResponseSchema(value: unknown): {
+  schema: Record<string, unknown>;
+  strict: boolean;
+} {
+  let convertedUnion = false;
+  const visit = (current: unknown): unknown => {
+    if (Array.isArray(current)) return current.map(visit);
+    if (!current || typeof current !== "object") return current;
+    const source = current as Record<string, unknown>;
+    const normalized: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(source)) {
+      if (key === "$schema") continue;
+      if (key === "oneOf") {
+        convertedUnion = true;
+        normalized.anyOf = visit(child);
+      } else {
+        normalized[key] = visit(child);
+      }
+    }
+    return normalized;
+  };
+  return {
+    schema: visit(value) as Record<string, unknown>,
+    strict: !convertedUnion,
+  };
+}
+
 export interface OpenAIStructuredModelOptions {
   apiKey: string;
   model: string;
@@ -58,6 +104,7 @@ export function createOpenAIStructuredModel(
   return {
     model,
     async generateJson(input) {
+      const responseSchema = normalizeResponseSchema(input.jsonSchema);
       const response = await request(options.endpoint ?? DEFAULT_OPENAI_ENDPOINT, {
         method: "POST",
         headers: {
@@ -74,16 +121,24 @@ export function createOpenAIStructuredModel(
               type: "json_schema",
               name: input.schemaName,
               description: input.schemaDescription,
-              schema: input.jsonSchema,
-              strict: true,
+              schema: responseSchema.schema,
+              strict: responseSchema.strict,
             },
           },
         }),
       });
 
       if (!response.ok) {
+        let providerMessage: string | null = null;
+        try {
+          providerMessage = safeProviderMessage(await response.json(), apiKey);
+        } catch {
+          providerMessage = null;
+        }
         throw new OpenAIProviderError(
-          `OpenAI request failed with HTTP ${response.status}.`,
+          `OpenAI request failed with HTTP ${response.status}${
+            providerMessage ? `: ${providerMessage}` : "."
+          }`,
           response.status,
         );
       }

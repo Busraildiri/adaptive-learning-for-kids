@@ -12,6 +12,7 @@ export const SAFETY_RULES_VERSION = "story-safety-tr-v1" as const;
 
 const rejectionCodeSchema = z.enum([
   "invalid_json",
+  "provider_request_failed",
   "invalid_schema",
   "skeleton_changed",
   "asset_not_allowed",
@@ -21,6 +22,7 @@ const rejectionCodeSchema = z.enum([
   "diagnostic_or_scoring_language",
   "frightening_content",
   "age_inappropriate_language",
+  "insufficient_narrative_variation",
   "supervisor_rejected",
   "supervisor_invalid_response",
 ]);
@@ -57,6 +59,28 @@ export interface StoryGenerationRequest {
   variationSeed: string;
   locale: "tr-TR";
   assetCatalog?: Asset[];
+  requireNarrativeVariation?: boolean;
+}
+
+function normalizedNarrative(value: string): string {
+  return value.trim().toLocaleLowerCase("tr-TR").replace(/\s+/gu, " ");
+}
+
+export function hasSufficientNarrativeVariation(candidate: Story, skeleton: Story): boolean {
+  if (normalizedNarrative(candidate.title) === normalizedNarrative(skeleton.title)) return false;
+  const candidateTexts = allText(candidate);
+  const skeletonTexts = allText(skeleton);
+  const comparableCount = Math.min(candidateTexts.length, skeletonTexts.length);
+  let changedCount = 0;
+  for (let index = 0; index < comparableCount; index += 1) {
+    if (
+      normalizedNarrative(candidateTexts[index] ?? "") !==
+      normalizedNarrative(skeletonTexts[index] ?? "")
+    ) {
+      changedCount += 1;
+    }
+  }
+  return changedCount >= Math.max(3, Math.ceil(comparableCount * 0.4));
 }
 
 function stepNarrative(step: StoryStep): string[] {
@@ -134,6 +158,17 @@ function approvedAssetSemantics(assets: Asset[]): Record<string, AssetSemantic> 
   );
 }
 
+function removeEmptyOptionalAssetIds(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(removeEmptyOptionalAssetIds);
+  if (!value || typeof value !== "object") return value;
+  const normalized: Record<string, unknown> = {};
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    if ((key === "introVideoAssetId" || key === "audioAssetId") && child === "") continue;
+    normalized[key] = removeEmptyOptionalAssetIds(child);
+  }
+  return normalized;
+}
+
 export interface StructuredModel {
   model: string;
   generateJson(input: {
@@ -170,7 +205,20 @@ export interface ContentGenerationAudit {
 
 export type GenerationResult =
   | { status: "draft"; draft: Story; audit: ContentGenerationAudit }
-  | { status: "fallback"; story: Story; audit: ContentGenerationAudit };
+  | {
+      status: "fallback";
+      story: Story;
+      audit: ContentGenerationAudit;
+      technicalError?: string;
+    };
+
+function safeTechnicalError(error: unknown): string {
+  const message = error instanceof Error ? error.message : "Unknown provider error";
+  return message
+    .replace(/sk-[A-Za-z0-9_-]+/gu, "[redacted-openai-key]")
+    .replace(/sb_secret_[A-Za-z0-9_-]+/gu, "[redacted-supabase-key]")
+    .slice(0, 300);
+}
 
 export interface PublicationSink {
   publish(input: { requestId: string; story: Story; contentVersion: string }): Promise<void>;
@@ -382,6 +430,11 @@ function buildGeneratorPrompt(
       stepMechanics: request.skeleton.steps.map(mechanicSignature),
       outputStatus: "draft",
       noCorrectEmotion: true,
+      optionalAssetFields:
+        "Kullanılmayan introVideoAssetId ve audioAssetId alanlarını boş yazma; tamamen atla.",
+      narrativeVariation: request.requireNarrativeVariation
+        ? "Başlığı ve anlatı alanlarının en az yüzde 40'ını yeni temaya göre değiştir. Şablon başlığını aynen kullanma."
+        : "Mekanikleri koru.",
     },
     approvedGuidance: sources,
     skeleton: request.skeleton,
@@ -442,7 +495,10 @@ export async function generateStoryDraft(input: {
     guidanceVersion: input.guidance.version,
     createdAt: (input.now ?? (() => new Date().toISOString()))(),
   };
-  const reject = async (rejectionReasons: RejectionCode[]): Promise<GenerationResult> => {
+  const reject = async (
+    rejectionReasons: RejectionCode[],
+    technicalError?: string,
+  ): Promise<GenerationResult> => {
     const audit: ContentGenerationAudit = {
       ...baseAudit,
       status: "rejected",
@@ -451,7 +507,12 @@ export async function generateStoryDraft(input: {
     };
     await input.auditSink.save(audit);
     const fallback = await input.cache.get(input.request.skeleton.id);
-    return { status: "fallback", story: fallback ?? input.request.skeleton, audit };
+    return {
+      status: "fallback",
+      story: fallback ?? input.request.skeleton,
+      audit,
+      ...(technicalError ? { technicalError } : {}),
+    };
   };
 
   let rawCandidate: unknown;
@@ -463,11 +524,18 @@ export async function generateStoryDraft(input: {
       schemaDescription: "@adaptive/content-schema storySchema strict JSON",
       jsonSchema: z.toJSONSchema(storySchema) as Record<string, unknown>,
     });
-  } catch {
-    return reject(["invalid_json"]);
+  } catch (error) {
+    return reject(["provider_request_failed"], safeTechnicalError(error));
   }
-  const parsedCandidate = storySchema.safeParse(rawCandidate);
-  if (!parsedCandidate.success) return reject(["invalid_schema"]);
+  const parsedCandidate = storySchema.safeParse(removeEmptyOptionalAssetIds(rawCandidate));
+  if (!parsedCandidate.success) {
+    const issueSummary = parsedCandidate.error.issues
+      .slice(0, 5)
+      .map((issue) => `${issue.path.join(".") || "story"}: ${issue.message}`)
+      .join(" | ")
+      .slice(0, 500);
+    return reject(["invalid_schema"], issueSummary);
+  }
   const deterministicReasons = deterministicStoryReview(
     parsedCandidate.data,
     input.request.skeleton,
@@ -476,6 +544,12 @@ export async function generateStoryDraft(input: {
   deterministicReasons.push(
     ...reviewAssetNarrativeConsistency(parsedCandidate.data, input.request.assetCatalog ?? []),
   );
+  if (
+    input.request.requireNarrativeVariation &&
+    !hasSufficientNarrativeVariation(parsedCandidate.data, input.request.skeleton)
+  ) {
+    deterministicReasons.push("insufficient_narrative_variation");
+  }
   if (deterministicReasons.length > 0) return reject(deterministicReasons);
 
   let rawDecision: unknown;
@@ -491,8 +565,8 @@ export async function generateStoryDraft(input: {
       schemaDescription: "{ approved: boolean, reasonCodes: RejectionCode[], notes: string[] }",
       jsonSchema: z.toJSONSchema(supervisorDecisionSchema) as Record<string, unknown>,
     });
-  } catch {
-    return reject(["supervisor_invalid_response"]);
+  } catch (error) {
+    return reject(["supervisor_invalid_response"], safeTechnicalError(error));
   }
   const decision = supervisorDecisionSchema.safeParse(rawDecision);
   if (!decision.success) return reject(["supervisor_invalid_response"]);

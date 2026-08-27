@@ -1,5 +1,7 @@
 "use client";
 
+import { contentVersionSchema, storySchema, type Story } from "@adaptive/content-schema";
+import contentJson from "@adaptive/content-schema/content/tr-TR/v1";
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -8,9 +10,29 @@ import {
   type ReviewItem,
   storyTitle,
 } from "../lib/reviewQueue";
+import { GenerationPanel } from "./GenerationPanel";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const content = contentVersionSchema.parse(contentJson);
+
+function storyNarratives(story: Story): string[] {
+  return story.steps.flatMap((step) => {
+    if (step.type === "emotion_choice") {
+      return [
+        step.prompt,
+        ...step.choices.map(
+          (choice) => `${choice.accessibilityLabel}: ${choice.supportiveFeedback.narration}`,
+        ),
+        step.storyResolution.narration,
+      ];
+    }
+    if (step.type === "choice") {
+      return [step.prompt, ...step.choices.map((choice) => choice.label)];
+    }
+    return [step.narration];
+  });
+}
 
 function createBrowserClient(): SupabaseClient | null {
   if (!supabaseUrl || !supabaseKey) return null;
@@ -75,7 +97,7 @@ export default function HomePage() {
     setMessage(null);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      setMessage("Giriş yapılamadı. E-posta ve parolayı kontrol et.");
+      setMessage(`Giriş yapılamadı: ${error.code ?? "auth_error"} — ${error.message}`);
       setLoading(false);
     }
   }
@@ -161,6 +183,14 @@ export default function HomePage() {
 
   const pending = pendingReviewItems(items);
   const selected = items.find((item) => item.id === selectedId) ?? null;
+  const parsedSelectedStory = selected?.story ? storySchema.safeParse(selected.story) : null;
+  const selectedStory = parsedSelectedStory?.success ? parsedSelectedStory.data : null;
+  const selectedSceneAsset = content.assets.find(
+    (asset) => asset.id === selectedStory?.sceneAssetId,
+  );
+  const selectedVideoAsset = content.assets.find(
+    (asset) => asset.id === selectedStory?.introVideoAssetId && asset.type === "video",
+  );
 
   return (
     <main className="dashboard-shell">
@@ -174,6 +204,7 @@ export default function HomePage() {
         </button>
       </header>
       {message && <p className="alert global-alert">{message}</p>}
+      <GenerationPanel onGenerated={loadQueue} supabase={supabase} />
       <section className="summary-grid">
         <article className="summary-card">
           <strong>{pending.length}</strong>
@@ -243,9 +274,45 @@ export default function HomePage() {
                   ))}
                 </ul>
               </div>
-              <div className="story-preview">
+              {selectedStory ? (
+                <div className="story-review-preview">
+                  <div className="review-media">
+                    {selectedVideoAsset ? (
+                      <video controls preload="metadata" src={selectedVideoAsset.uri}>
+                        <track kind="captions" />
+                      </video>
+                    ) : selectedSceneAsset?.uri.startsWith("emoji:") ? (
+                      <span aria-hidden="true" className="review-media-symbol">
+                        {selectedSceneAsset.uri.slice("emoji:".length)}
+                      </span>
+                    ) : selectedSceneAsset?.type === "image" ? (
+                      <img
+                        alt={selectedSceneAsset.accessibilityLabel}
+                        src={selectedSceneAsset.uri}
+                      />
+                    ) : (
+                      <p>Bu taslak için görüntülenebilir bir medya asset’i yok.</p>
+                    )}
+                    <small>
+                      {selectedVideoAsset
+                        ? selectedVideoAsset.accessibilityLabel
+                        : selectedSceneAsset?.accessibilityLabel}
+                    </small>
+                  </div>
+                  <div className="review-story-copy">
+                    <p className="review-greeting">{selectedStory.greetingTemplate}</p>
+                    <ol>
+                      {storyNarratives(selectedStory).map((narrative, index) => (
+                        <li key={`${index}-${narrative}`}>{narrative}</li>
+                      ))}
+                    </ol>
+                  </div>
+                </div>
+              ) : null}
+              <details className="technical-story-json">
+                <summary>Teknik JSON’u göster</summary>
                 <pre>{JSON.stringify(selected.story, null, 2)}</pre>
-              </div>
+              </details>
               <div className="decision-bar">
                 <button className="danger" onClick={() => decide("rejected")} disabled={loading}>
                   Reddet ve sil

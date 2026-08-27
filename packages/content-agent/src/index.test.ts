@@ -6,6 +6,7 @@ import {
   type ContentGenerationAudit,
   deterministicStoryReview,
   generateStoryDraft,
+  hasSufficientNarrativeVariation,
   retrieveGuidance,
   reviewAssetNarrativeConsistency,
   routeGenerationResult,
@@ -72,6 +73,35 @@ const guidance: ApprovedGuidance = {
 };
 
 const allowedAssets = ["scene-balloons", "mino-happy", "mino-sad"];
+
+describe("narrative variation", () => {
+  it("rejects a renamed id when title and narration still match the source", () => {
+    expect(hasSufficientNarrativeVariation({ ...skeleton, id: "new-id" }, skeleton)).toBe(false);
+  });
+
+  it("accepts a new title with materially changed narration", () => {
+    const candidate: Story = {
+      ...skeleton,
+      id: "new-id",
+      title: "Mino ve Uçan Uçurtma",
+      greetingTemplate: "Merhaba {{childName}}! Mino'nun uçurtmasına bakalım mı?",
+      steps: skeleton.steps.map((step, index) =>
+        step.type === "emotion_choice"
+          ? {
+              ...step,
+              prompt: "Rüzgâr dinince Mino nasıl hissediyor olabilir?",
+              storyResolution: { narration: "Mino yardım istemeyi seçti." },
+            }
+          : {
+              ...step,
+              narration: index === 0 ? "Uçurtma bir dala takıldı." : "Birlikte çözdüler.",
+            },
+      ),
+    };
+
+    expect(hasSufficientNarrativeVariation(candidate, skeleton)).toBe(true);
+  });
+});
 
 function model(model: string, response: unknown): StructuredModel {
   return { model, generateJson: async () => response };
