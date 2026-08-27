@@ -138,6 +138,18 @@ export interface Database {
         Args: { child_profile_id: string; candidate_activity_ids: string[] };
         Returns: Json;
       };
+      select_personalized_activity: {
+        Args: { child_profile_id: string; candidate_activity_ids: string[] };
+        Returns: Json;
+      };
+      get_parent_session_summary: {
+        Args: { child_profile_id: string };
+        Returns: Json;
+      };
+      get_parent_personalization_status: {
+        Args: { child_profile_id: string };
+        Returns: Json;
+      };
     };
     Enums: Record<never, never>;
     CompositeTypes: Record<never, never>;

@@ -17,6 +17,8 @@
     "@adaptive/analytics-events": "workspace:*",
     "@adaptive/content-schema": "workspace:*",
     "@adaptive/evidence-engine": "workspace:*",
+    "@adaptive/parent-insights": "workspace:*",
+    "@adaptive/personalization-engine": "workspace:*",
     "@adaptive/shared-types": "workspace:*",
     "@react-native-community/netinfo": "11.4.1",
     "@supabase/supabase-js": "^2.112.4",

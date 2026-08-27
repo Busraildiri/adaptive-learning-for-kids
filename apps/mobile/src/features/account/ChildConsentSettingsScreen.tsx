@@ -126,9 +126,9 @@ export function ChildConsentSettingsScreen({
       ) : (
         <>
           <ConsentRow
-            description="Açarsanız sevdiği hayvan, oyuncak ve ilgi alanları hikâyeyi uyarlamak için kullanılır. Kapatınca bu alanlar silinir."
+            description="Açarsanız tercihler ve en az 5 farklı tamamlanmış hikâyedeki tutarlı seçimler önerileri uyarlamak için kullanılabilir. Öğrenme gözlemleri de açık olmalıdır. Kapatınca genel hikâye sırası kullanılır ve bu alanlar silinir."
             disabled={busy}
-            label="Kişiselleştirme"
+            label="Kişiselleştirilmiş öneriler"
             onValueChange={(personalization) =>
               setSettings((current) => (current ? { ...current, personalization } : current))
             }

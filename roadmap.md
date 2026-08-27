@@ -515,8 +515,8 @@ Türkçe güvenlik kuralları, sürümlü rehber erişimi, eklemeli private audi
 geri dönüş akışı tamamlandı. OpenAI Responses bağlantısı `gpt-5.4-mini`, strict Structured Outputs ve
 `store: false` ile gerçek API isteğinde doğrulandı; normal testler kredi harcamaz. İçerik agent'ının
 15 unit testi, monorepo genelinde 76 unit test ve yerel
-Supabase/PostgreSQL üzerinde 57 pgTAP testi başarılıdır. Migration yerelde doğrulandı; staging'e henüz
-uygulanmadı. Rehber dosyası teknik olarak hazırdır ancak pilot kullanımı içerik uzmanı onayı bekler.**
+Supabase/PostgreSQL üzerinde 57 pgTAP testi başarılıdır. Audit migration'ı staging projesine
+uygulanmıştır. Rehber dosyası teknik olarak hazırdır ancak pilot kullanımı içerik uzmanı onayı bekler.**
 
 #### R8 eksikler
 
@@ -546,22 +546,29 @@ uygulanmadı. Rehber dosyası teknik olarak hazırdır ancak pilot kullanımı i
 
 ### R8.1 — Beş hikâye sonrası açıklanabilir kişiselleştirme
 
-- [ ] Kişiselleştirilmiş önerileri en az beş tamamlanmış ve birbirinden farklı hikâyeden sonra aç.
-- [ ] Yalnızca tekrar seçimi, tamamlama, yardım tercihi ve birden fazla oturumda tutarlı tercih gibi
+- [x] Kişiselleştirilmiş önerileri en az beş tamamlanmış ve birbirinden farklı hikâyeden sonra aç.
+- [x] Yalnızca tekrar seçimi, tamamlama, yardım tercihi ve birden fazla oturumda tutarlı tercih gibi
       sınırlı etkileşim sinyallerini kullan.
-- [ ] Kişiselleştirmeyi hem `personalization` hem `learning_observations` izni açıkken çalıştır;
+- [x] Kişiselleştirmeyi hem `personalization` hem `learning_observations` izni açıkken çalıştır;
       izinlerden biri kapanırsa genel hikâye rotasyonuna geri dön.
-- [ ] Tek bir dokunuştan, hızlı cevaptan veya yarıda kalan hikâyeden kalıcı çıkarım üretme.
-- [ ] Öneri gerekçesini ebeveyne olumlu ve gözlenebilir dille göster; tanı, kişilik etiketi,
+- [x] Tek bir dokunuştan, hızlı cevaptan veya yarıda kalan hikâyeden kalıcı çıkarım üretme.
+- [x] Öneri gerekçesini ebeveyne olumlu ve gözlenebilir dille göster; tanı, kişilik etiketi,
       akran karşılaştırması veya yetersizlik iddiası kullanma.
-- [ ] Ebeveyne kişiselleştirilmiş önerileri kapatma ve genel hikâye rotasyonuna dönme kontrolü ver.
-- [ ] Kullanılan kanıt sayısını, güvenilirlik eşiğini ve öneri nedenini sürümlü karar logunda sakla.
+- [x] Ebeveyne kişiselleştirilmiş önerileri kapatma ve genel hikâye rotasyonuna dönme kontrolü ver.
+- [x] Kullanılan kanıt sayısını, güvenilirlik eşiğini ve öneri nedenini sürümlü karar logunda sakla.
 
 #### R8.1 kabul kriterleri
 
 - Beş farklı hikâye tamamlanmadan kişiselleştirilmiş öneri üretilmez.
 - İzin kapatıldığında yeni kişiselleştirilmiş çıkarım ve öneri oluşturulmaz.
 - Her öneri ebeveyne anlaşılır, yargılamayan ve gözlenebilir bir gerekçeyle açıklanır.
+
+Doğrulama notu: **`personalization-policy-v1` karar motoru, iki bağımsız izin kapısı, beş farklı
+tamamlama eşiği, çoklu oturum sinyalleri, ebeveyn açıklama kartı ve private karar audit'i eklendi.
+Yerel Supabase sıfırdan kuruldu; R8.1'in 9 pgTAP testi dahil toplam 99 veritabanı testi ve
+kişiselleştirme paketinin 6 unit testi geçti. Eşiğin gerçek cihazda erişilebilir olması için yalnızca
+mevcut `scene-lost-toy` sembolünü ve Mino görsellerini kullanan beşinci kısa hikâye eklendi; içerik
+şeması testi beş oynanabilir hikâyeyi doğrular.**
 
 ### R9 — Admin paneli
 
@@ -579,7 +586,8 @@ uygulanmadı. Rehber dosyası teknik olarak hazırdır ancak pilot kullanımı i
 Doğrulama notu: **Yerel Supabase sıfırdan kuruldu; kuyruk, allowlist, onay/yayın, ret/silme,
 otomatik yönlendirme ve 15 günlük süre aşımı dahil monorepo genelinde 82 pgTAP testi geçti.
 Admin panelinin 3 unit testi, content-agent'ın 20 unit testi, TypeScript ve Next.js production build'i
-başarılıdır. Service-role anahtarı web istemcisine verilmez; kök sunucu ortamında kalır.**
+başarılıdır. İnceleme kuyruğu migration'ı staging projesine uygulanmıştır. Service-role anahtarı web
+istemcisine verilmez; kök sunucu ortamında kalır.**
 
 #### R9 sonraki editoryal araçlar
 
@@ -613,12 +621,28 @@ geçti. Video `happy/playing` adayı olarak kaydedildi fakat kare incelemesi tam
 
 ### R11 — Ebeveyn oturum özeti ve insight altyapısı
 
-- [ ] Tarafsız oturum özeti oluştur.
-- [ ] Cold start ekranını geliştir.
-- [ ] Insight uygunluk kapılarını uygula.
-- [ ] Şablon tabanlı nitel gözlemler oluştur.
-- [ ] Yüzde ve yaşıt karşılaştırmalarını yasaklayan testler ekle.
-- [ ] Yetersiz veride gözlem oluşmamasını test et.
+- [x] Tamamlanan hikâye sayısı ve son beş oturumu gösteren tarafsız ebeveyn özeti oluştur.
+- [x] İzin kapalı, hiç etkinlik yok ve yetersiz veri durumları için ayrı cold start ekranlarını geliştir.
+- [x] Öğrenme gözlemi izni, ebeveyn sahipliği ve en az üç uygun oturum kapılarını uygula.
+- [x] Yalnızca sabit, sürümlü ve tanısal olmayan nitel gözlem şablonları oluştur.
+- [x] Yüzde, puan, tanı ve yaşıt/akran karşılaştırmalarını yasaklayan unit testleri ekle.
+- [x] Yetersiz veride ve izin kapalıyken gözlem oluşmamasını test et.
+- [x] Ham seçimleri ve dokunma payload'larını ebeveyn özet RPC'sinden çıkar.
+- [x] Her özet uygunluk kararını private ve eklemeli audit tablosunda sakla.
+- [x] Ebeveynin yalnızca kendi çocuğunun özetini okuyabildiğini pgTAP testiyle doğrula.
+
+Doğrulama notu: **`@adaptive/parent-insights`, `parent-insight-policy-v1` uygunluk kapısı,
+`get_parent_session_summary` güvenli RPC'si, private audit tablosu ve mobil ebeveyn “Özet” ekranı
+tamamlandı. Üç uygun oturumdan önce nitel gözlem üretilmez; izin kapalıysa sayaç ve geçmiş dahi
+döndürülmez. Monorepo genelinde 91 unit test, yerel Supabase/PostgreSQL üzerinde 90 pgTAP testi,
+TypeScript, Biome ve Expo iOS export başarılıdır. R11 migration'ı `adaptive-kids-staging` projesine
+uygulanmıştır.**
+
+#### R11 kabul kriterleri
+
+- Ebeveyn özeti ham seçim, tekrar dokunması, yüzde, puan, tanı veya yaşıt karşılaştırması içermez.
+- İzin kapalıyken ve yeterli uygun oturum yokken nitel gözlem üretilmez.
+- Başka bir ebeveyn çocuğun özetine veya private audit kayıtlarına erişemez.
 
 ### R12 — Pilot
 
