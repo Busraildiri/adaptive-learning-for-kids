@@ -673,6 +673,76 @@
           "narration": "Mırmır şimdi yeni balonunu tutuyor ve yeniden neşeyle oynuyor."
         }
       ]
+    },
+    {
+      "id": "mino-lost-toy-story",
+      "version": 1,
+      "title": "Mino Oyuncağını Arıyor",
+      "ageBands": ["2-4"],
+      "targetSkills": ["emotion_recognition", "helping", "coping"],
+      "greetingTemplate": "Merhaba {{childName}}! Mino oyuncak ayısını arıyor. Birlikte bakalım mı?",
+      "sceneAssetId": "scene-lost-toy",
+      "characterAssets": {
+        "happyAssetId": "character-mino-happy",
+        "sadAssetId": "character-mino-sad"
+      },
+      "steps": [
+        {
+          "id": "toy-is-missing",
+          "type": "event",
+          "narration": "Mino oyuncak ayısını yatağının yanında bulamadı. Biraz durup etrafına bakıyor."
+        },
+        {
+          "id": "notice-lost-toy-emotion",
+          "type": "emotion_choice",
+          "prompt": "Oyuncağını bulamayan Mino nasıl hissediyor olabilir?",
+          "choices": [
+            {
+              "id": "lost-toy-sad",
+              "emotion": "sad",
+              "accessibilityLabel": "Üzgün yüz",
+              "supportiveFeedback": {
+                "narration": "Oyuncağını bulamayınca üzülmüş olabileceğini düşündün."
+              }
+            },
+            {
+              "id": "lost-toy-scared",
+              "emotion": "scared",
+              "accessibilityLabel": "Korkmuş yüz",
+              "supportiveFeedback": {
+                "narration": "Oyuncağının nerede olduğunu bilmeyince kaygılanmış olabileceğini düşündün."
+              }
+            }
+          ],
+          "storyResolution": {
+            "narration": "Sevdiğimiz bir şeyi bulamayınca üzgün ya da kaygılı hissedebiliriz. İki duygu da anlaşılabilir."
+          }
+        },
+        {
+          "id": "help-find-toy",
+          "type": "help_choice",
+          "prompt": "Mino'ya nasıl yardım etmek istersin?",
+          "choices": [
+            {
+              "id": "look-under-chair",
+              "action": "breathe",
+              "accessibilityLabel": "Sandalyenin altına birlikte bak",
+              "resultNarration": "Birlikte sandalyenin altına baktınız. Oyuncak ayı oradaymış!"
+            },
+            {
+              "id": "hug-before-looking",
+              "action": "hug",
+              "accessibilityLabel": "Mino'ya sarıl",
+              "resultNarration": "Mino'ya sarıldın. Hazır olunca birlikte aramaya devam ettiniz."
+            }
+          ]
+        },
+        {
+          "id": "lost-toy-finished",
+          "type": "closing",
+          "narration": "Mino oyuncak ayısını buldu. Birlikte aradığınız için sana teşekkür ediyor."
+        }
+      ]
     }
   ]
 }

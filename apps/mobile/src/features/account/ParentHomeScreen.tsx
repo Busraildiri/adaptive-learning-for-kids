@@ -6,6 +6,7 @@ import { AccountShell } from "./AccountShell";
 import { ChildConsentSettingsScreen } from "./ChildConsentSettingsScreen";
 import { ChildProfileForm } from "./ChildProfileForm";
 import { formStyles } from "./formStyles";
+import { ParentSessionSummaryScreen } from "./ParentSessionSummaryScreen";
 import { PasswordUpdateScreen } from "./PasswordUpdateScreen";
 
 export function ParentHomeScreen({
@@ -24,6 +25,7 @@ export function ParentHomeScreen({
   const [showForm, setShowForm] = useState(children.length === 0);
   const [showPasswordSettings, setShowPasswordSettings] = useState(false);
   const [settingsChild, setSettingsChild] = useState<ChildProfile | null>(null);
+  const [summaryChild, setSummaryChild] = useState<ChildProfile | null>(null);
   const [startingChildId, setStartingChildId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,6 +50,10 @@ export function ParentHomeScreen({
         }}
       />
     );
+  }
+
+  if (summaryChild) {
+    return <ParentSessionSummaryScreen child={summaryChild} onBack={() => setSummaryChild(null)} />;
   }
 
   if (showForm) {
@@ -92,6 +98,9 @@ export function ParentHomeScreen({
               </Text>
             </View>
             <View style={styles.childActions}>
+              <Pressable onPress={() => setSummaryChild(child)} style={styles.summaryButton}>
+                <Text style={styles.summaryButtonText}>Özet</Text>
+              </Pressable>
               <Pressable onPress={() => setSettingsChild(child)} style={styles.settingsButton}>
                 <Text style={styles.settingsButtonText}>İzinler</Text>
               </Pressable>
@@ -175,6 +184,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#EAF5F2",
   },
+  summaryButton: {
+    alignItems: "center",
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: "#F7EEF9",
+  },
+  summaryButtonText: { color: "#75547E", fontSize: 12, fontWeight: "900" },
   settingsButtonText: { color: "#216D61", fontSize: 12, fontWeight: "900" },
   startButton: {
     paddingHorizontal: 16,

@@ -267,6 +267,24 @@ Kural tabanlı seçici önce henüz tamamlanmamış, sonra daha az uygulanan ve 
 tamamlanmayan etkinliği öne çıkarır. Karar; adaylar, neden kodu, açıklama ve aktif eşik sürümüyle
 private logda saklanır. Bu mekanizma tanı, beceri puanı veya akran karşılaştırması üretmez.
 
+### Ebeveyn oturum özeti
+
+`@adaptive/parent-insights`, ebeveyn alanında yalnızca tamamlanan hikâye sayısını, son beş etkinliği
+ve uygunluk kapısı açıldığında sabit bir nitel gözlemi gösterir. Öğrenme gözlemi izni kapalıysa veri
+fail-closed biçimde gizlenir; üç `valid_evidence` veya `limited_evidence` oturumundan önce gözlem
+üretilmez. Özet RPC'si ham seçimleri ve dokunma payload'larını döndürmez; yüzde, puan, tanı ve
+yaşıt/akran karşılaştırması sözleşme testleriyle yasaktır. Her özet kararı sürümlü politika koduyla
+private audit tablosuna eklenir ve ebeveyn sahipliği sunucuda yeniden doğrulanır.
+
+### Açıklanabilir kişiselleştirme
+
+`@adaptive/personalization-engine`, yalnızca `personalization` ve `learning_observations` izinleri
+birlikte açıkken ve en az beş farklı hikâye tamamlandığında önerileri uyarlayabilir. Tek dokunuşlar,
+yarıda bırakılan hikâyeler ve tek oturumluk sinyaller kalıcı çıkarım üretmez; öneri için en az iki ayrı
+oturumda tekrar seçimi veya yardım tercihi aranır. Koşullar sağlanmazsa sistem genel hikâye
+rotasyonuna döner. Son kararın gözlenebilir gerekçesi ebeveyn oturum özetinde gösterilir ve sürümlü
+private audit kaydında saklanır.
+
 Sonraki aşamada değerlendirilebilecekler:
 
 - Apple ile giriş.

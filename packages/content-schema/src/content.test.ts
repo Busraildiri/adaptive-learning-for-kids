@@ -48,12 +48,12 @@ describe("Turkish content v1", () => {
     }
   });
 
-  it("contains four valid playable stories", () => {
+  it("contains five valid playable stories so the personalization gate is reachable", () => {
     const content = contentVersionSchema.parse(contentV1);
     const story = content.stories[0];
     const stepTypes = story.steps.map((step) => step.type);
 
-    expect(content.stories).toHaveLength(4);
+    expect(content.stories).toHaveLength(5);
     expect(story.ageBands).toContain("2-4");
     expect(stepTypes.filter((type) => type === "emotion_choice")).toHaveLength(1);
     expect(new Set(stepTypes)).toEqual(
@@ -63,7 +63,11 @@ describe("Turkish content v1", () => {
 
   it("uses existing scene symbols and gives every emotion its own non-judgmental feedback", () => {
     const content = contentVersionSchema.parse(contentV1);
-    const expectedSceneAssets = new Set(["scene-block-tower", "scene-friend-goodbye"]);
+    const expectedSceneAssets = new Set([
+      "scene-block-tower",
+      "scene-friend-goodbye",
+      "scene-lost-toy",
+    ]);
     const newStories = content.stories.filter(
       (story) => story.id !== "mino-balloon-story" && story.id.startsWith("mino-"),
     );

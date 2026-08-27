@@ -429,7 +429,7 @@ export function MinoStory({
         </Pressable>
 
         <Pressable
-          accessibilityLabel="Hikâye seçimine dön"
+          accessibilityLabel="Hikâyeyi kapat"
           accessibilityRole="button"
           onPress={() => {
             if (mode !== "COMPLETED") void recorder.record("activity_abandoned", { stepIndex });
@@ -437,7 +437,7 @@ export function MinoStory({
           }}
           style={styles.storySelectionButton}
         >
-          <Text style={styles.storySelectionSymbol}>★</Text>
+          <Text style={styles.storySelectionSymbol}>×</Text>
         </Pressable>
 
         <View style={styles.progressRow}>
@@ -655,14 +655,16 @@ const styles = StyleSheet.create({
     top: 8,
     left: 14,
     zIndex: 30,
-    width: 36,
-    height: 36,
+    width: 48,
+    height: 48,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 18,
-    backgroundColor: "#FFFFFFCC",
+    borderWidth: 3,
+    borderColor: "#FFFFFF",
+    borderRadius: 24,
+    backgroundColor: "#E94F4F",
   },
-  storySelectionSymbol: { color: "#2D8C7C", fontSize: 20 },
+  storySelectionSymbol: { color: "#FFFFFF", fontSize: 36, fontWeight: "900", lineHeight: 38 },
   progressDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: "#DDCFBE" },
   progressDotActive: { width: 24, backgroundColor: "#2D8C7C" },
   scene: {
