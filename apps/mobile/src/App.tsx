@@ -1,3 +1,5 @@
+import { contentVersionSchema } from "@adaptive/content-schema";
+import contentV1 from "@adaptive/content-schema/content/tr-TR/v1";
 import {
   type ChildProfile,
   type ChildSessionProfile,
@@ -19,8 +21,10 @@ import {
 } from "./features/account/PasswordUpdateScreen";
 import { SetupRequiredScreen } from "./features/account/SetupRequiredScreen";
 import { MinoStory } from "./features/story/MinoStory";
+import { StorySelectionScreen } from "./features/story/StorySelectionScreen";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
 import { loadChildProfiles, loadParentProfile } from "./services/account";
+import { selectNextStory } from "./services/activitySelection";
 import { completePasswordRecoveryRedirect, isPasswordRecoveryUrl } from "./services/authDeepLink";
 import {
   clearPersistedActiveChildId,
@@ -28,8 +32,11 @@ import {
   persistActiveChildId,
 } from "./services/childMode";
 import { loadChildConsentSettings } from "./services/consents";
+import { initializeInteractionEventSync } from "./services/interactionEvents";
 
 type PasswordRecoveryStatus = "checking" | "idle" | "processing" | "ready" | "error";
+
+const content = contentVersionSchema.parse(contentV1);
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -40,10 +47,14 @@ export default function App() {
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [activeChild, setActiveChild] = useState<ChildSessionProfile | null>(null);
   const [showParentPinGate, setShowParentPinGate] = useState(false);
+  const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
+  const [recommendedStoryId, setRecommendedStoryId] = useState<string | null>(null);
   const [passwordRecoveryStatus, setPasswordRecoveryStatus] =
     useState<PasswordRecoveryStatus>("checking");
   const [passwordRecoveryError, setPasswordRecoveryError] = useState<string | null>(null);
   const handledRecoveryUrl = useRef<string | null>(null);
+
+  useEffect(() => initializeInteractionEventSync(), []);
 
   const refreshAccount = useCallback(async (userId: string) => {
     setLoadingAccount(true);
@@ -65,6 +76,7 @@ export default function App() {
         setActiveChild(
           createChildSessionProfile(persistedChild, {
             personalizationEnabled: consentSettings.personalization,
+            learningObservationsEnabled: consentSettings.learning_observations,
           }),
         );
       } else {
@@ -100,6 +112,7 @@ export default function App() {
         setChildren([]);
         setActiveChild(null);
         setShowParentPinGate(false);
+        setSelectedStoryId(null);
         void clearPersistedActiveChildId();
       }
     });
@@ -152,6 +165,27 @@ export default function App() {
   }, []);
 
   const sessionUserId = session?.user.id;
+
+  useEffect(() => {
+    if (!activeChild) {
+      setRecommendedStoryId(null);
+      return;
+    }
+    let cancelled = false;
+    void selectNextStory(
+      activeChild.id,
+      content.stories.map((story) => story.id),
+    )
+      .then((decision) => {
+        if (!cancelled) setRecommendedStoryId(decision.selectedActivityId);
+      })
+      .catch(() => {
+        if (!cancelled) setRecommendedStoryId(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeChild]);
 
   useEffect(() => {
     if (!sessionUserId) return;
@@ -241,7 +275,29 @@ export default function App() {
   }
 
   if (activeChild) {
-    return <MinoStory child={activeChild} onRequestParentArea={() => setShowParentPinGate(true)} />;
+    const selectedStory = content.stories.find((story) => story.id === selectedStoryId);
+
+    if (!selectedStory) {
+      return (
+        <StorySelectionScreen
+          assets={content.assets}
+          childName={activeChild.nickname}
+          onRequestParentArea={() => setShowParentPinGate(true)}
+          onSelectStory={setSelectedStoryId}
+          recommendedStoryId={recommendedStoryId}
+          stories={content.stories}
+        />
+      );
+    }
+
+    return (
+      <MinoStory
+        child={activeChild}
+        onRequestParentArea={() => setShowParentPinGate(true)}
+        onRequestStorySelection={() => setSelectedStoryId(null)}
+        story={selectedStory}
+      />
+    );
   }
 
   return (
@@ -256,9 +312,11 @@ export default function App() {
       onStartChildMode={async (profile) => {
         const consentSettings = await loadChildConsentSettings(profile.id);
         await persistActiveChildId(profile.id);
+        setSelectedStoryId(null);
         setActiveChild(
           createChildSessionProfile(profile, {
             personalizationEnabled: consentSettings.personalization,
+            learningObservationsEnabled: consentSettings.learning_observations,
           }),
         );
       }}

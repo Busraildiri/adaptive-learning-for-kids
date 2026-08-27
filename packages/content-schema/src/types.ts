@@ -3,7 +3,9 @@ import type {
   activitySchema,
   activityTypeSchema,
   ageBandSchema,
+  assetPresentationSchema,
   assetSchema,
+  assetSemanticSchema,
   assetTypeSchema,
   choiceSchema,
   contentStatusSchema,
@@ -25,6 +27,8 @@ export type EmotionId = z.infer<typeof emotionIdSchema>;
 export type HelpAction = z.infer<typeof helpActionSchema>;
 export type AssetType = z.infer<typeof assetTypeSchema>;
 export type Asset = z.infer<typeof assetSchema>;
+export type AssetPresentation = z.infer<typeof assetPresentationSchema>;
+export type AssetSemantic = z.infer<typeof assetSemanticSchema>;
 export type SupportiveFeedback = z.infer<typeof supportiveFeedbackSchema>;
 export type StoryResolution = z.infer<typeof storyResolutionSchema>;
 export type Choice = z.infer<typeof choiceSchema>;

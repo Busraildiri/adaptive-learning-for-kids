@@ -1,6 +1,6 @@
 {
   "schemaVersion": "0.2.0",
-  "contentVersion": "1.1.0",
+  "contentVersion": "1.2.0",
   "locale": "tr-TR",
   "status": "draft",
   "createdAt": "2026-08-26T12:00:00.000Z",
@@ -18,6 +18,93 @@
       "uri": "app-assets:characters/mino-sad-v2.png",
       "mimeType": "image/png",
       "accessibilityLabel": "Balonu patladığı için üzgün görünen tavşan Mino"
+    },
+    {
+      "id": "character-mirmir-red-balloon-happy",
+      "type": "image",
+      "uri": "app-assets:characters/mirmir-happy.jpg",
+      "mimeType": "image/jpeg",
+      "accessibilityLabel": "Parkta kırmızı balonunu tutarken mutlu görünen kedi Mırmır",
+      "presentation": {
+        "aspectRatio": 0.8,
+        "fit": "cover",
+        "focalPoint": { "x": 0.52, "y": 0.52 }
+      },
+      "semantic": {
+        "character": "mirmir",
+        "object": "red-balloon",
+        "eventState": "holding",
+        "emotion": "happy",
+        "allowedNarrativeTerms": ["mutlu", "neşeli", "balonu tutuyor", "balonuyla oynuyor"],
+        "prohibitedNarrativeTerms": ["üzgün", "kızgın", "korkmuş", "balon patladı"],
+        "reviewStatus": "approved",
+        "rightsStatus": "cleared",
+        "provenance": {
+          "source": "gemini-apps",
+          "aiGenerated": true,
+          "generatedByUser": true,
+          "thirdPartyReferencesDeclared": false,
+          "disclosure": "Google Gemini ile yapay zekâ tarafından üretildi"
+        }
+      }
+    },
+    {
+      "id": "character-mirmir-red-balloon-sad",
+      "type": "image",
+      "uri": "app-assets:characters/mirmir-sad.jpg",
+      "mimeType": "image/jpeg",
+      "accessibilityLabel": "Kırmızı balonu patladığında üzgün görünen kedi Mırmır",
+      "presentation": {
+        "aspectRatio": 0.8,
+        "fit": "cover",
+        "focalPoint": { "x": 0.52, "y": 0.5 }
+      },
+      "semantic": {
+        "character": "mirmir",
+        "object": "red-balloon",
+        "eventState": "popped",
+        "emotion": "sad",
+        "allowedNarrativeTerms": ["üzgün", "balon patladı", "balonu patladı"],
+        "prohibitedNarrativeTerms": ["mutlu", "neşeli", "kızgın", "korkmuş", "balon sağlam"],
+        "reviewStatus": "approved",
+        "rightsStatus": "cleared",
+        "provenance": {
+          "source": "gemini-apps",
+          "aiGenerated": true,
+          "generatedByUser": true,
+          "thirdPartyReferencesDeclared": false,
+          "disclosure": "Google Gemini ile yapay zekâ tarafından üretildi"
+        }
+      }
+    },
+    {
+      "id": "character-mirmir-red-balloon-playing-video",
+      "type": "video",
+      "uri": "app-assets:characters/mirmir-balloon.mp4",
+      "mimeType": "video/mp4",
+      "accessibilityLabel": "Kırmızı balonuyla oynayan kedi Mırmır",
+      "presentation": {
+        "aspectRatio": 0.8,
+        "fit": "cover",
+        "focalPoint": { "x": 0.5, "y": 0.5 }
+      },
+      "semantic": {
+        "character": "mirmir",
+        "object": "red-balloon",
+        "eventState": "playing",
+        "emotion": "happy",
+        "allowedNarrativeTerms": ["mutlu", "neşeli", "balonuyla oynuyor"],
+        "prohibitedNarrativeTerms": ["üzgün", "kızgın", "korkmuş", "balon patladı"],
+        "reviewStatus": "pending",
+        "rightsStatus": "cleared",
+        "provenance": {
+          "source": "gemini-apps",
+          "aiGenerated": true,
+          "generatedByUser": true,
+          "thirdPartyReferencesDeclared": false,
+          "disclosure": "Google Gemini ile yapay zekâ tarafından üretildi"
+        }
+      }
     },
     {
       "id": "scene-lost-toy",
@@ -288,6 +375,7 @@
       "ageBands": ["2-4"],
       "targetSkills": ["emotion_recognition", "helping", "co_regulation"],
       "greetingTemplate": "Merhaba {{childName}}! Ben Mino. Benimle balon oynar mısın?",
+      "sceneAssetId": "scene-birthday-balloons",
       "characterAssets": {
         "happyAssetId": "character-mino-happy",
         "sadAssetId": "character-mino-sad"
@@ -385,6 +473,204 @@
           "id": "story-finished",
           "type": "closing",
           "narration": "Mino şimdi kendini biraz daha iyi hissediyor. Ona yardım ettiğin için teşekkür ederim!"
+        }
+      ]
+    },
+    {
+      "id": "mino-block-tower-story",
+      "version": 1,
+      "title": "Mino'nun Kulesi",
+      "ageBands": ["2-4"],
+      "targetSkills": ["emotion_recognition", "coping", "helping"],
+      "greetingTemplate": "Merhaba {{childName}}! Mino bloklarla yüksek bir kule yapıyor. Birlikte bakalım mı?",
+      "sceneAssetId": "scene-block-tower",
+      "characterAssets": {
+        "happyAssetId": "character-mino-happy",
+        "sadAssetId": "character-mino-sad"
+      },
+      "steps": [
+        {
+          "id": "tower-falls",
+          "type": "event",
+          "narration": "Mino son bloğu koyarken kule devrildi. Bloklar yere dağıldı."
+        },
+        {
+          "id": "notice-tower-emotion",
+          "type": "emotion_choice",
+          "prompt": "Kulesi yıkılan Mino nasıl hissediyor olabilir?",
+          "choices": [
+            {
+              "id": "tower-sad",
+              "emotion": "sad",
+              "accessibilityLabel": "Üzgün yüz",
+              "supportiveFeedback": {
+                "narration": "Emek verdiği kule yıkılınca üzülmüş olabileceğini düşündün."
+              }
+            },
+            {
+              "id": "tower-angry",
+              "emotion": "angry",
+              "accessibilityLabel": "Kızgın yüz",
+              "supportiveFeedback": {
+                "narration": "Kulesi birden yıkılınca kızmış olabileceğini düşündün."
+              }
+            }
+          ],
+          "storyResolution": {
+            "narration": "Bazen bir şey yıkıldığında üzgün ya da kızgın hissedebiliriz. İki duygu da anlaşılabilir."
+          }
+        },
+        {
+          "id": "help-rebuild",
+          "type": "help_choice",
+          "prompt": "Mino'ya nasıl eşlik etmek istersin?",
+          "choices": [
+            {
+              "id": "hug-after-tower",
+              "action": "hug",
+              "accessibilityLabel": "Mino'ya sarıl",
+              "resultNarration": "Mino'ya sarıldın. Mino yanında olduğunu hissetti."
+            },
+            {
+              "id": "breathe-after-tower",
+              "action": "breathe",
+              "accessibilityLabel": "Mino ile nefes al",
+              "resultNarration": "Mino'yla yavaşça nefes aldın. Yeniden denemeye hazır hissediyor."
+            }
+          ]
+        },
+        {
+          "id": "tower-finished",
+          "type": "closing",
+          "narration": "Mino blokları topladı. Hazır olduğunda kulesini yeniden deneyebilir."
+        }
+      ]
+    },
+    {
+      "id": "mino-friend-goodbye-story",
+      "version": 1,
+      "title": "Mino Arkadaşına Veda Ediyor",
+      "ageBands": ["2-4"],
+      "targetSkills": ["emotion_recognition", "separation", "co_regulation"],
+      "greetingTemplate": "Merhaba {{childName}}! Mino arkadaşıyla güzel bir oyun oynadı. Şimdi veda zamanı.",
+      "sceneAssetId": "scene-friend-goodbye",
+      "characterAssets": {
+        "happyAssetId": "character-mino-happy",
+        "sadAssetId": "character-mino-sad"
+      },
+      "steps": [
+        {
+          "id": "friend-leaves",
+          "type": "event",
+          "narration": "Mino'nun arkadaşı evine gidiyor ve ona el sallıyor."
+        },
+        {
+          "id": "notice-goodbye-emotion",
+          "type": "emotion_choice",
+          "prompt": "Arkadaşı giderken Mino nasıl hissediyor olabilir?",
+          "choices": [
+            {
+              "id": "goodbye-sad",
+              "emotion": "sad",
+              "accessibilityLabel": "Üzgün yüz",
+              "supportiveFeedback": {
+                "narration": "Oyunun bitmesine üzülmüş olabileceğini düşündün."
+              }
+            },
+            {
+              "id": "goodbye-happy",
+              "emotion": "happy",
+              "accessibilityLabel": "Mutlu yüz",
+              "supportiveFeedback": {
+                "narration": "Birlikte oynadıkları güzel zamanı düşününce mutlu olabileceğini düşündün."
+              }
+            }
+          ],
+          "storyResolution": {
+            "narration": "Vedalarda aynı anda hem üzgün hem de güzel anılar için mutlu hissedebiliriz."
+          }
+        },
+        {
+          "id": "goodbye-breath",
+          "type": "breathing",
+          "narration": "Mino'yla bir kez yavaşça nefes alalım. İçeri... ve dışarı...",
+          "cycles": 1
+        },
+        {
+          "id": "goodbye-finished",
+          "type": "closing",
+          "narration": "Mino arkadaşına el salladı. Başka bir gün yeniden oynayabileceklerini biliyor."
+        }
+      ]
+    },
+    {
+      "id": "mirmir-red-balloon-story",
+      "version": 1,
+      "title": "Mırmır'ın Kırmızı Balonu",
+      "ageBands": ["2-4"],
+      "targetSkills": ["emotion_recognition", "coping", "helping"],
+      "greetingTemplate": "Merhaba {{childName}}! Mırmır kırmızı balonuyla neşeyle oynuyor.",
+      "sceneAssetId": "character-mirmir-red-balloon-happy",
+      "introVideoAssetId": "character-mirmir-red-balloon-playing-video",
+      "characterAssets": {
+        "happyAssetId": "character-mirmir-red-balloon-happy",
+        "sadAssetId": "character-mirmir-red-balloon-sad"
+      },
+      "steps": [
+        {
+          "id": "mirmir-balloon-pops",
+          "type": "event",
+          "narration": "Pat! Mırmır'ın kırmızı balonu patladı. Mırmır üzgün görünüyor."
+        },
+        {
+          "id": "notice-mirmir-emotion",
+          "type": "emotion_choice",
+          "prompt": "Mırmır nasıl hissediyor olabilir?",
+          "choices": [
+            {
+              "id": "mirmir-sad-choice",
+              "emotion": "sad",
+              "accessibilityLabel": "Üzgün yüz",
+              "supportiveFeedback": {
+                "narration": "Üzgün olabileceğini düşündün. Balonunun patlaması onu üzmüş olabilir."
+              }
+            },
+            {
+              "id": "mirmir-scared-choice",
+              "emotion": "scared",
+              "accessibilityLabel": "Korkmuş yüz",
+              "supportiveFeedback": {
+                "narration": "Patlama sesinden korkmuş olabileceğini düşündün. Böyle hissetmek anlaşılabilir."
+              }
+            }
+          ],
+          "storyResolution": {
+            "narration": "Bu hikâyede Mırmır balonu patladığı için üzgün hissediyor."
+          }
+        },
+        {
+          "id": "help-mirmir",
+          "type": "help_choice",
+          "prompt": "Mırmır'a nasıl eşlik etmek istersin?",
+          "choices": [
+            {
+              "id": "hug-mirmir",
+              "action": "hug",
+              "accessibilityLabel": "Mırmır'a sarıl",
+              "resultNarration": "Mırmır'a sıcacık sarıldın. Yanında olduğunu hissetti."
+            },
+            {
+              "id": "new-balloon-for-mirmir",
+              "action": "new_balloon",
+              "accessibilityLabel": "Mırmır'a yeni balon ver",
+              "resultNarration": "Mırmır'a yeni bir kırmızı balon verdin. Mırmır teşekkür ediyor."
+            }
+          ]
+        },
+        {
+          "id": "mirmir-finished",
+          "type": "closing",
+          "narration": "Mırmır şimdi yeni balonunu tutuyor ve yeniden neşeyle oynuyor."
         }
       ]
     }

@@ -122,7 +122,7 @@ select results_eq(
 select results_eq(
   $$select favorite_animals from public.child_profiles
     where id = 'cccccccc-cccc-cccc-cccc-cccccccccccc'$$,
-  array[array['tavşan']::text[]],
+  $$values (array['tavşan']::text[])$$,
   'consented personalization data is stored'
 );
 

@@ -44,7 +44,11 @@ describe("child age bands", () => {
           favoriteToys: ["balon"],
           interests: ["renkler"],
         },
-        { personalizationEnabled: true, today: august2026 },
+        {
+          personalizationEnabled: true,
+          learningObservationsEnabled: true,
+          today: august2026,
+        },
       ),
     ).toEqual({
       id: "child-1",
@@ -52,6 +56,7 @@ describe("child age bands", () => {
       ageBand: "2-4",
       contentLocale: "tr-TR",
       personalizationEnabled: true,
+      learningObservationsEnabled: true,
       favoriteAnimals: ["tavşan"],
       favoriteToys: ["balon"],
       interests: ["renkler"],
@@ -75,7 +80,11 @@ describe("child age bands", () => {
         favoriteToys: ["balon"],
         interests: ["renkler"],
       },
-      { personalizationEnabled: false, today: august2026 },
+      {
+        personalizationEnabled: false,
+        learningObservationsEnabled: false,
+        today: august2026,
+      },
     );
 
     expect(session.personalizationEnabled).toBe(false);

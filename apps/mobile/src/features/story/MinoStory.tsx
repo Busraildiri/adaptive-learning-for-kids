@@ -2,13 +2,15 @@ import {
   contentVersionSchema,
   type EmotionId,
   type HelpAction,
+  type Story,
   type StoryStep,
 } from "@adaptive/content-schema";
 import contentV1 from "@adaptive/content-schema/content/tr-TR/v1";
 import type { ChildSessionProfile } from "@adaptive/shared-types";
 import * as Speech from "expo-speech";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useVideoPlayer, VideoView } from "expo-video";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Image,
@@ -19,23 +21,21 @@ import {
   Text,
   View,
 } from "react-native";
+import { createActivityEventRecorder } from "../../services/interactionEvents";
+import { getEmotionPresentation } from "./emotionPresentation";
 
 const content = contentVersionSchema.parse(contentV1);
-const story = content.stories[0];
-
-if (!story) {
-  throw new Error("The mobile prototype requires one playable story.");
-}
-
 const CHARACTER_ASSETS: Record<string, ImageSourcePropType> = {
   "character-mino-happy": require("../../../assets/characters/mino-happy.png"),
   "character-mino-sad": require("../../../assets/characters/mino-sad-v2.png"),
+  "character-mirmir-red-balloon-happy": require("../../../assets/characters/mirmir-happy.jpg"),
+  "character-mirmir-red-balloon-sad": require("../../../assets/characters/mirmir-sad.jpg"),
+};
+const VIDEO_ASSETS: Record<string, number> = {
+  "character-mirmir-red-balloon-playing-video": require("../../../assets/characters/mirmir-balloon.mp4"),
 };
 
 const PREFERRED_TURKISH_VOICE_NAMES = ["yelda", "seda"];
-const POP_STEP_INDEX = story.steps.findIndex((step) => step.type === "event");
-const HELP_STEP_INDEX = story.steps.findIndex((step) => step.type === "help_choice");
-
 type PlayerMode =
   | "GREETING"
   | "PLAYING_PROMPT"
@@ -72,6 +72,32 @@ function getCharacterAsset(assetId: string): ImageSourcePropType {
   return source;
 }
 
+function getVideoAsset(assetId: string): number {
+  const source = VIDEO_ASSETS[assetId];
+  if (!source) throw new Error(`Missing bundled video asset: ${assetId}`);
+  return source;
+}
+
+function StoryIntroVideo({ assetId }: { assetId: string }) {
+  const player = useVideoPlayer(getVideoAsset(assetId), (instance) => {
+    instance.loop = true;
+    instance.muted = true;
+    instance.play();
+  });
+
+  return (
+    <View style={styles.mediaFrame}>
+      <VideoView
+        allowsFullscreen={false}
+        contentFit="cover"
+        nativeControls={false}
+        player={player}
+        style={styles.mediaFill}
+      />
+    </View>
+  );
+}
+
 function Balloon({ color, scale = 1 }: { color: string; scale?: number }) {
   return (
     <View style={[styles.balloonWrap, { transform: [{ scale }] }]}>
@@ -83,15 +109,21 @@ function Balloon({ color, scale = 1 }: { color: string; scale?: number }) {
 }
 
 function EmotionFace({ emotion }: { emotion: EmotionId }) {
-  const isSad = emotion === "sad";
+  const presentation = getEmotionPresentation(emotion, content.assets);
 
   return (
-    <View style={[styles.face, { backgroundColor: isSad ? "#9CCFE3" : "#C4A9E8" }]}>
-      <View style={styles.eyesRow}>
-        <View style={styles.eye} />
-        <View style={styles.eye} />
-      </View>
-      <View style={isSad ? styles.sadMouth : styles.scaredMouth} />
+    <View
+      accessibilityLabel={presentation.accessibilityLabel}
+      style={[
+        styles.emotionChoiceContent,
+        {
+          backgroundColor: presentation.backgroundColor,
+          borderColor: presentation.borderColor,
+          borderRadius: presentation.borderRadius,
+        },
+      ]}
+    >
+      <Text style={styles.emotionSymbol}>{presentation.symbol}</Text>
     </View>
   );
 }
@@ -125,10 +157,14 @@ function HelpVisual({ action }: { action: HelpAction }) {
 
 export function MinoStory({
   child,
+  story,
   onRequestParentArea,
+  onRequestStorySelection,
 }: {
   child: ChildSessionProfile;
+  story: Story;
   onRequestParentArea: () => void;
+  onRequestStorySelection: () => void;
 }) {
   const [mode, setMode] = useState<PlayerMode>("GREETING");
   const [stepIndex, setStepIndex] = useState(-1);
@@ -136,10 +172,48 @@ export function MinoStory({
   const [selectedColor, setSelectedColor] = useState("#F46F5E");
   const [selectedHelp, setSelectedHelp] = useState<HelpAction | null>(null);
   const [tapCount, setTapCount] = useState(0);
+  const [runId, setRunId] = useState(0);
   const [voiceIdentifier, setVoiceIdentifier] = useState<string | null | undefined>(undefined);
   const balloonBounce = useRef(new Animated.Value(0.74)).current;
   const breathScale = useRef(new Animated.Value(0.7)).current;
+  const recordedSteps = useRef(new Set<string>());
+  const recorder = useMemo(
+    () =>
+      createActivityEventRecorder({
+        childId: child.id,
+        activityId: story.id,
+        enabled: child.learningObservationsEnabled,
+      }),
+    [child.id, child.learningObservationsEnabled, runId],
+  );
   const currentStep = stepIndex >= 0 ? story.steps[stepIndex] : undefined;
+  const eventStepIndex = story.steps.findIndex((step) => step.type === "event");
+  const recoveryStepIndex = story.steps.findIndex(
+    (step, index) =>
+      index > eventStepIndex &&
+      (step.type === "help_choice" || step.type === "breathing" || step.type === "closing"),
+  );
+  const sceneAsset = content.assets.find((asset) => asset.id === story.sceneAssetId);
+  const sceneSymbol =
+    sceneAsset?.type === "symbol" && sceneAsset.uri.startsWith("emoji:")
+      ? sceneAsset.uri.slice("emoji:".length)
+      : null;
+
+  useEffect(() => {
+    void recorder.record("activity_started", { contentVersion: content.contentVersion });
+  }, [recorder]);
+
+  useEffect(() => {
+    if (!currentStep || mode !== "WAITING_FOR_INPUT" || recordedSteps.current.has(currentStep.id)) {
+      return;
+    }
+    recordedSteps.current.add(currentStep.id);
+    void recorder.record("step_presented", { stepId: currentStep.id, stepType: currentStep.type });
+  }, [currentStep, mode, recorder]);
+
+  useEffect(() => {
+    if (mode === "COMPLETED") void recorder.record("activity_completed");
+  }, [mode, recorder]);
 
   const advanceStep = useCallback(() => {
     setPendingNarration(null);
@@ -303,17 +377,25 @@ export function MinoStory({
     setTapCount(0);
     balloonBounce.setValue(0.74);
     breathScale.setValue(0.7);
+    recordedSteps.current.clear();
+    setRunId((current) => current + 1);
     setMode("GREETING");
   };
 
   const isSad =
-    stepIndex >= POP_STEP_INDEX && stepIndex <= HELP_STEP_INDEX && selectedHelp === null;
+    eventStepIndex >= 0 &&
+    stepIndex >= eventStepIndex &&
+    (recoveryStepIndex < 0 ||
+      stepIndex < recoveryStepIndex ||
+      (stepIndex === recoveryStepIndex && currentStep?.type === "help_choice" && !selectedHelp));
   const characterAssetId = isSad
     ? story.characterAssets.sadAssetId
     : story.characterAssets.happyAssetId;
   const characterLabel = content.assets.find(
     (asset) => asset.id === characterAssetId,
   )?.accessibilityLabel;
+  const characterAsset = content.assets.find((asset) => asset.id === characterAssetId);
+  const showIntroVideo = mode === "GREETING" && Boolean(story.introVideoAssetId);
   const prompt = currentStep ? getStepNarration(currentStep) : "";
   const isSpeaking =
     mode === "GREETING" || mode === "PLAYING_PROMPT" || mode === "PLAYING_RESPONSE";
@@ -337,10 +419,25 @@ export function MinoStory({
         <Pressable
           accessibilityLabel="Ebeveyn alanına dön"
           accessibilityRole="button"
-          onPress={onRequestParentArea}
+          onPress={() => {
+            if (mode !== "COMPLETED") void recorder.record("activity_abandoned", { stepIndex });
+            onRequestParentArea();
+          }}
           style={styles.parentGateButton}
         >
           <Text style={styles.parentGateSymbol}>●</Text>
+        </Pressable>
+
+        <Pressable
+          accessibilityLabel="Hikâye seçimine dön"
+          accessibilityRole="button"
+          onPress={() => {
+            if (mode !== "COMPLETED") void recorder.record("activity_abandoned", { stepIndex });
+            onRequestStorySelection();
+          }}
+          style={styles.storySelectionButton}
+        >
+          <Text style={styles.storySelectionSymbol}>★</Text>
         </Pressable>
 
         <View style={styles.progressRow}>
@@ -353,12 +450,31 @@ export function MinoStory({
         </View>
 
         <View style={styles.scene}>
-          <Image
-            accessibilityLabel={characterLabel}
-            resizeMode="contain"
-            source={getCharacterAsset(characterAssetId)}
-            style={styles.character}
-          />
+          {showIntroVideo && story.introVideoAssetId ? (
+            <StoryIntroVideo assetId={story.introVideoAssetId} />
+          ) : characterAsset?.presentation?.fit === "cover" ? (
+            <View style={styles.mediaFrame}>
+              <Image
+                accessibilityLabel={characterLabel}
+                resizeMode="cover"
+                source={getCharacterAsset(characterAssetId)}
+                style={styles.mediaFill}
+              />
+            </View>
+          ) : (
+            <Image
+              accessibilityLabel={characterLabel}
+              resizeMode="contain"
+              source={getCharacterAsset(characterAssetId)}
+              style={styles.character}
+            />
+          )}
+
+          {sceneSymbol && (
+            <Text accessibilityLabel={sceneAsset?.accessibilityLabel} style={styles.sceneSymbol}>
+              {sceneSymbol}
+            </Text>
+          )}
 
           {currentStep?.type === "tap" && (
             <View pointerEvents="none" style={styles.pumpTarget}>
@@ -368,7 +484,9 @@ export function MinoStory({
             </View>
           )}
 
-          {currentStep?.type === "event" && <View style={styles.popBurst} />}
+          {story.id === "mino-balloon-story" && currentStep?.type === "event" && (
+            <View style={styles.popBurst} />
+          )}
 
           {mode === "BREATHING" && (
             <Animated.View style={[styles.breathBubble, { transform: [{ scale: breathScale }] }]} />
@@ -391,6 +509,10 @@ export function MinoStory({
                 disabled={mode !== "WAITING_FOR_INPUT"}
                 key={choice.id}
                 onPress={() => {
+                  void recorder.record("choice_selected", {
+                    stepId: currentStep.id,
+                    choiceId: choice.id,
+                  });
                   setSelectedColor(choice.visual.color);
                   playResponse(choice.acknowledgement);
                 }}
@@ -414,11 +536,15 @@ export function MinoStory({
                 accessibilityRole="button"
                 disabled={mode !== "WAITING_FOR_INPUT"}
                 key={choice.id}
-                onPress={() =>
+                onPress={() => {
+                  void recorder.record("choice_selected", {
+                    stepId: currentStep.id,
+                    choiceId: choice.id,
+                  });
                   playResponse(
                     `${choice.supportiveFeedback.narration} ${currentStep.storyResolution.narration}`,
-                  )
-                }
+                  );
+                }}
                 style={({ pressed }) => [
                   styles.visualChoice,
                   mode !== "WAITING_FOR_INPUT" && styles.disabledChoice,
@@ -440,6 +566,10 @@ export function MinoStory({
                 disabled={mode !== "WAITING_FOR_INPUT"}
                 key={choice.id}
                 onPress={() => {
+                  void recorder.record("hint_requested", {
+                    stepId: currentStep.id,
+                    action: choice.action,
+                  });
                   setSelectedHelp(choice.action);
                   playResponse(choice.resultNarration);
                 }}
@@ -520,6 +650,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFFCC",
   },
   parentGateSymbol: { color: "#887867", fontSize: 18 },
+  storySelectionButton: {
+    position: "absolute",
+    top: 8,
+    left: 14,
+    zIndex: 30,
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 18,
+    backgroundColor: "#FFFFFFCC",
+  },
+  storySelectionSymbol: { color: "#2D8C7C", fontSize: 20 },
   progressDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: "#DDCFBE" },
   progressDotActive: { width: 24, backgroundColor: "#2D8C7C" },
   scene: {
@@ -530,6 +673,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   character: { width: "80%", height: "95%" },
+  mediaFrame: {
+    width: "78%",
+    height: "92%",
+    maxWidth: 420,
+    overflow: "hidden",
+    borderRadius: 28,
+    backgroundColor: "#F5D9C8",
+    shadowColor: "#7B6149",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  mediaFill: { width: "100%", height: "100%" },
+  sceneSymbol: {
+    position: "absolute",
+    right: "6%",
+    top: "9%",
+    fontSize: 68,
+  },
   pumpTarget: { position: "absolute", right: "5%", top: "13%", padding: 18 },
   balloonWrap: { width: 105, height: 155, alignItems: "center" },
   balloon: {
@@ -647,30 +810,14 @@ const styles = StyleSheet.create({
   },
   disabledChoice: { opacity: 0.48 },
   pressed: { transform: [{ scale: 0.92 }] },
-  face: {
-    width: 102,
-    height: 102,
+  emotionChoiceContent: {
+    width: 104,
+    height: 104,
     alignItems: "center",
-    borderRadius: 51,
-    paddingTop: 30,
+    justifyContent: "center",
+    borderWidth: 5,
   },
-  eyesRow: { flexDirection: "row", gap: 25 },
-  eye: { width: 10, height: 15, borderRadius: 7, backgroundColor: "#3C342E" },
-  sadMouth: {
-    width: 38,
-    height: 21,
-    marginTop: 19,
-    borderTopWidth: 5,
-    borderTopColor: "#3C342E",
-    borderRadius: 20,
-  },
-  scaredMouth: {
-    width: 19,
-    height: 25,
-    marginTop: 13,
-    borderRadius: 12,
-    backgroundColor: "#3C342E",
-  },
+  emotionSymbol: { fontSize: 72, lineHeight: 82 },
   heart: { color: "#EF6A73", fontSize: 76, lineHeight: 84 },
   breatheIcon: {
     width: 94,

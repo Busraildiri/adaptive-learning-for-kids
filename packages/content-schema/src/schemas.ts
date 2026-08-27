@@ -13,8 +13,36 @@ export const activityTypeSchema = z.enum([
 ]);
 
 export const emotionIdSchema = z.enum(["happy", "sad", "angry", "scared"]);
+export const assetEmotionSchema = z.enum(["happy", "sad", "angry", "scared", "neutral"]);
 
-export const assetTypeSchema = z.enum(["image", "audio", "animation", "symbol"]);
+export const assetTypeSchema = z.enum(["image", "audio", "animation", "video", "symbol"]);
+
+export const assetSemanticSchema = z.strictObject({
+  character: z.string().trim().min(1),
+  object: z.string().trim().min(1),
+  eventState: z.string().trim().min(1),
+  emotion: assetEmotionSchema,
+  allowedNarrativeTerms: z.array(z.string().trim().min(1)).min(1),
+  prohibitedNarrativeTerms: z.array(z.string().trim().min(1)),
+  reviewStatus: z.enum(["pending", "approved"]),
+  rightsStatus: z.enum(["needs_confirmation", "cleared"]),
+  provenance: z.strictObject({
+    source: z.enum(["gemini-apps", "owned", "licensed"]),
+    aiGenerated: z.boolean(),
+    generatedByUser: z.boolean(),
+    thirdPartyReferencesDeclared: z.boolean(),
+    disclosure: z.string().trim().min(1),
+  }),
+});
+
+export const assetPresentationSchema = z.strictObject({
+  aspectRatio: z.number().positive(),
+  fit: z.enum(["cover", "contain"]),
+  focalPoint: z.strictObject({
+    x: z.number().min(0).max(1),
+    y: z.number().min(0).max(1),
+  }),
+});
 
 export const assetSchema = z.strictObject({
   id: z.string().trim().min(1),
@@ -22,6 +50,8 @@ export const assetSchema = z.strictObject({
   uri: z.string().trim().min(1),
   mimeType: z.string().trim().min(1),
   accessibilityLabel: z.string().trim().min(1).optional(),
+  semantic: assetSemanticSchema.optional(),
+  presentation: assetPresentationSchema.optional(),
 });
 
 export const supportiveFeedbackSchema = z.strictObject({
@@ -127,6 +157,8 @@ export const storySchema = z.strictObject({
   ageBands: z.tuple([ageBandSchema], ageBandSchema),
   targetSkills: z.array(z.string().trim().min(1)).min(1),
   greetingTemplate: z.string().trim().min(1),
+  sceneAssetId: z.string().trim().min(1).optional(),
+  introVideoAssetId: z.string().trim().min(1).optional(),
   characterAssets: z.strictObject({
     happyAssetId: z.string().trim().min(1),
     sadAssetId: z.string().trim().min(1),

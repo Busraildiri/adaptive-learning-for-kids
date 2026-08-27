@@ -233,18 +233,15 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Use a production-ready SMTP server
-# Resend relay (see https://resend.com/docs/send-with-smtp): the password below must be set
-# with `supabase secrets set RESEND_API_KEY=...` — never hardcode the key here or in Studio's
-# password field via automation; paste it manually in the Supabase Studio SMTP settings.
-# [auth.email.smtp]
-# enabled = true
-# host = "smtp.resend.com"
-# port = 465
-# user = "resend"
-# pass = "env(RESEND_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# Local Supabase Auth email delivery through Brevo. Keep credentials in the root .env only.
+[auth.email.smtp]
+enabled = true
+host = "smtp-relay.brevo.com"
+port = 587
+user = "env(BREVO_SMTP_USER)"
+pass = "env(BREVO_SMTP_PASS)"
+admin_email = "env(BREVO_SENDER_EMAIL)"
+sender_name = "Adaptive Learning for Kids"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]

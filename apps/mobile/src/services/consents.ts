@@ -5,6 +5,7 @@ import {
   createFailClosedChildConsentSettings,
 } from "@adaptive/shared-types";
 import { requireSupabase } from "../lib/supabase";
+import { clearPendingInteractionEventsForChild } from "./interactionEvents";
 
 export async function loadChildConsentSettings(childId: string): Promise<ChildConsentSettings> {
   const { data, error } = await requireSupabase()
@@ -35,6 +36,10 @@ export async function setChildConsent(
   });
 
   if (error) throw error;
+
+  if (consentType === "learning_observations" && !enabled) {
+    await clearPendingInteractionEventsForChild(childId);
+  }
 }
 
 export async function setChildPersonalization(

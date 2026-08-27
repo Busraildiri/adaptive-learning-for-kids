@@ -21,6 +21,7 @@ export interface ChildSessionProfile {
   ageBand: AgeBand;
   contentLocale: ContentLocale;
   personalizationEnabled: boolean;
+  learningObservationsEnabled: boolean;
   favoriteAnimals: string[];
   favoriteToys: string[];
   interests: string[];
@@ -28,6 +29,7 @@ export interface ChildSessionProfile {
 
 export interface ChildSessionProfileOptions {
   personalizationEnabled: boolean;
+  learningObservationsEnabled: boolean;
   today?: Date;
 }
 
@@ -63,7 +65,7 @@ export function createChildSessionProfile(
   profile: ChildProfile,
   options: ChildSessionProfileOptions,
 ): ChildSessionProfile {
-  const { personalizationEnabled, today = new Date() } = options;
+  const { personalizationEnabled, learningObservationsEnabled, today = new Date() } = options;
   const ageBand = resolveAgeBand(profile.birthMonth, profile.birthYear, today);
 
   if (!ageBand) {
@@ -76,6 +78,7 @@ export function createChildSessionProfile(
     ageBand,
     contentLocale: profile.contentLocale,
     personalizationEnabled,
+    learningObservationsEnabled,
     favoriteAnimals: personalizationEnabled ? [...profile.favoriteAnimals] : [],
     favoriteToys: personalizationEnabled ? [...profile.favoriteToys] : [],
     interests: personalizationEnabled ? [...profile.interests] : [],

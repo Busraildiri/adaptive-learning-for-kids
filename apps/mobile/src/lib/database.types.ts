@@ -130,6 +130,14 @@ export interface Database {
         };
         Returns: undefined;
       };
+      sync_interaction_events: {
+        Args: { events: Json };
+        Returns: Json;
+      };
+      select_next_activity: {
+        Args: { child_profile_id: string; candidate_activity_ids: string[] };
+        Returns: Json;
+      };
     };
     Enums: Record<never, never>;
     CompositeTypes: Record<never, never>;

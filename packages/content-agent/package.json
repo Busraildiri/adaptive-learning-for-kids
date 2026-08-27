@@ -1,0 +1,23 @@
+{
+  "name": "@adaptive/content-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./guidance/tr-TR": "./guidance/tr-TR.approved.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@adaptive/content-schema": "workspace:*",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.3.0",
+    "typescript": "latest",
+    "vitest": "latest"
+  }
+}

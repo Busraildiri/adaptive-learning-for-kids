@@ -3,6 +3,20 @@ import contentV1 from "../content/tr-TR/content.v1.json";
 import { contentVersionSchema } from "./schemas";
 
 describe("Turkish content v1", () => {
+  it("registers the Mırmır red-balloon pack with locked semantic metadata", () => {
+    const content = contentVersionSchema.parse(contentV1);
+    const assets = content.assets.filter((asset) => asset.id.startsWith("character-mirmir-"));
+
+    expect(assets).toHaveLength(3);
+    expect(assets.map((asset) => asset.semantic?.eventState)).toEqual([
+      "holding",
+      "popped",
+      "playing",
+    ]);
+    expect(assets.map((asset) => asset.semantic?.emotion)).toEqual(["happy", "sad", "happy"]);
+    expect(assets.every((asset) => asset.semantic?.rightsStatus === "cleared")).toBe(true);
+    expect(assets.every((asset) => asset.semantic?.provenance.source === "gemini-apps")).toBe(true);
+  });
   it("contains six valid activities", () => {
     const content = contentVersionSchema.parse(contentV1);
 
@@ -34,16 +48,39 @@ describe("Turkish content v1", () => {
     }
   });
 
-  it("contains one varied playable story instead of a chain of emotion questions", () => {
+  it("contains four valid playable stories", () => {
     const content = contentVersionSchema.parse(contentV1);
     const story = content.stories[0];
     const stepTypes = story.steps.map((step) => step.type);
 
-    expect(content.stories).toHaveLength(1);
+    expect(content.stories).toHaveLength(4);
     expect(story.ageBands).toContain("2-4");
     expect(stepTypes.filter((type) => type === "emotion_choice")).toHaveLength(1);
     expect(new Set(stepTypes)).toEqual(
       new Set(["choice", "tap", "event", "emotion_choice", "help_choice", "breathing", "closing"]),
     );
+  });
+
+  it("uses existing scene symbols and gives every emotion its own non-judgmental feedback", () => {
+    const content = contentVersionSchema.parse(contentV1);
+    const expectedSceneAssets = new Set(["scene-block-tower", "scene-friend-goodbye"]);
+    const newStories = content.stories.filter(
+      (story) => story.id !== "mino-balloon-story" && story.id.startsWith("mino-"),
+    );
+
+    expect(new Set(newStories.map((story) => story.sceneAssetId))).toEqual(expectedSceneAssets);
+
+    for (const story of content.stories) {
+      const emotionSteps = story.steps.filter((step) => step.type === "emotion_choice");
+      expect(emotionSteps.length).toBeGreaterThanOrEqual(1);
+
+      for (const step of emotionSteps) {
+        for (const choice of step.choices) {
+          expect(choice.supportiveFeedback.narration.length).toBeGreaterThan(0);
+          expect(choice).not.toHaveProperty("isCorrect");
+          expect(choice).not.toHaveProperty("correctAnswer");
+        }
+      }
+    }
   });
 });

@@ -36,7 +36,7 @@
           },
           "type": {
             "type": "string",
-            "enum": ["image", "audio", "animation", "symbol"]
+            "enum": ["image", "audio", "animation", "video", "symbol"]
           },
           "uri": {
             "type": "string",
@@ -49,6 +49,124 @@
           "accessibilityLabel": {
             "type": "string",
             "minLength": 1
+          },
+          "semantic": {
+            "type": "object",
+            "properties": {
+              "character": {
+                "type": "string",
+                "minLength": 1
+              },
+              "object": {
+                "type": "string",
+                "minLength": 1
+              },
+              "eventState": {
+                "type": "string",
+                "minLength": 1
+              },
+              "emotion": {
+                "type": "string",
+                "enum": ["happy", "sad", "angry", "scared", "neutral"]
+              },
+              "allowedNarrativeTerms": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "prohibitedNarrativeTerms": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "reviewStatus": {
+                "type": "string",
+                "enum": ["pending", "approved"]
+              },
+              "rightsStatus": {
+                "type": "string",
+                "enum": ["needs_confirmation", "cleared"]
+              },
+              "provenance": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "enum": ["gemini-apps", "owned", "licensed"]
+                  },
+                  "aiGenerated": {
+                    "type": "boolean"
+                  },
+                  "generatedByUser": {
+                    "type": "boolean"
+                  },
+                  "thirdPartyReferencesDeclared": {
+                    "type": "boolean"
+                  },
+                  "disclosure": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "source",
+                  "aiGenerated",
+                  "generatedByUser",
+                  "thirdPartyReferencesDeclared",
+                  "disclosure"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "character",
+              "object",
+              "eventState",
+              "emotion",
+              "allowedNarrativeTerms",
+              "prohibitedNarrativeTerms",
+              "reviewStatus",
+              "rightsStatus",
+              "provenance"
+            ],
+            "additionalProperties": false
+          },
+          "presentation": {
+            "type": "object",
+            "properties": {
+              "aspectRatio": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "fit": {
+                "type": "string",
+                "enum": ["cover", "contain"]
+              },
+              "focalPoint": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                },
+                "required": ["x", "y"],
+                "additionalProperties": false
+              }
+            },
+            "required": ["aspectRatio", "fit", "focalPoint"],
+            "additionalProperties": false
           }
         },
         "required": ["id", "type", "uri", "mimeType"],
@@ -292,6 +410,14 @@
             }
           },
           "greetingTemplate": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sceneAssetId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "introVideoAssetId": {
             "type": "string",
             "minLength": 1
           },
