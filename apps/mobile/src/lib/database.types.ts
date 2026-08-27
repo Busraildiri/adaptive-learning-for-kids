@@ -72,6 +72,33 @@ export interface Database {
           },
         ];
       };
+      child_consent_preferences: {
+        Row: {
+          child_id: string;
+          parent_id: string;
+          consent_type:
+            | "personalization"
+            | "learning_observations"
+            | "anonymous_product_improvement";
+          enabled: boolean;
+          notice_version: string;
+          granted_at: string | null;
+          withdrawn_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [
+          {
+            foreignKeyName: "child_consent_preferences_child_id_parent_id_fkey";
+            columns: ["child_id", "parent_id"];
+            isOneToOne: false;
+            referencedRelation: "child_profiles";
+            referencedColumns: ["id", "parent_id"];
+          },
+        ];
+      };
     };
     Views: Record<never, never>;
     Functions: {
@@ -82,6 +109,26 @@ export interface Database {
       verify_parent_pin: {
         Args: { pin: string };
         Returns: boolean;
+      };
+      set_child_consent: {
+        Args: {
+          child_profile_id: string;
+          consent_kind: "learning_observations" | "anonymous_product_improvement";
+          is_enabled: boolean;
+          consent_notice_version: string;
+        };
+        Returns: undefined;
+      };
+      set_child_personalization: {
+        Args: {
+          child_profile_id: string;
+          is_enabled: boolean;
+          consent_notice_version: string;
+          favorite_animals?: string[];
+          favorite_toys?: string[];
+          interests?: string[];
+        };
+        Returns: undefined;
       };
     };
     Enums: Record<never, never>;

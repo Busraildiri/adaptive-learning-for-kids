@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { calculateAgeInMonths, createChildSessionProfile, resolveAgeBand } from "./index";
+import {
+  calculateAgeInMonths,
+  createChildSessionProfile,
+  createFailClosedChildConsentSettings,
+  NEW_CHILD_CONSENT_DEFAULTS,
+  resolveAgeBand,
+} from "./index";
 
 const august2026 = new Date(2026, 7, 15);
 
@@ -38,13 +44,14 @@ describe("child age bands", () => {
           favoriteToys: ["balon"],
           interests: ["renkler"],
         },
-        august2026,
+        { personalizationEnabled: true, today: august2026 },
       ),
     ).toEqual({
       id: "child-1",
       nickname: "Ece",
       ageBand: "2-4",
       contentLocale: "tr-TR",
+      personalizationEnabled: true,
       favoriteAnimals: ["tavşan"],
       favoriteToys: ["balon"],
       interests: ["renkler"],
@@ -53,5 +60,43 @@ describe("child age bands", () => {
 
   it("rejects invalid birth months", () => {
     expect(() => calculateAgeInMonths(13, 2023, august2026)).toThrow(RangeError);
+  });
+
+  it("keeps optional interests out of the child session until personalization is enabled", () => {
+    const session = createChildSessionProfile(
+      {
+        id: "child-1",
+        parentId: "parent-1",
+        nickname: "Ece",
+        birthMonth: 8,
+        birthYear: 2023,
+        contentLocale: "tr-TR",
+        favoriteAnimals: ["tavşan"],
+        favoriteToys: ["balon"],
+        interests: ["renkler"],
+      },
+      { personalizationEnabled: false, today: august2026 },
+    );
+
+    expect(session.personalizationEnabled).toBe(false);
+    expect(session.favoriteAnimals).toEqual([]);
+    expect(session.favoriteToys).toEqual([]);
+    expect(session.interests).toEqual([]);
+  });
+
+  it("enables every preference for newly created child profiles", () => {
+    expect(NEW_CHILD_CONSENT_DEFAULTS).toEqual({
+      personalization: true,
+      learning_observations: true,
+      anonymous_product_improvement: true,
+    });
+  });
+
+  it("fails closed when persisted consent rows are unavailable", () => {
+    expect(createFailClosedChildConsentSettings()).toEqual({
+      personalization: false,
+      learning_observations: false,
+      anonymous_product_improvement: false,
+    });
   });
 });

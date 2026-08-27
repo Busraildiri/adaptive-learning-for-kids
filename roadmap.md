@@ -102,7 +102,7 @@ Pedagojik ve gizlilik kararları
 - [x] Katman sınırlarının ay yaşıyla belirlenmesi kararlaştırıldı: 2–4 katmanı 24–47 ayı, 4–7 katmanı 48–83 ayı kapsar.
 - [x] 2–4 yaşta bireysel öğrenme insight’ı üretilmemesi kararlaştırıldı.
 - [x] 4–7 yaş insight’larının izin ve veri yeterliliğine bağlı olması kararlaştırıldı.
-- [x] Insight özelliğinin varsayılan olarak kapalı olması kararlaştırıldı.
+- [x] Mevcut eski profillerde gözlemlerin kapalı kalması; yeni profillerde üç tercihin açık başlayıp ebeveyn tarafından kapatılabilmesi kararlaştırıldı.
 - [x] Kişiselleştirme, insight ve anonim ürün geliştirme izinleri birbirinden ayrıldı.
 - [x] Ebeveynin ham olayları standart panelde görmemesi kararlaştırıldı.
 - [x] Ebeveynin yasal erişim, itiraz ve silme haklarının korunması kararlaştırıldı.
@@ -128,7 +128,7 @@ Pedagojik ve gizlilik kararları
 
 - [x] Ebeveyn hesabının zorunlu olması kararlaştırıldı.
 - [x] E-posta doğrulaması ve ebeveyn PIN’i gereksinimi tanımlandı.
-- [x] Çocuk profilinde takma ad, doğum ayı, doğum yılı, içerik dili ve temel ilgi alanlarının tutulması kararlaştırıldı.
+- [x] Çocuk profilinde takma ad, doğum ayı/yılı ve içerik dilinin temel; ilgi alanlarının ise açık kişiselleştirme iznine bağlı olması kararlaştırıldı.
 - [x] Tam doğum gününün tutulmaması kararlaştırıldı.
 - [x] Veri minimizasyonu için cinsiyet bilgisinin 2–4 MVP profilinde tutulmaması kararlaştırıldı.
 
@@ -327,9 +327,9 @@ Not: Prototip artık R4'te oluşturulan gerçek `ChildSessionProfile` verisini k
 - [-] Ebeveyn/yasal temsilci beyanını ekle; geliştirme taslağını pilot öncesi hukuki incelemeye gönder.
 - [-] Ebeveyn PIN’ini ayrı private tabloda hash’lenmiş biçimde uygula; yerel SQL testini çalıştır.
 - [-] Çocuk profil tablosunu migration olarak oluştur ve staging veritabanına uygula; Docker kurulduğunda yerel reseti de doğrula.
-- [x] Takma ad, doğum ayı/yılı, dil, sevilen oyuncaklar/hayvanlar ve ilgi alanlarını profile ekle.
+- [x] Takma ad, doğum ayı/yılı ve dili temel profile ekle; sevilen oyuncak/hayvan ve ilgi alanlarını R5 kişiselleştirme iznine bağla.
 - [x] Veri minimizasyonu nedeniyle cinsiyet bilgisini 2–4 MVP profilinden çıkar.
-- [x] İlk girişte takma ad, yaş bilgisi, sevilen oyuncaklar, hayvanlar ve ilgi alanlarını soran ebeveyn akışını ekle.
+- [x] İlk girişte yalnızca takma ad ve doğum ayı/yılını sor; sevilen oyuncak, hayvan ve ilgi alanlarını kişiselleştirme izni açıldıktan sonra iste.
 - [x] Ebeveyn “başlat” dediğinde profil verisini çocuk oturumuna aktar ve çocuğu adıyla sesli karşıla.
 - [x] Yaş katmanını ay ve yıldan hesapla ve sınır değerleri unit testlerle doğrula.
 - [-] Row Level Security politikalarını ve iki ebeveyn izolasyon testini yaz; Docker bulunan ortamda testi çalıştır.
@@ -345,19 +345,29 @@ Doğrulama notu: **Mobil lint, TypeScript, 28 unit test ve Expo iOS export başa
 
 ### R5 — İzin yönetimi
 
-- [ ] Kişiselleştirme iznini ekle.
-- [ ] Öğrenme gözlemi iznini ekle.
-- [ ] Anonim ürün/AI geliştirme iznini ekle.
-- [ ] İzinleri varsayılan olarak kapalı yapılandır.
-- [ ] İzin metni sürümünü kaydet.
-- [ ] İzin geri çekme akışını geliştir.
-- [ ] Audit log oluştur.
+- [x] Çocuk bazlı kişiselleştirme iznini ekle.
+- [x] 2–4 yaşta da ebeveynin açabildiği çocuk bazlı öğrenme gözlemi iznini ekle.
+- [x] Anonim ürün/AI geliştirme iznini ayrı ekle.
+- [x] Mevcut profilleri kapalı bırak; migration sonrasında oluşturulan yeni profillerde üç tercihi de açık başlat.
+- [x] İzin metni sürümünü, verilme ve geri çekilme zamanlarını kaydet.
+- [x] Kişiselleştirme geri çekildiğinde isteğe bağlı profil alanlarını sil.
+- [x] Mobil istemciye kapalı, eklemeli izin audit log’u oluştur.
+- [x] Başka ebeveyn erişimini, doğrudan tablo yazımını ve eski metin sürümünü SQL testleriyle reddet.
+- [-] İzin metinlerini çocuklarla pilot öncesinde hukuk ve etik incelemeye gönder.
+
+Doğrulama notu: **`20260827002500_consent_management.sql` ve ileriye dönük yeni profil
+varsayılanını belirleyen `20260827043000_enable_consents_for_new_children.sql` ortak
+`adaptive-kids-staging` projesine uygulanmış ve uzak şema lint’i hatasız tamamlanmıştır. Biome, TypeScript,
+31 unit test ve Expo iOS export başarılıdır. 19 maddelik izin/RLS pgTAP testi yazılmıştır;
+Supabase test runner yerel Docker gerektirdiği için henüz çalıştırılamamıştır.**
 
 #### R5 kabul kriterleri
 
 - Üç izin birbirinden bağımsız değiştirilebilir.
 - AI geliştirme izni temel uygulama kullanımının koşulu değildir.
-- Insight kapalıyken yeni bireysel gözlem üretilmez.
+- Öğrenme gözlemleri 2–4 yaşta kalıcı olarak kilitli değildir; yeni profilde açık başlar ve ebeveyn kapatabilir.
+- İzin gerekli ama yeterli değildir: R7 kanıt motoru yeterli oturum ve güvenilir kanıt eşiğini ayrıca uygulamalıdır.
+- Gözlem kapalıyken yeni bireysel gözlem üretilemez; açıkken dahi tanı, puan, akran karşılaştırması veya kalıcı yetersizlik iddiası üretilemez.
 
 ### R6 — Etkileşim olayları ve çevrimdışı senkronizasyon
 
