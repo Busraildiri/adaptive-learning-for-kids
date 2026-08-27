@@ -37,7 +37,13 @@ function storyNarratives(story: Story): string[] {
       ];
     }
     if (step.type === "choice") {
-      return [step.prompt, ...step.choices.map((choice) => choice.label)];
+      return [step.prompt, ...step.choices.map((choice) => choice.accessibilityLabel)];
+    }
+    if (step.type === "tap") {
+      return [step.prompt, step.completionNarration];
+    }
+    if (step.type === "help_choice") {
+      return [step.prompt, ...step.choices.map((choice) => choice.resultNarration)];
     }
     return [step.narration];
   });
