@@ -6,6 +6,7 @@ import { AccountShell } from "./AccountShell";
 import { ChildConsentSettingsScreen } from "./ChildConsentSettingsScreen";
 import { ChildProfileForm } from "./ChildProfileForm";
 import { formStyles } from "./formStyles";
+import { PasswordUpdateScreen } from "./PasswordUpdateScreen";
 
 export function ParentHomeScreen({
   parentId,
@@ -21,9 +22,20 @@ export function ParentHomeScreen({
   onStartChildMode: (profile: ChildProfile) => Promise<void>;
 }) {
   const [showForm, setShowForm] = useState(children.length === 0);
+  const [showPasswordSettings, setShowPasswordSettings] = useState(false);
   const [settingsChild, setSettingsChild] = useState<ChildProfile | null>(null);
   const [startingChildId, setStartingChildId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  if (showPasswordSettings) {
+    return (
+      <PasswordUpdateScreen
+        mode="authenticated"
+        onCancel={() => setShowPasswordSettings(false)}
+        onCompleted={() => setShowPasswordSettings(false)}
+      />
+    );
+  }
 
   if (settingsChild) {
     return (
@@ -113,6 +125,9 @@ export function ParentHomeScreen({
       <Pressable onPress={() => setShowForm(true)} style={formStyles.secondaryButton}>
         <Text style={formStyles.secondaryButtonText}>Yeni çocuk profili</Text>
       </Pressable>
+      <Pressable onPress={() => setShowPasswordSettings(true)} style={styles.passwordButton}>
+        <Text style={styles.passwordButtonText}>Parolayı değiştir</Text>
+      </Pressable>
       <Pressable
         onPress={() => {
           setError(null);
@@ -168,6 +183,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#2D8C7C",
   },
   startButtonText: { color: "#FFFFFF", fontWeight: "900" },
+  passwordButton: { alignItems: "center", marginTop: 12, padding: 10 },
+  passwordButtonText: { color: "#216D61", fontSize: 14, fontWeight: "800" },
   signOutButton: { alignItems: "center", marginTop: 19, padding: 10 },
   signOutText: { color: "#795D51", fontSize: 14, fontWeight: "700" },
 });
