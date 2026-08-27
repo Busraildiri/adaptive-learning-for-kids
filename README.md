@@ -14,6 +14,38 @@
 | Yönetim paneli | Next.js ve TypeScript |
 | AI yaklaşımı | Çocukla canlı konuşmayan, yayın öncesi içerik üreten ve denetleyen agent sistemi |
 
+## Yerel geliştirme hızlı başlangıç
+
+Bağımlılıkları kurun:
+
+```powershell
+pnpm install
+```
+
+Supabase'i yerelde çalıştırmak için Docker Desktop veya Podman gerekir:
+
+```powershell
+pnpm db:start
+pnpm db:reset
+pnpm db:test
+```
+
+Mobil uygulama için `apps/mobile/.env.example` dosyasını `apps/mobile/.env` adıyla kopyalayın ve Supabase proje panelindeki URL ile **publishable key** değerlerini ekleyin. `secret` veya `service_role` anahtarı mobil uygulamaya kesinlikle eklenmez.
+
+```powershell
+pnpm dev:mobile
+```
+
+Fiziksel iPhone testinde en kolay yol hosted Supabase geliştirme projesi kullanmaktır. Migration'ı uzak projeye göndermeden önce doğru proje referansını kontrol edin:
+
+```powershell
+pnpm exec supabase login
+pnpm exec supabase link --project-ref PROJE_REFERANSI
+pnpm exec supabase db push
+```
+
+Gerçek aile pilotundan önce `docs/legal` altındaki geliştirme taslakları hukuki incelemeden geçirilmelidir.
+
 ---
 
 ## 1. Belgenin amacı
@@ -40,7 +72,7 @@ Bu belge klinik protokol veya hukuki görüş değildir. Pilot ve mağaza yayın
 
 Çocuğa “yanlış” denmeyecek, çocuk puanlanmayacak ve çocuk hakkında tanısal sonuç üretilmeyecektir. Sistem, önceden onaylanmış öğretim cümleleriyle hedef kavramı sakin biçimde açıklayacaktır.
 
-Ebeveyn isterse ve yeterli güvenilir kanıt oluşursa, 5–7 yaş grubunda tanısal olmayan öğrenme gözlemleri görebilecektir. Bu özellik varsayılan olarak kapalı olacaktır.
+Ebeveyn isterse ve yeterli güvenilir kanıt oluşursa, 4–7 yaş grubunda tanısal olmayan öğrenme gözlemleri görebilecektir. Bu özellik varsayılan olarak kapalı olacaktır.
 
 ### 2.1 Temel değer önerisi
 
@@ -135,7 +167,7 @@ React Native ortak kod tabanı Android’e geçişi kolaylaştıracaktır; ancak
 
 ## 5. Yaş katmanları
 
-### 5.1 3–5 yaş katmanı
+### 5.1 2–4 yaş katmanı
 
 Sunulacak özellikler:
 
@@ -151,13 +183,13 @@ Sunulmayacak özellikler:
 - Gelişimsel çıkarım.
 - Klinik yönlendirme.
 
-3–5 yaş verileri içerik kalitesi, kullanılabilirlik, tekrar ihtiyacı ve uygulama akışını iyileştirmek için kullanılabilir. Çocuk hakkında bireysel beceri profili oluşturmak için kullanılmaz.
+2–4 yaş verileri içerik kalitesi, kullanılabilirlik, tekrar ihtiyacı ve uygulama akışını iyileştirmek için kullanılabilir. Çocuk hakkında bireysel beceri profili oluşturmak için kullanılmaz.
 
-### 5.2 5–7 yaş katmanı
+### 5.2 4–7 yaş katmanı
 
 Sunulacak özellikler:
 
-- 3–5 yaş özelliklerinin tamamı.
+- 2–4 yaş özelliklerinin tamamı.
 - Daha karmaşık sosyal bağlamlar.
 - Perspektif alma ve neden-sonuç etkinlikleri.
 - Ebeveyn izin verdiyse, yeterli ve güvenilir kanıt sonrası nitel öğrenme gözlemleri.
@@ -206,9 +238,10 @@ type ChildProfile = {
   nickname: string;
   birthMonth: number;
   birthYear: number;
-  gender: 'female' | 'male' | 'prefer_not_to_say';
   contentLanguage: 'tr';
-  preferredCharacterId?: string;
+  favoriteAnimals: string[];
+  favoriteToys: string[];
+  interests: string[];
   createdAt: string;
   updatedAt: string;
 };
@@ -263,8 +296,8 @@ Kapalıysa:
 ### 7.2 Öğrenme gözlemleri
 
 - Varsayılan olarak kapalıdır.
-- 3–5 yaş grubunda beceri insight’ı üretmez.
-- 5–7 yaş grubunda yalnızca uygunluk koşulları karşılanırsa üretilebilir.
+- 2–4 yaş grubunda beceri insight’ı üretmez.
+- 4–7 yaş grubunda yalnızca uygunluk koşulları karşılanırsa üretilebilir.
 - Kapatıldığında yeni bireysel beceri gözlemi oluşturulmaz.
 - Önceki gözlemler için saklama veya silme seçenekleri hukuki değerlendirmeye uygun biçimde sunulur.
 
@@ -442,7 +475,7 @@ type ActivityContent = {
     | 'expert_approved'
     | 'published'
     | 'archived';
-  ageBand: '3-5' | '5-7';
+  ageBand: '2-4' | '4-7';
   skill: string;
   activityType:
     | 'introduction'
@@ -906,7 +939,7 @@ Sıradaki etkinlik şunlara göre seçilebilir:
 ### 17.1 Uygunluk kapıları
 
 ```text
-5–7 yaş politikası uygun
+4–7 yaş politikası uygun
 AND ebeveyn insight izni açık
 AND minimum farklı gün
 AND minimum oturum
@@ -1357,7 +1390,7 @@ Teknoloji:
 - PIN.
 - Çocuk profili.
 - Yaş katmanı.
-- Cinsiyet alanı.
+- Veri minimizasyonlu ilgi alanları.
 
 Teknoloji:
 
@@ -1479,7 +1512,7 @@ Teknoloji:
 
 - 40–60 onaylı senaryo.
 - Dört temel duygu.
-- 3–5 ve 5–7 varyasyonları.
+- 2–4 ve 4–7 varyasyonları.
 - Görsel ve ses asset’leri.
 - Uzman incelemesi.
 
@@ -1568,9 +1601,9 @@ Pilot sırası:
 - E-posta doğrulama.
 - PIN korumalı ebeveyn alanı.
 - Çocuk profili.
-- Doğum ayı/yılı ve cinsiyet.
+- Doğum ayı/yılı ve temel ilgi alanları.
 - Üç ayrı izin.
-- 3–5 ve 5–7 yaş katmanları.
+- 2–4 ve 4–7 yaş katmanları.
 - Dört temel duygu.
 - 40–60 onaylı senaryo.
 - Önceden üretilmiş görsel ve sesler.
@@ -1582,7 +1615,7 @@ Pilot sırası:
 - İçerik agent’ı.
 - Admin paneli.
 - Tarafsız oturum özeti.
-- 5–7 yaş için sınırlı ve izinli insight altyapısı; pilot sonucuna göre açılacaktır.
+- 4–7 yaş için sınırlı ve izinli insight altyapısı; pilot sonucuna göre açılacaktır.
 
 ### Dahil değil
 

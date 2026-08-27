@@ -2,9 +2,14 @@
   "expo": {
     "name": "Adaptive Learning for Kids",
     "slug": "adaptive-learning-for-kids",
+    "scheme": "adaptivekids",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "ios": { "supportsTablet": true, "bundleIdentifier": "com.busraildiri.adaptivelearningforkids" }
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.busraildiri.adaptivelearningforkids"
+    },
+    "plugins": ["expo-secure-store"]
   }
 }

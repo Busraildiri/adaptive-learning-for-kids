@@ -12,11 +12,16 @@
     "build": "pnpm --filter @adaptive/admin-web build && pnpm --filter @adaptive/mobile build:ios",
     "check": "biome check .",
     "check:fix": "biome check --write .",
+    "db:start": "supabase start",
+    "db:reset": "supabase db reset",
+    "db:test": "supabase test db",
+    "db:stop": "supabase stop",
     "typecheck": "pnpm --recursive --if-present typecheck",
     "test": "pnpm --recursive --if-present test"
   },
   "devDependencies": {
     "@biomejs/biome": "latest",
+    "supabase": "^2.115.0",
     "typescript": "latest",
     "vitest": "latest"
   }
