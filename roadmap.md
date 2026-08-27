@@ -128,9 +128,9 @@ Pedagojik ve gizlilik kararları
 
 - [x] Ebeveyn hesabının zorunlu olması kararlaştırıldı.
 - [x] E-posta doğrulaması ve ebeveyn PIN’i gereksinimi tanımlandı.
-- [x] Çocuk profilinde takma ad, doğum ayı, doğum yılı, cinsiyet ve içerik dili tutulması kararlaştırıldı.
+- [x] Çocuk profilinde takma ad, doğum ayı, doğum yılı, içerik dili ve temel ilgi alanlarının tutulması kararlaştırıldı.
 - [x] Tam doğum gününün tutulmaması kararlaştırıldı.
-- [x] Cinsiyet bilgisinin tek başına insight veya zorluk belirlememesi kararlaştırıldı.
+- [x] Veri minimizasyonu için cinsiyet bilgisinin 2–4 MVP profilinde tutulmaması kararlaştırıldı.
 
 ### İçerik ve asset kararları
 
@@ -289,7 +289,7 @@ Birincil amaç: **Soru-cevap zinciri yerine oynanabilir bir dikey kesit doğrula
 - [x] İçerik şemasına `choice`, `tap`, `event`, `emotion_choice`, `help_choice`, `breathing` ve `closing` adımlarını ekle.
 - [ ] Akışı fiziksel iPhone ve Expo Go üzerinde çocuk gözüyle yeniden doğrula.
 
-Not: Bu prototipte `ChildSessionProfile` için geçici veri kullanılır. Gerçek ilk giriş soruları, profil kaydı ve ebeveyn kontrolleri R4 kapsamında eklenecektir; hikâye bu profile bağlanmaya hazırdır.
+Not: Prototip artık R4'te oluşturulan gerçek `ChildSessionProfile` verisini kullanır ve çocuğu profilindeki takma adla karşılar.
 
 #### R2.1 kabul kriterleri
 
@@ -319,18 +319,23 @@ Not: Bu prototipte `ChildSessionProfile` için geçici veri kullanılır. Gerçe
 
 ### R4 — Ebeveyn hesabı ve çocuk profili
 
-- [ ] Supabase projesini oluştur.
-- [ ] Yerel, staging ve production ortamlarını ayır.
-- [ ] E-posta/şifre kayıt akışını geliştir.
-- [ ] E-posta doğrulamasını zorunlu yap.
-- [ ] Ebeveyn/yasal temsilci beyanını ekle.
-- [ ] Ebeveyn PIN’ini güvenli biçimde uygula.
-- [ ] Çocuk profil tablosunu oluştur.
-- [ ] Takma ad, doğum ayı/yılı, cinsiyet ve dil alanlarını ekle.
-- [ ] İlk girişte takma ad, yaş bilgisi, sevilen oyuncaklar, hayvanlar ve ilgi alanlarını soran ebeveyn akışını ekle.
-- [ ] Ebeveyn “başlat” dediğinde profil verisini çocuk oturumuna aktar ve çocuğu adıyla sesli karşıla.
-- [ ] Yaş katmanını ay ve yıldan hesapla.
-- [ ] Row Level Security politikalarını yaz ve test et.
+- [x] Supabase CLI yerel proje yapılandırmasını ve sürümlü migration altyapısını oluştur.
+- [x] Ortak `adaptive-kids-staging` Supabase projesini oluştur.
+- [-] Yerel ve staging yapılandırmalarını ayır; production projesini pilot öncesinde ayrıca oluştur.
+- [x] E-posta/şifre kayıt akışını geliştir ve staging projesinde fiziksel cihazla doğrula.
+- [x] E-posta doğrulamasını zorunlu yap ve doğrulama bağlantısını fiziksel cihazda test et.
+- [-] Ebeveyn/yasal temsilci beyanını ekle; geliştirme taslağını pilot öncesi hukuki incelemeye gönder.
+- [-] Ebeveyn PIN’ini ayrı private tabloda hash’lenmiş biçimde uygula; yerel SQL testini çalıştır.
+- [-] Çocuk profil tablosunu migration olarak oluştur ve staging veritabanına uygula; Docker kurulduğunda yerel reseti de doğrula.
+- [x] Takma ad, doğum ayı/yılı, dil, sevilen oyuncaklar/hayvanlar ve ilgi alanlarını profile ekle.
+- [x] Veri minimizasyonu nedeniyle cinsiyet bilgisini 2–4 MVP profilinden çıkar.
+- [x] İlk girişte takma ad, yaş bilgisi, sevilen oyuncaklar, hayvanlar ve ilgi alanlarını soran ebeveyn akışını ekle.
+- [x] Ebeveyn “başlat” dediğinde profil verisini çocuk oturumuna aktar ve çocuğu adıyla sesli karşıla.
+- [x] Yaş katmanını ay ve yıldan hesapla ve sınır değerleri unit testlerle doğrula.
+- [-] Row Level Security politikalarını ve iki ebeveyn izolasyon testini yaz; Docker bulunan ortamda testi çalıştır.
+- [x] Aktif çocuk modunu cihazın güvenli deposunda sakla; uygulama yeniden açıldığında PIN kapısının atlanmasını engelle.
+
+Doğrulama notu: **Mobil lint, TypeScript, 28 unit test ve Expo iOS export başarılıdır. `20260826222303_parent_child_profiles.sql` migration'ı `adaptive-kids-staging` projesine uygulanmış; fiziksel cihazda kayıt ve e-posta doğrulama akışı tamamlanmıştır. Supabase pgTAP runner uzak proje seçilse bile yerel Docker çalıştırıcısı istediği için 13 maddelik otomatik RLS testi henüz yürütülememiştir.**
 
 #### R4 kabul kriterleri
 
