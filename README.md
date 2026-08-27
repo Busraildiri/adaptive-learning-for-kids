@@ -32,6 +32,8 @@ pnpm db:test
 
 Mobil uygulama için `apps/mobile/.env.example` dosyasını `apps/mobile/.env` adıyla kopyalayın ve Supabase proje panelindeki URL ile **publishable key** değerlerini ekleyin. `secret` veya `service_role` anahtarı mobil uygulamaya kesinlikle eklenmez.
 
+Yerel Supabase Auth e-posta testi için Brevo'da doğrulanmış bir gönderen oluşturun; **Settings → SMTP & API → SMTP** ekranındaki SMTP login ve ürettiğiniz SMTP key ile gönderen adresini kök `.env.example` dosyasından oluşturacağınız kök `.env` içindeki `BREVO_SMTP_USER`, `BREVO_SMTP_PASS` ve `BREVO_SENDER_EMAIL` alanlarına ekleyin. SMTP anahtarını `apps/mobile/.env` dosyasına koymayın; uzak Supabase projesi için aynı değerleri Dashboard SMTP Settings ekranına elle girin.
+
 ```powershell
 pnpm dev:mobile
 ```
@@ -240,6 +242,30 @@ Fiziksel iOS cihazında development build oluşturmak için `apps/mobile` dizini
 Metro `pnpm start:dev-client` ile başlatılır. Google Cloud istemci sırrı yalnızca Supabase Dashboard'daki
 Google provider alanında saklanır; uygulamanın `.env` dosyasına veya EAS environment variable'larına
 eklenmez.
+
+### Çevrimdışı etkileşim olayları
+
+`@adaptive/analytics-events`, sürüm 1 etkileşim olayı sözleşmesini ve 100 olaylık batch sınırını
+tanımlar. Mobil uygulama olayları Expo SQLite kuyruğunda oturum ve `sequenceNumber` sırasıyla tutar.
+Ağ yeniden erişilebilir olduğunda kuyruk Supabase `sync_interaction_events` RPC'sine gönderilir;
+başarısız istekler kuyruktan silinmez. Sunucu `eventId` ile tekrar gönderimleri tekilleştirir ve aynı
+oturumdaki sıra numarasını benzersiz tutar.
+
+Olay toplama, çocuk profilindeki `learning_observations` iznine bağlıdır. İstemci izin kapalıyken
+olay üretmez; izin geri çekildiğinde bekleyen yerel olayları temizler. RPC ebeveyn sahipliğini ve
+güncel izni yeniden denetler. Private olay tablosu mobil Data API istemcilerine kapalıdır ve kayıtlar
+puan, tanı veya öğrenme kanıtı değil, yalnızca asgari etkileşim gerçekleridir.
+
+### Kanıt ve etkinlik seçimi
+
+`@adaptive/evidence-engine`, ham etkileşim olaylarını oturum bazlı kanıttan ayırır. Kanıtlar
+`valid_evidence`, `limited_evidence`, `interaction_noise` veya `not_evaluated` olarak sınıflanır.
+Tek bir hızlı yanıt sınırlı kanıt sayılır; otomatik olarak gürültüye dönüştürülmez. Aynı
+adımdaki tekrar dokunmaları cevap analizinden çıkarılır ve ayrı bir gürültü sayacında tutulur.
+
+Kural tabanlı seçici önce henüz tamamlanmamış, sonra daha az uygulanan ve en uzun süredir
+tamamlanmayan etkinliği öne çıkarır. Karar; adaylar, neden kodu, açıklama ve aktif eşik sürümüyle
+private logda saklanır. Bu mekanizma tanı, beceri puanı veya akran karşılaştırması üretmez.
 
 Sonraki aşamada değerlendirilebilecekler:
 

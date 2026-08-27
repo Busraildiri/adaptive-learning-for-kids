@@ -70,7 +70,7 @@ export function AuthScreen({
         const result = await signUpParent(normalizedEmail, password);
         if (!result.session) {
           setNotice(
-            "Doğrulama bağlantısını e-postanıza gönderdik. Doğruladıktan sonra giriş yapın.",
+            "Doğrulama bağlantısını e-postanıza gönderdik. Bağlantıya bastıktan sonra tarayıcı hata gösterse bile uygulamaya dönüp giriş yapın.",
           );
           setMode("sign-in");
         }

@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import "./styles.css";
 
 export const metadata: Metadata = {
-  title: "Adaptive Learning Admin",
-  description: "İçerik üretim ve inceleme paneli",
+  title: "İçerik İnceleme | Adaptive Learning",
+  description: "Kuşkulu hikâye taslakları için güvenli yönetim paneli",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

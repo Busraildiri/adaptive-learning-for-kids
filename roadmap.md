@@ -328,30 +328,36 @@ Not: Prototip artık R4'te oluşturulan gerçek `ChildSessionProfile` verisini k
 - [-] Google OAuth akışını development build ile fiziksel iPhone'da doğrula; EAS development profili
       hazırlandı, Apple imzalama ve cihaz testi ertelendi.
 - [x] E-posta doğrulamasını zorunlu yap ve doğrulama bağlantısını fiziksel cihazda test et.
+- [x] Auth e-postaları için Brevo SMTP'ye geç (yerleşik servisin proje genelindeki 2/saat
+      limiti ve dış adres kısıtı nedeniyle); yerel yapılandırmayı yalnızca gizli ortam
+      değişkenlerinden okuyacak şekilde hazırla.
 - [-] Ebeveyn/yasal temsilci beyanını ekle; geliştirme taslağını pilot öncesi hukuki incelemeye gönder.
 - [x] Ebeveyn/yasal temsilci ve gizlilik beyanlarını ayrı, görünür ve zorunlu onaylar olarak uygula.
-- [-] Ebeveyn PIN’ini ayrı private tabloda hash’lenmiş biçimde uygula; yerel SQL testini çalıştır.
-- [-] Çocuk profil tablosunu migration olarak oluştur ve staging veritabanına uygula; Docker kurulduğunda yerel reseti de doğrula.
+- [x] Ebeveyn PIN’ini ayrı private tabloda hash’lenmiş biçimde uygula; yerel SQL testini çalıştır.
+- [x] Çocuk profil tablosunu migration olarak oluştur, staging veritabanına uygula ve yerel reseti doğrula.
 - [x] Takma ad, doğum ayı/yılı ve dili temel profile ekle; sevilen oyuncak/hayvan ve ilgi alanlarını R5 kişiselleştirme iznine bağla.
 - [x] Veri minimizasyonu nedeniyle cinsiyet bilgisini 2–4 MVP profilinden çıkar.
 - [x] İlk girişte yalnızca takma ad ve doğum ayı/yılını sor; sevilen oyuncak, hayvan ve ilgi alanlarını kişiselleştirme izni açıldıktan sonra iste.
 - [x] Ebeveyn “başlat” dediğinde profil verisini çocuk oturumuna aktar ve çocuğu adıyla sesli karşıla.
 - [x] Yaş katmanını ay ve yıldan hesapla ve sınır değerleri unit testlerle doğrula.
-- [-] Row Level Security politikalarını ve iki ebeveyn izolasyon testini yaz; Docker bulunan ortamda testi çalıştır.
+- [x] Row Level Security politikalarını ve iki ebeveyn izolasyon testini yazıp yerel PostgreSQL üzerinde çalıştır.
 - [x] Aktif çocuk modunu cihazın güvenli deposunda sakla; uygulama yeniden açıldığında PIN kapısının atlanmasını engelle.
 
-Doğrulama notu: **Mobil lint, TypeScript, 28 unit test ve Expo iOS export başarılıdır. `20260826222303_parent_child_profiles.sql` migration'ı `adaptive-kids-staging` projesine uygulanmış; fiziksel cihazda kayıt ve e-posta doğrulama akışı tamamlanmıştır. Supabase pgTAP runner uzak proje seçilse bile yerel Docker çalıştırıcısı istediği için 13 maddelik otomatik RLS testi henüz yürütülememiştir.**
+Doğrulama notu: **Mobil lint, TypeScript, 28 unit test ve Expo iOS export başarılıdır. `20260826222303_parent_child_profiles.sql` migration'ı `adaptive-kids-staging` projesine uygulanmış; fiziksel cihazda kayıt ve e-posta doğrulama akışı tamamlanmıştır. Yerel Supabase/PostgreSQL sıfırdan kurulmuş ve 13 maddelik otomatik profil/RLS pgTAP testi başarıyla çalıştırılmıştır. Brevo SMTP'nin repo ve yerel geliştirme yapılandırması tamamlanmıştır; Brevo hesabı, doğrulanmış gönderen ve uzak Supabase Dashboard bilgileri proje sahibi tarafından elle girildikten sonra dış adrese teslim testi yapılacaktır.**
 
 #### R4 eksikler
 
+- E-posta kayıt doğrulamasını tarayıcı yönlendirmesine bağımlı bağlantı yerine uygulama içinde
+  girilen 6 haneli kod akışına dönüştür. Bu tamamlanana kadar doğrulama bağlantısı hesabı başarıyla
+  doğrulasa bile geçersiz dönüş adresi tarayıcıda hata gösterebilir; kullanıcı uygulamaya dönerek
+  giriş yapabilir.
 - Google Cloud OAuth istemcisi ve Supabase Google provider yapılandırıldı; ancak Google hesabıyla
   uygulama içi giriş iPhone'da uçtan uca tamamlanmadı. Expo Go bu deep-link akışı için yeterli
   değildir; fiziksel iPhone testi Apple imzalı development build ve dolayısıyla aktif Apple Developer
   Program üyeliği gerektirir. Bu doğrulama tamamlanana kadar Google girişi kullanıma hazır kabul edilmez.
-- Staging SMTP, Resend deneme göndericisi `onboarding@resend.dev` ile sınırlıdır. Resend hesap
-  sahibinin/test kullanıcısının adresi dışındaki uygulama üyeleri e-posta doğrulama ve parola
-  sıfırlama mesajlarını alamaz. Dış kullanıcı testi için bir alan adı, doğrulanmış auth
-  gönderim alt alanı ve bu alana ait gönderen adresi zorunludur.
+- Brevo SMTP repo yapılandırması hazırdır; Brevo hesabı ve SMTP key oluşturma, gönderen adresini
+  doğrulama, uzak Supabase Dashboard'a kimlik bilgilerini girme ve Serenay'ın adresiyle uçtan uca
+  teslim testi dış adım olarak beklemektedir.
 - iOS fiziksel cihaz giriş testi ve dağıtılabilir development build henüz yoktur; EAS profili
   hazırdır fakat Apple imzalama ve cihaz kaydı tamamlanmamıştır.
 
@@ -373,15 +379,15 @@ Doğrulama notu: **Mobil lint, TypeScript, 28 unit test ve Expo iOS export başa
 - [x] Deep-link ayrıştırması, parola politikası ve recovery kodu için unit testleri yaz.
 - [x] Supabase staging redirect allowlist’ine `adaptivekids://**` ve `exp://**` adreslerini kaydet.
 - [x] Staging e-posta OTP uzunluğunu uygulamayla uyumlu biçimde altı hane olarak ayarla.
-- [x] Staging için özel SMTP’yi Resend deneme göndericisi (`onboarding@resend.dev`) ile kur;
-      bu yapılandırmayı yalnızca Resend hesap sahibinin adresindeki geliştirme testlerinde kullan.
+- [x] Yerel ve staging Auth e-postaları için Brevo SMTP yapılandırmasını hazırla; SMTP login,
+      SMTP key ve doğrulanmış gönderen adresini kaynak koddan ayır.
 - [x] Reset password şablonunda `{{ .Token }}` kodunu göster.
 - [x] Fiziksel cihazda parola yenileme kodunu Expo Go üzerinde doğrula.
 - [ ] Dış kullanıcılarla kapalı test başlamadan önce uygun bir alan adı satın al, auth e-postaları
-      için ayrı bir gönderim alt alanını (ör. `auth.alanadi.com`) Resend'de DNS kayıtlarıyla doğrula
+      için ayrı bir gönderim alt alanını (ör. `auth.alanadi.com`) Brevo'da DNS kayıtlarıyla doğrula
       ve Supabase gönderen adresini bu alana taşı.
 - [ ] Doğrulanmış alan adıyla farklı e-posta sağlayıcılarına kayıt doğrulama ve parola yenileme
-      e-postalarının teslimini test et; Resend deneme göndericisini pilot veya production'da kullanma.
+      e-postalarının teslimini test et; kişisel test göndericisini pilot veya production'da kullanma.
 
 Doğrulama notu: **Expo, kararlı kimlik doğrulama yönlendirmeleri için Expo Go yerine development
 build önerir. Bu nedenle Expo Go cihaz testinde e-posta kodu, development/production build’de
@@ -407,8 +413,8 @@ parolayla yeniden giriş akışı fiziksel cihazda Expo Go üzerinde başarıyla
 Doğrulama notu: **`20260827002500_consent_management.sql` ve ileriye dönük yeni profil
 varsayılanını belirleyen `20260827043000_enable_consents_for_new_children.sql` ortak
 `adaptive-kids-staging` projesine uygulanmış ve uzak şema lint’i hatasız tamamlanmıştır. Biome, TypeScript,
-31 unit test ve Expo iOS export başarılıdır. 19 maddelik izin/RLS pgTAP testi yazılmıştır;
-Supabase test runner yerel Docker gerektirdiği için henüz çalıştırılamamıştır.**
+31 unit test ve Expo iOS export başarılıdır. 19 maddelik izin/RLS pgTAP testi yerel
+Supabase/PostgreSQL üzerinde başarıyla çalıştırılmıştır.**
 
 #### R5 kabul kriterleri
 
@@ -420,13 +426,20 @@ Supabase test runner yerel Docker gerektirdiği için henüz çalıştırılamam
 
 ### R6 — Etkileşim olayları ve çevrimdışı senkronizasyon
 
-- [ ] Sürümlü olay sözleşmesini oluştur.
-- [ ] `packages/analytics-events` paketini oluştur.
-- [ ] Expo SQLite olay kuyruğunu ekle.
-- [ ] Batch senkronizasyon endpoint’ini geliştir.
-- [ ] `eventId` tabanlı idempotency uygula.
-- [ ] Olay sırasını `sequenceNumber` ile koru.
-- [ ] İnternet kesintisi ve tekrar gönderim testlerini yaz.
+- [x] Sürümlü olay sözleşmesini oluştur.
+- [x] `packages/analytics-events` paketini oluştur.
+- [x] Expo SQLite olay kuyruğunu ekle.
+- [x] Batch senkronizasyon endpoint’ini geliştir.
+- [x] `eventId` tabanlı idempotency uygula.
+- [x] Olay sırasını `sequenceNumber` ile koru.
+- [x] İnternet kesintisi ve tekrar gönderim testlerini yaz.
+
+Doğrulama notu: **Sürüm 1 olay sözleşmesi, oturum bazlı sıralı Expo SQLite kuyruğu ve
+`sync_interaction_events` batch RPC'si tamamlandı. Mobil istemci olayları yalnızca öğrenme gözlemi
+izni açıkken üretir; izin geri çekildiğinde bekleyen olaylar silinir ve sunucu yeni olayları ayrıca
+reddeder. Migration `adaptive-kids-staging` projesine uygulandı ve uzak şema lint'i hatasız
+tamamlandı. TypeScript, Biome ve 50 unit test başarılıdır. Sekiz maddelik SQL pgTAP testi yerel
+Supabase/PostgreSQL üzerinde başarıyla çalıştırılmıştır.**
 
 #### R6 kabul kriterleri
 
@@ -434,28 +447,141 @@ Supabase test runner yerel Docker gerektirdiği için henüz çalıştırılamam
 - Olaylar bağlantı gelince doğru sırada gönderilir.
 - Aynı olay iki kez kaydedilmez.
 
+### R6.1 — Çoklu Mino hikayesi ve hikaye seçimi
+
+- [x] Mevcut balon hikâyesinin yanına kısa kule ve arkadaşa veda hikâyelerini ekle.
+- [x] Yeni hikâyelerde mevcut `scene-block-tower` ve `scene-friend-goodbye` emoji-symbol
+      asset'lerini ve mevcut iki Mino karakter görselini kullan.
+- [x] Her hikâyeye tek doğru cevabı olmayan, seçenek bazlı destekleyici geri bildirim sunan
+      en az bir duygu seçimi ekle.
+- [x] Hikâye oynatıcıyı dışarıdan `story` alan ve symbol sahne asset'lerini gösteren yapıya getir.
+- [x] Çocuk modu ile oynatıcı arasına erişilebilir hikâye seçim ekranı ekle.
+- [x] İçerik sözleşmesi ve hikâye seçim davranışı için unit testleri ekle.
+
+Doğrulama notu: **`content.v1.json` içindeki üç hikâye `contentVersionSchema` doğrulamasından
+geçer. Yeni dosya asset'i eklenmemiştir; sahne görselleri mevcut emoji-symbol kayıtlarından,
+karakterler mevcut Mino PNG'lerinden gelir. Biome, TypeScript, mobil/content-schema testleri ve Expo
+iOS export başarılıdır.**
+
 ### R7 — Kanıt ve kişiselleştirme motoru
 
-- [ ] Etkileşim olayı ile öğrenme kanıtını ayır.
-- [ ] `valid_evidence`, `limited_evidence`, `interaction_noise` ve `not_evaluated` sınıflarını uygula.
-- [ ] Tek hızlı cevabın otomatik gürültü sayılmasını engelle.
-- [ ] Tekrar dokunmalarını cevap analizinden çıkar.
-- [ ] Kural tabanlı etkinlik seçim motorunu oluştur.
-- [ ] Açıklanabilir karar logları ekle.
-- [ ] Pilot öncesi varsayılan eşikleri yapılandırılabilir yap.
+- [x] Etkileşim olayı ile öğrenme kanıtını ayır.
+- [x] `valid_evidence`, `limited_evidence`, `interaction_noise` ve `not_evaluated` sınıflarını uygula.
+- [x] Tek hızlı cevabın otomatik gürültü sayılmasını engelle.
+- [x] Tekrar dokunmalarını cevap analizinden çıkar.
+- [x] Kural tabanlı etkinlik seçim motorunu oluştur.
+- [x] Açıklanabilir karar logları ekle.
+- [x] Pilot öncesi varsayılan eşikleri yapılandırılabilir yap.
+
+Doğrulama notu: **`@adaptive/evidence-engine`, ham etkileşim olaylarından ayrı oturum kanıtı
+üretir. Tek hızlı yanıt `limited_evidence` olarak korunur; aynı adımdaki tekrar dokunmaları ilk
+anlamlı cevaptan ayrı sayılır. Supabase private kanıt tablosu, sürümlü eşik yapılandırması,
+deterministik etkinlik seçim RPC'si ve eklemeli karar logu migration olarak eklenmiştir. Mobil hikâye
+seçim ekranı önerilen etkinliği ilk sıraya alır; izin kapalıysa genel sıraya döner.
+`20260827143000_evidence_engine.sql` staging projesine uygulanmış, uzak şema lint'i, Biome,
+TypeScript, 61 unit test ve Expo iOS export başarılıdır. Sekiz maddelik pgTAP testi yerel
+Supabase/PostgreSQL üzerinde başarıyla çalıştırılmıştır.**
+
+#### R7 kabul kriterleri
+
+- Ham olaylar kanıt veya kalıcı çocuk özelliği olarak doğrudan yorumlanmaz.
+- Tek hızlı yanıt gürültü sayılmaz ve tek başına kalıcı çıkarım üretmez.
+- Her etkinlik seçimi sürümlü eşik ve yargılamayan bir neden koduyla geriye dönük izlenebilir.
 
 ### R8 — İçerik agent’ı
 
-- [ ] `packages/content-agent` paketini oluştur.
-- [ ] Üretici agent’ı geliştir.
-- [ ] Denetleyici agent’ı geliştir.
-- [ ] Uzman onaylı rehberler için RAG kaynağı oluştur.
-- [ ] Zorunlu JSON/Zod çıktısı uygula.
-- [ ] Yasak dil ve güvenlik kontrollerini ekle.
-- [ ] Agent’ın yalnızca `draft` içerik oluşturmasını sağla.
-- [ ] Ret nedenlerini yapılandırılmış biçimde kaydet.
+- [x] `packages/content-agent` paketini oluştur.
+- [x] Zorunlu yapılandırılmış çıktı kullanan, model sağlayıcısından bağımsız üretici agent’ı geliştir.
+- [x] Üreticiden ayrı model istemcisi ve karar şeması kullanan denetleyici agent’ı geliştir.
+- [x] LLM'nin sabit hikâye iskeletleri içinde anlatım, olay, duygu ve yardım varyantları
+      üretmesini sağla; temel oyun mekaniğini ve izin verilen asset listesini değiştirmesine izin verme.
+- [x] Üretici model çıktısını çocuğa doğrudan gösterme; ayrı denetleyici model, deterministik
+      güvenlik kuralları ve `storySchema` doğrulamasından geçir.
+- [x] Tek doğru duygu, yargılayıcı geri bildirim, tanı, beceri puanı, korkutucu ayrıntı ve
+      yaşa uygun olmayan dili otomatik reddet.
+- [x] Model, prompt hash'i, şema, güvenlik/rehber sürümleri, denetim sonucu ve taslak içerik sürümünü eklemeli audit kaydında sakla.
+- [x] Üretim veya denetim başarısız olduğunda son onaylı ve cihazda önbelleklenebilen hikâyeye dön.
+- [-] Sürümlü Türkçe RAG rehber kaynağını oluştur; pilot öncesinde içerik uzmanı onayını tamamla.
+- [x] Zorunlu JSON/Zod çıktısı uygula.
+- [x] Yasak dil ve güvenlik kontrollerini ekle.
+- [x] Agent’ın yalnızca `draft` içerik oluşturmasını sağla.
+- [x] Ret nedenlerini yapılandırılmış biçimde kaydet.
+- [x] OpenAI Responses API sağlayıcısını strict JSON Schema ve `store: false` ile sunucu tarafına bağla.
+- [x] OpenAI üretici ve denetleyici rollerini ayrı model çağrıları olarak yapılandır; API anahtarını
+      yalnızca Git tarafından dışlanan kök `.env` dosyasından yükle ve mobil paketten uzak tut.
+
+Doğrulama notu: **Üretici ve ayrı denetleyici, `storySchema`, sabit mekanik/asset kapısı,
+Türkçe güvenlik kuralları, sürümlü rehber erişimi, eklemeli private audit/fallback tabloları ve güvenli
+geri dönüş akışı tamamlandı. OpenAI Responses bağlantısı `gpt-5.4-mini`, strict Structured Outputs ve
+`store: false` ile gerçek API isteğinde doğrulandı; normal testler kredi harcamaz. İçerik agent'ının
+15 unit testi, monorepo genelinde 76 unit test ve yerel
+Supabase/PostgreSQL üzerinde 57 pgTAP testi başarılıdır. Migration yerelde doğrulandı; staging'e henüz
+uygulanmadı. Rehber dosyası teknik olarak hazırdır ancak pilot kullanımı içerik uzmanı onayı bekler.**
+
+#### R8 eksikler
+
+- Prototip aşamasında ücretli Anthropic API kullanılmayacaktır. Uygulama piyasaya sunulmadan veya
+  gerçek kullanıcı pilotuna açılmadan önce Claude için ayrı reviewer API anahtarı oluşturulmalı,
+  sunucu secret deposuna eklenmeli ve bağımsız sağlayıcı denetimi uçtan uca doğrulanmalıdır.
+- OpenAI prototip üreticisi ve ayrı reviewer çağrısı etkinleştirilmiştir. İki rol aynı sağlayıcı ailesini
+  kullandığı için bu yapı bağımsız sağlayıcı denetimi sayılmaz; pilot/piyasa öncesinde Claude gibi ikinci
+  bir sağlayıcıyla kör nokta çeşitliliği ve maliyet yeniden değerlendirilmelidir.
+- R9 kuşkulu içerik kuyruğu ve yayın kapısı tamamlanana kadar hiçbir model çıktısı otomatik
+  yayınlanmamalı; OpenAI çıktıları deterministik güvenlik kontrollerinden geçmeli ve yalnızca `draft`
+  durumunda tutulmalıdır.
+- Gemini API anahtarı şu anda Free tier projeye aittir. Türkiye'deki ücretsiz API kullanımında prompt ve
+  yanıtların Google ürün/model geliştirmesinde kullanılabilmesi ürün gizliliği duruşuyla uyumlu değildir;
+  gerçek hikâye üretimi paid tier doğrulanana kadar teknik olarak kapalı tutulmalıdır.
+- İnsan onayı tüm içerikler için zorunlu bir darboğaz olmamalıdır. Otomatik kontrollerden yüksek güvenle
+  geçen içerik yayın sırasına alınmalı; yalnızca kuşkulu içerikler insan inceleme kuyruğuna düşmelidir.
+- Kuşkulu içerik onaylanırsa yayınlanmalı, reddedilirse içerik gövdesi hemen silinmeli; 15 gün boyunca
+  işlem yapılmazsa içerik gövdesi otomatik silinmeli ve yalnızca minimal ret/süre aşımı audit kaydı kalmalıdır.
+
+#### R8 kabul kriterleri
+
+- LLM çıktısı denetleyici ve deterministik kontrollerden geçmeden çocuğa ulaşmaz.
+- Uygulama yeni içerik üretilemediğinde çevrimdışı ve güvenli bir hikâyeyle çalışmaya devam eder.
+- Yayınlanan her hikâye model, prompt, şema ve denetim sürümleriyle geriye dönük izlenebilir.
+- Yalnızca kuşkulu taslaklar insan incelemesine düşer; bekleyen taslak içerikleri 15 gün sonunda otomatik silinir.
+
+### R8.1 — Beş hikâye sonrası açıklanabilir kişiselleştirme
+
+- [ ] Kişiselleştirilmiş önerileri en az beş tamamlanmış ve birbirinden farklı hikâyeden sonra aç.
+- [ ] Yalnızca tekrar seçimi, tamamlama, yardım tercihi ve birden fazla oturumda tutarlı tercih gibi
+      sınırlı etkileşim sinyallerini kullan.
+- [ ] Kişiselleştirmeyi hem `personalization` hem `learning_observations` izni açıkken çalıştır;
+      izinlerden biri kapanırsa genel hikâye rotasyonuna geri dön.
+- [ ] Tek bir dokunuştan, hızlı cevaptan veya yarıda kalan hikâyeden kalıcı çıkarım üretme.
+- [ ] Öneri gerekçesini ebeveyne olumlu ve gözlenebilir dille göster; tanı, kişilik etiketi,
+      akran karşılaştırması veya yetersizlik iddiası kullanma.
+- [ ] Ebeveyne kişiselleştirilmiş önerileri kapatma ve genel hikâye rotasyonuna dönme kontrolü ver.
+- [ ] Kullanılan kanıt sayısını, güvenilirlik eşiğini ve öneri nedenini sürümlü karar logunda sakla.
+
+#### R8.1 kabul kriterleri
+
+- Beş farklı hikâye tamamlanmadan kişiselleştirilmiş öneri üretilmez.
+- İzin kapatıldığında yeni kişiselleştirilmiş çıkarım ve öneri oluşturulmaz.
+- Her öneri ebeveyne anlaşılır, yargılamayan ve gözlenebilir bir gerekçeyle açıklanır.
 
 ### R9 — Admin paneli
+
+- [x] Next.js tabanlı, çocuk uygulamasından ayrı ve mobil uyumlu yönetim paneli temelini oluştur.
+- [x] Supabase e-posta/parola oturumu ve `private.content_admins` allowlist'iyle yönetici erişimini sınırla.
+- [x] Yalnızca kuşkulu içerikleri gösteren inceleme kuyruğu ve yapılandırılmış kuşku nedenleri.
+- [x] İnceleme kuyruğunda hikâye önizlemesi, kalan süre, onayla/yayınla ve reddet/içeriği sil eylemleri.
+- [x] Yüksek güvenli taslağı yayın deposuna, düşük güvenli veya neden kodlu taslağı kuyruğa yönlendiren
+      sunucu-only publication sink ve service-role RPC'si geliştir.
+- [x] İşlem yapılmayan kuşkulu içerik gövdelerini 15 gün sonunda otomatik silen saatlik retention görevi.
+- [x] Ret ve süre aşımında içerik gövdesini fiziksel olarak sil; minimal ve eklemeli karar audit kaydını koru.
+- [x] Yayınlanan hikâyeleri sürümlü ve yalnızca oturum açmış ailelerin okuyabildiği depoda sakla.
+- [x] Yönetici olmayan, anonim ve mobil istemcilerin kuyruk/karar/yayın RPC'lerine erişimini engelle.
+
+Doğrulama notu: **Yerel Supabase sıfırdan kuruldu; kuyruk, allowlist, onay/yayın, ret/silme,
+otomatik yönlendirme ve 15 günlük süre aşımı dahil monorepo genelinde 82 pgTAP testi geçti.
+Admin panelinin 3 unit testi, content-agent'ın 20 unit testi, TypeScript ve Next.js production build'i
+başarılıdır. Service-role anahtarı web istemcisine verilmez; kök sunucu ortamında kalır.**
+
+#### R9 sonraki editoryal araçlar
 
 - [ ] İçerik üretim talebi ekranı.
 - [ ] Taslak düzenleme ekranı.
@@ -464,17 +590,26 @@ Supabase test runner yerel Docker gerektirdiği için henüz çalıştırılamam
 - [ ] Ses dinleme ve seçme.
 - [ ] Ortak onayı.
 - [ ] Uzman onayı.
-- [ ] Yayınlama, arşivleme ve sürüm geri alma.
-- [ ] Admin audit log.
+- [ ] Yayın arşivleme ve sürüm geri alma.
 
 ### R10 — MVP içerik paketi
 
+- [x] İlk dış asset paketi olarak Mırmır'ın kırmızı balonlu iki görselini ve videosunu katalogla;
+      duygu, olay durumu, izinli/yasak anlatım ve inceleme/hak durumu metadata'sını şemaya ekle.
+- [x] Producer prompt'unu yalnızca onaylı ve kullanım hakkı doğrulanmış asset metadata'sıyla sınırla;
+      denetleyiciye görsel/video–metin duygu ve olay tutarlılığı kontrolü ekle.
+- [x] Asset metadata'sıyla çelişen anlatımı deterministik `asset_semantic_mismatch`, onaysız veya
+      kullanım hakkı belirsiz asset'i `asset_not_approved` nedeniyle reddet.
 - [ ] Dört temel duygu için içerik planı oluştur.
 - [ ] 40–60 senaryo üret.
 - [ ] 2–4 ve 4–7 yaş varyasyonlarını hazırla.
 - [ ] Görsel ve ses asset’lerini üret.
 - [ ] Bütün içerikleri iki ortak incelemesinden geçir.
 - [ ] Bütün pilot içeriklerini uzman incelemesinden geçir.
+
+R10 doğrulama notu: **Mırmır görselleri `happy/holding` ve `sad/popped` olarak semantik incelemeden
+geçti. Video `happy/playing` adayı olarak kaydedildi fakat kare incelemesi tamamlanana kadar `pending`;
+üç asset de kullanım hakkı doğrulanana kadar `needs_confirmation` ve üretim/yayın kapısında kapalıdır.**
 
 ### R11 — Ebeveyn oturum özeti ve insight altyapısı
 
