@@ -431,10 +431,23 @@
               "sadAssetId": {
                 "type": "string",
                 "minLength": 1
+              },
+              "angryAssetId": {
+                "type": "string",
+                "minLength": 1
               }
             },
             "required": ["happyAssetId", "sadAssetId"],
             "additionalProperties": false
+          },
+          "flowAssetIds": {
+            "minItems": 1,
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
           },
           "steps": {
             "minItems": 1,

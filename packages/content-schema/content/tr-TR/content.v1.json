@@ -20,6 +20,55 @@
       "accessibilityLabel": "Balonu patladığı için üzgün görünen tavşan Mino"
     },
     {
+      "id": "character-noni-happy",
+      "type": "image",
+      "uri": "app-assets:characters/noni-happy.jpg",
+      "mimeType": "image/jpeg",
+      "accessibilityLabel": "Ellerini kaldırmış, gülümseyen pembe ayıcık Noni"
+    },
+    {
+      "id": "character-noni-sad",
+      "type": "image",
+      "uri": "app-assets:characters/noni-sad.jpg",
+      "mimeType": "image/jpeg",
+      "accessibilityLabel": "Üzgün ve düşünceli görünen pembe ayıcık Noni"
+    },
+    {
+      "id": "character-noni-scared",
+      "type": "image",
+      "uri": "app-assets:characters/noni-scared.jpg",
+      "mimeType": "image/jpeg",
+      "accessibilityLabel": "Kollarını göğsünde kavuşturmuş, korkmuş görünen pembe ayıcık Noni"
+    },
+    {
+      "id": "character-noni-waving",
+      "type": "image",
+      "uri": "app-assets:characters/noni-waving.jpg",
+      "mimeType": "image/jpeg",
+      "accessibilityLabel": "El sallayarak selam veren pembe ayıcık Noni"
+    },
+    {
+      "id": "character-noni-with-toy",
+      "type": "image",
+      "uri": "app-assets:characters/noni-with-toy.jpg",
+      "mimeType": "image/jpeg",
+      "accessibilityLabel": "Elinde tahta oyuncak arabayla oynayan pembe ayıcık Noni"
+    },
+    {
+      "id": "character-noni-with-one-friend",
+      "type": "image",
+      "uri": "app-assets:characters/noni-with-one-friend.jpg",
+      "mimeType": "image/jpeg",
+      "accessibilityLabel": "Mavi ayıcık arkadaşıyla birlikte oyuncaklarıyla oynayan Noni"
+    },
+    {
+      "id": "character-noni-with-two-friends",
+      "type": "image",
+      "uri": "app-assets:characters/noni-with-two-friends.jpg",
+      "mimeType": "image/jpeg",
+      "accessibilityLabel": "Mavi ve mor ayıcık arkadaşlarıyla birlikte oyuncaklarıyla oynayan Noni"
+    },
+    {
       "id": "character-mirmir-red-balloon-happy",
       "type": "image",
       "uri": "app-assets:characters/mirmir-happy.jpg",
@@ -164,6 +213,13 @@
       "uri": "emoji:🖍️",
       "mimeType": "text/plain",
       "accessibilityLabel": "Paylaşılan boya kalemleri"
+    },
+    {
+      "id": "scene-noni-lost-car",
+      "type": "symbol",
+      "uri": "emoji:🚗",
+      "mimeType": "text/plain",
+      "accessibilityLabel": "Noni'nin kayıp oyuncak arabası"
     },
     {
       "id": "emotion-happy",
