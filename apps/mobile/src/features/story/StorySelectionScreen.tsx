@@ -1,5 +1,14 @@
 import type { Asset, Game, Story } from "@adaptive/content-schema";
-import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  type ImageSourcePropType,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { createStorySelectionCards } from "./storySelection";
 
 const routineGameIcon = require("../../../assets/game/home/morning-routine.png");
@@ -15,6 +24,13 @@ const miniGameIcons = {
   "riko-where-001": require("../../../assets/game/home/spatial-crate.png"),
   "zuzu-missing-piece-001": require("../../../assets/game/home/missing-blocks.png"),
   "kiki-big-small-shop-001": require("../../../assets/game/home/big-small-acorns.png"),
+};
+const storyCoverImages: Record<string, ImageSourcePropType> = {
+  "mino-balloon-story": require("../../../assets/characters/mino-happy.png"),
+  "mino-block-tower-story": require("../../../assets/characters/mino-sad-v2.png"),
+  "mino-friend-goodbye-story": require("../../../assets/characters/mino-happy.png"),
+  "mirmir-red-balloon-story": require("../../../assets/characters/mirmir-happy.jpg"),
+  "mino-lost-toy-story": require("../../../assets/characters/mino-sad-v2.png"),
 };
 
 export function StorySelectionScreen({
@@ -66,9 +82,22 @@ export function StorySelectionScreen({
                 pressed && styles.storyCardPressed,
               ]}
             >
-              <Text accessibilityLabel={card.accessibilityLabel} style={styles.storySymbol}>
-                {card.symbol}
-              </Text>
+              {storyCoverImages[card.storyId] ? (
+                <View style={styles.storyCover}>
+                  <Image
+                    accessibilityIgnoresInvertColors
+                    accessibilityLabel={card.accessibilityLabel}
+                    resizeMode={card.storyId === "mirmir-red-balloon-story" ? "cover" : "contain"}
+                    source={storyCoverImages[card.storyId]}
+                    style={styles.storyCoverImage}
+                  />
+                  <Text style={styles.storySceneBadge}>{card.symbol}</Text>
+                </View>
+              ) : (
+                <Text accessibilityLabel={card.accessibilityLabel} style={styles.storySymbol}>
+                  {card.symbol}
+                </Text>
+              )}
               <Text style={styles.storyTitle}>{card.title}</Text>
               {card.recommended && <Text style={styles.recommendedSymbol}>★</Text>}
               <Text style={styles.playLabel}>Başla ›</Text>
@@ -183,6 +212,25 @@ const styles = StyleSheet.create({
   storyCardAlternate: { backgroundColor: "#CDEBE4" },
   storyCardPressed: { opacity: 0.72, transform: [{ scale: 0.98 }] },
   storySymbol: { width: 60, fontSize: 48, textAlign: "center" },
+  storyCover: {
+    width: 86,
+    height: 86,
+    overflow: "hidden",
+    borderWidth: 4,
+    borderColor: "#FFFFFF",
+    borderRadius: 23,
+    backgroundColor: "#FFF8EE",
+  },
+  storyCoverImage: { width: "100%", height: "100%" },
+  storySceneBadge: {
+    position: "absolute",
+    right: 2,
+    bottom: 1,
+    fontSize: 24,
+    textShadowColor: "#FFFFFF",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
   storyTitle: { flex: 1, color: "#463A31", fontSize: 20, fontWeight: "900", lineHeight: 25 },
   recommendedSymbol: { color: "#D08A19", fontSize: 25 },
   playLabel: { color: "#216D61", fontSize: 16, fontWeight: "900" },
