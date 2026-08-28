@@ -20,6 +20,7 @@
     "@adaptive/parent-insights": "workspace:*",
     "@adaptive/personalization-engine": "workspace:*",
     "@adaptive/shared-types": "workspace:*",
+    "@expo/vector-icons": "15.1.1",
     "@react-native-community/netinfo": "11.4.1",
     "@supabase/supabase-js": "^2.112.4",
     "expo": "~54.0.37",
