@@ -58,7 +58,10 @@ export async function createMediaJob(
   return job;
 }
 
-export async function getMediaJob(client: SupabaseClient, jobId: string): Promise<MediaJob | undefined> {
+export async function getMediaJob(
+  client: SupabaseClient,
+  jobId: string,
+): Promise<MediaJob | undefined> {
   const { data, error } = await client.rpc("get_media_job", { target_job_id: jobId });
   if (error) throw new Error(error.message);
   const row = (data as MediaJobRow[] | null)?.[0];
