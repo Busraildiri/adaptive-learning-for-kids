@@ -99,6 +99,19 @@ export interface Database {
           },
         ];
       };
+      published_game_versions: {
+        Row: {
+          game_id: string;
+          game_version: number;
+          age_band: "2-4" | "4-7";
+          game: Json;
+          published_by: string;
+          published_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
     };
     Views: Record<never, never>;
     Functions: {

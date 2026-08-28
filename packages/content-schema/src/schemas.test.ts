@@ -1,7 +1,117 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import generatedJsonSchema from "../generated/content-version.schema.json";
-import { contentVersionSchema } from "./schemas";
+import { contentVersionSchema, tapOrWaitGameSchema } from "./schemas";
+
+const validTapOrWaitGame = {
+  schemaVersion: "game-v1",
+  id: "color-lights-001",
+  version: 1,
+  status: "draft",
+  productionSource: "manual",
+  mechanic: "tap_or_wait",
+  title: "Renkli Işıklar",
+  description: "Yeşilde dokun, kırmızıda bekle.",
+  ageBand: "2-4",
+  skillTags: ["yönerge-takibi", "bekleme-pratiği"],
+  presentation: {
+    mascotAssetId: "character-mino-happy",
+    introNarration: "Yeşil ışık görünce dokun. Kırmızı ışık görünce bekle.",
+    closingNarration: "Oyun tamamlandı!",
+    showRuleReminder: true,
+    playAudioInstructions: true,
+  },
+  rules: [
+    {
+      id: "green-tap",
+      stimulus: {
+        kind: "signal",
+        color: "#45B96B",
+        symbol: "✓",
+        accessibilityLabel: "Yeşil dokunma ışığı",
+      },
+      expectedAction: { type: "tap_count", count: 1, responseWindowMs: 5_000 },
+      instruction: "Yeşil ışığa bir kere dokun.",
+      reminder: "Yeşilde dokunuyoruz.",
+    },
+    {
+      id: "red-wait",
+      stimulus: {
+        kind: "signal",
+        color: "#D9534F",
+        symbol: "■",
+        accessibilityLabel: "Kırmızı bekleme ışığı",
+      },
+      expectedAction: { type: "wait_without_tap", durationMs: 4_000 },
+      instruction: "Kırmızı ışıkta bekle.",
+      reminder: "Bu kez bekliyoruz.",
+    },
+  ],
+  roundPlan: {
+    mode: "manual",
+    rounds: [
+      { ruleId: "green-tap" },
+      { ruleId: "red-wait" },
+      { ruleId: "green-tap" },
+      { ruleId: "green-tap" },
+      { ruleId: "red-wait" },
+    ],
+  },
+  feedback: {
+    expectedActionMatched: "Devam edelim!",
+    tapWhileWaiting: "Bu kez bekliyoruz. Bir daha deneyelim.",
+    tooFewTaps: "Bir dokunuş daha yapabilirsin.",
+    tooManyTaps: "Yeni tur geliyor.",
+    noResponse: "Şimdi sıradaki geliyor.",
+    roundTransition: "Hazır ol, yenisi geliyor!",
+  },
+  difficulty: {
+    level: "starter",
+    interRoundDelayMs: 1_200,
+    reminderMode: "every_round",
+    ruleChangeEnabled: false,
+  },
+  adaptation: {
+    enabled: true,
+    minimumRoundCount: 3,
+    maximumRoundCount: 6,
+    minimumResponseWindowMs: 4_000,
+    maximumResponseWindowMs: 8_000,
+    allowedReminderModes: ["every_round", "when_needed"],
+  },
+} as const;
+
+describe("tapOrWaitGameSchema", () => {
+  it("accepts a bounded game for ages 2-4", () => {
+    expect(tapOrWaitGameSchema.parse(validTapOrWaitGame)).toEqual(validTapOrWaitGame);
+  });
+
+  it("rejects rounds that reference missing rules", () => {
+    expect(
+      tapOrWaitGameSchema.safeParse({
+        ...validTapOrWaitGame,
+        roundPlan: {
+          mode: "manual",
+          rounds: [{ ruleId: "missing" }, { ruleId: "green-tap" }, { ruleId: "red-wait" }],
+        },
+      }).success,
+    ).toBe(false);
+  });
+
+  it("enforces the rule and round limits for ages 2-4", () => {
+    const thirdRule = { ...validTapOrWaitGame.rules[0], id: "another-tap" };
+    expect(
+      tapOrWaitGameSchema.safeParse({
+        ...validTapOrWaitGame,
+        rules: [...validTapOrWaitGame.rules, thirdRule],
+        roundPlan: {
+          mode: "manual",
+          rounds: Array.from({ length: 7 }, () => ({ ruleId: "green-tap" })),
+        },
+      }).success,
+    ).toBe(false);
+  });
+});
 
 const validContent = {
   schemaVersion: "0.2.0",

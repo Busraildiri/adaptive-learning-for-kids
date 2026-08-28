@@ -743,6 +743,129 @@ uygulanmıştır.**
 
 ---
 
+## Ek özellikler
+
+### E1 — Yapılandırılabilir oyun üretimi ve oyun paneli
+
+Amaç: **Mobil uygulamanın desteklediği sınırlı sayıdaki güçlü oyun mekaniğinden manuel veya
+otomatik olarak çok sayıda güvenli, yaşa uygun ve farklı oyun türetmek.**
+
+Sorumluluk ayrımı:
+
+- **Büşra:** Oyun motorları ve oyun veri sözleşmesi; admin panelindeki oyun üretimi, zorluk
+  sınıflandırması, filtreleme, yayın ve otomasyon akışları; oyun verilerinden güvenli insight üretimi,
+  ebeveyn paneli bağlantıları, oyun kişiselleştirmesi ve 5–7 yaş çocuk arayüzü.
+- **Serenay:** Admin panelindeki hikâye üretimi akışının yeniden düzenlenmesi.
+- Mobil oyun motorları ve uygulama entegrasyonları mevcut ortak sözleşmelere göre koordine edilir.
+
+#### Büşra — sıradaki adımlar
+
+Bağımlılık ve uygulama sırasına göre:
+
+1. [ ] Oyun oturumlarından yalnızca gerekli ve izinli sinyalleri toplayan insight veri sözleşmesini
+       tamamla; tamamlama, yardım ihtiyacı, tekrar, bekleme ve oyundan ayrılma olaylarını tanısal
+       olmayan gözlemlere dönüştürmek için eşik ve yeterli veri kurallarını belirle.
+2. [ ] Ebeveyn panelini detaylandır; hikâye özetlerinin yanında oyun oturumlarını ve oyunlara dair
+       yargılamayan, açıklanabilir insight kartlarını göster. Yetersiz veri ve izin kapalı durumlarını
+       ayrı ele al; puan, tanı ve akran karşılaştırması kullanma.
+3. [ ] Oyunlar için sürümlü zorluk seviyeleri ve zorluk parametreleri tanımla; admin panelinde oyunları
+       yaş grubu, mekanik ve zorluk düzeyine göre filtreleme imkânı ekle.
+4. [ ] Admin panelini otomatik oyun üretim akışına bağla; otomasyonun yalnızca uygulamada var olan oyun
+       mekaniklerini, onaylı seçenekleri, asset'leri ve güvenli parametre aralıklarını kullanarak yeni
+       oyun taslakları oluşturmasını sağla. Taslakları doğrulama ve onay kuyruğundan sonra yayınla.
+5. [ ] Yeterli ve birden fazla oturuma yayılan oyun verisi oluştuğunda, çocuğun yaş katmanı içinde daha
+       kolay veya daha zor onaylı oyun varyantları gösteren açıklanabilir kişiselleştirmeyi uygula;
+       tek oyun veya tek hatadan kalıcı çıkarım üretme.
+6. [ ] 5–7 yaş katmanının çocuk arayüzünü oluşturmaya başla; görsel dil, gezinme, yönerge yoğunluğu,
+       seçenek sayısı ve etkileşim karmaşıklığını bu yaş grubuna göre tasarla ve mevcut oyunların
+       5–7 yaş varyantlarını yeni arayüzde doğrula.
+
+#### E1.1 — Oyun mekaniği ve veri modeli
+
+- [ ] İçerikten bağımsız, mobil uygulamanın güvenli biçimde çalıştırabileceği 5–8 yapılandırılabilir
+      oyun mekaniğini tanımla.
+- [ ] İlk mekanik adaylarını duygu ve duygusal ipucu bulma, dokun/bekle, kural değiştirme,
+      sıralama/gruplama, renk-sayı, işitsel yönerge ve zamanlı hareket olarak değerlendir.
+- [ ] Oyun mekaniği ile değişken oyun içeriğini birbirinden ayıran sürümlü oyun şeması oluştur.
+- [ ] Oyun adımları için seçim, hedefe dokunma, dokunma sayısı, dokunmadan bekleme, sıralama,
+      gruplama, dinle-seç, yalnızca gözlem ve doğrulanmayan zamanlı katılım etkileşimlerini tanımla.
+- [ ] Mobil uygulamanın desteklemediği yeni sensör veya etkileşimlerin yalnızca admin içeriğiyle
+      etkinleştirilememesini sağla.
+- [ ] Oyunların asset, seslendirme, yönerge, geri bildirim, tur ve zorluk parametrelerini
+      yapılandırılmış alanlarda sakla.
+
+#### E1.2 — Admin oyun düzenleyicisi
+
+- [ ] Yöneticiye önce oyun mekaniği seçtiren, ardından boş oyun düzenleyicisi açan akışı geliştir.
+- [ ] Oyun adı, yaş uygunluğu, hedef beceri, karakter, sahne, yönerge, kural, seçenek, tur,
+      geri bildirim, asset ve zorluk alanlarını düzenlenebilir yap.
+- [ ] “Boş oyun oluştur” ve “örnekten başla” seçeneklerini destekle.
+- [ ] Aynı oyunun 2–4 ve 4–7 yaş yapılandırmalarını ayrı ayrı düzenleme ve mobil görünümde
+      önizleme imkânı sağla.
+- [ ] Taslak kaydetme, doğrulama, inceleme, yayınlama, arşivleme ve sürüm geri alma akışlarını ekle.
+- [ ] Duygu oyunlarında tek doğru duygu varsayımını ve yargılayıcı doğru/yanlış geri bildirimini
+      engelle.
+- [ ] Tanı, tedavi veya “ADHD'yi geliştirir/tedavi eder” benzeri klinik iddiaları oyun metinlerinde
+      yasakla; becerileri yalnızca pratik edilen genel alanlar olarak tanımla.
+
+#### E1.3 — Yaş uygunluğu ve zorluk
+
+- [ ] Yaş uygunluğunu `2-4` (24–47 ay), `4-7` (48–83 ay) veya iki katman olarak açıkça sakla.
+- [ ] Yaş uygunluğu, oyun zorluğu ve çocuk bazlı kişiselleştirmeyi birbirinden bağımsız kavramlar
+      olarak modelle.
+- [ ] 2–4 yaş varyantlarında kısa ve tek aşamalı yönerge, 2–4 büyük seçenek, düşük tur sayısı,
+      sesli/görsel destek ve süre baskısı olmaması için doğrulama kuralları belirle.
+- [ ] 4–7 yaş varyantlarında kontrollü kural değişimi, daha fazla seçenek, duygusal ipucu yorumlama,
+      çok adımlı sıralama ve çalışma belleği parametrelerini destekle.
+- [ ] Çocuk zorlandığında onu daha küçük yaş katmanına geçirmek yerine kendi yaş katmanında seçenek,
+      çeldirici, süre, tur, hatırlatma ve yönerge karmaşıklığını uyarlamayı sağla.
+- [ ] Uygulamanın önce kesin yaş filtresi uygulamasını, ardından uygun oyun havuzu içinde zorluk ve
+      kişiselleştirme seçimi yapmasını sağla.
+
+#### E1.4 — Otomatik oyun üretimi
+
+- [ ] Manuel düzenleyici ile gelecekteki AI üretiminin aynı sürümlü oyun şemasını kullanmasını sağla.
+- [ ] AI’ın yalnızca mobilde desteklenen mekanikleri, izin verilen asset’leri ve güvenli parametre
+      aralıklarını kullanabildiği üretim kapısını tasarla.
+- [ ] Günlük beş farklı oyun üretebilen zamanlanmış otomasyon akışını tasarla.
+- [ ] Günlük üretimde mekanik, yaş grubu, hedef beceri, karakter, tema ve zorluk dağılımını dengeli
+      planla.
+- [ ] Aynı olayın yalnızca karakter veya küçük kelime değişiklikleriyle yeniden üretilmesini engelleyen
+      benzerlik ve tekrar kontrolü ekle.
+- [ ] AI çıktısını oyun şeması, yaş uygunluğu, güvenlik, asset hakları ve oynatılabilirlik
+      kontrollerinden geçir.
+- [ ] İlk aşamada otomatik üretim ve insan onayı kullan; güvenilirliği doğrulanan düşük riskli
+      mekanikler için otomatik yayını ayrıca değerlendirmeye aç.
+- [ ] Üretim modeli, prompt, şema, güvenlik kuralları, denetim sonucu ve yayın kararını sürümlü audit
+      kaydında tut.
+
+#### E1.5 — Oyun kişiselleştirmesi
+
+- [ ] Yalnızca uygun izinler açıkken oyun seçimi ve zorluk uyarlaması yap.
+- [ ] Tamamlama, hatırlatma ihtiyacı, tekrar eden etkileşim örüntüsü, oyundan ayrılma ve farklı
+      oturumlardaki tutarlı tercihler gibi sınırlı sinyalleri değerlendir.
+- [ ] Tek dokunuştan veya tek oyundan kalıcı çocuk özelliği, tanı ya da beceri puanı üretme.
+- [ ] Seçenek sayısı, çeldirici sayısı, tur, süre, kural sayısı, kural değişim sıklığı ve ipucu düzeyini
+      güvenli sınırlar içinde uyarlanabilir yap.
+- [ ] Her çocuğa ayrı içerik üretmek yerine onaylı oyun havuzundan uygun varyant seçimini varsayılan
+      ve daha kontrollü yaklaşım olarak kullan.
+- [ ] Her kişiselleştirme kararını yargılamayan ve geriye dönük açıklanabilir neden kodlarıyla kaydet.
+
+#### E1 kabul kriterleri
+
+- Yönetici, ayrıca JSON veya taslak dosya hazırlamadan desteklenen bir mekanikten sıfırdan oyun
+  oluşturabilir.
+- Aynı oyun mekaniğinden farklı karakter, olay, kural, asset ve zorluklarla çok sayıda oynanabilir
+  oyun türetilebilir.
+- Mobil uygulama yalnızca kendi desteklediği ve şema doğrulamasından geçen oyunları çalıştırır.
+- 2–4 ve 4–7 yaş uygunluğu kesin ay sınırlarıyla filtrelenir; zorluk kişiselleştirmesi yaş filtresinden
+  sonra uygulanır.
+- Otomatik üretim açıldığında AI, manuel panelin kullandığı veri sözleşmesini doldurur ve güvenlik
+  kapılarını atlayamaz.
+- Oyunlar tanı, tedavi, klinik gelişim iddiası veya çocuğu yaşıtlarıyla karşılaştıran sonuçlar üretmez.
+
+---
+
 ## Daha sonra
 
 - [ ] Android cihaz doğrulaması ve mağaza yayını.
