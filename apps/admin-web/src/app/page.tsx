@@ -290,7 +290,7 @@ export default function HomePage() {
       </nav>
       {message && <p className="alert global-alert">{message}</p>}
       {screen === "games" ? (
-        <GamePanel />
+        <GamePanel supabase={supabase} />
       ) : (
         <>
           <GenerationPanel onGenerated={loadQueue} supabase={supabase} />

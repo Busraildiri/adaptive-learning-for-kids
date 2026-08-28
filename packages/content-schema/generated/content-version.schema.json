@@ -944,6 +944,1645 @@
         ],
         "additionalProperties": false
       }
+    },
+    "games": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "schemaVersion": {
+                "type": "string",
+                "const": "game-v1"
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "version": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "status": {
+                "type": "string",
+                "enum": ["draft", "in_review", "published", "archived"]
+              },
+              "productionSource": {
+                "type": "string",
+                "enum": ["manual", "ai", "automation"]
+              },
+              "mechanic": {
+                "type": "string",
+                "const": "tap_or_wait"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "ageBand": {
+                "type": "string",
+                "enum": ["2-4", "4-7"]
+              },
+              "skillTags": {
+                "minItems": 1,
+                "maxItems": 5,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                }
+              },
+              "presentation": {
+                "type": "object",
+                "properties": {
+                  "mascotAssetId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "introNarration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240
+                  },
+                  "closingNarration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "showRuleReminder": {
+                    "type": "boolean"
+                  },
+                  "playAudioInstructions": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "introNarration",
+                  "closingNarration",
+                  "showRuleReminder",
+                  "playAudioInstructions"
+                ],
+                "additionalProperties": false
+              },
+              "rules": {
+                "minItems": 2,
+                "maxItems": 3,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "stimulus": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "const": "signal"
+                        },
+                        "color": {
+                          "type": "string",
+                          "pattern": "^#[0-9a-fA-F]{6}$"
+                        },
+                        "symbol": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 4
+                        },
+                        "accessibilityLabel": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 120
+                        }
+                      },
+                      "required": ["kind", "color", "symbol", "accessibilityLabel"],
+                      "additionalProperties": false
+                    },
+                    "expectedAction": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "tap_count"
+                            },
+                            "count": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 2
+                            },
+                            "responseWindowMs": {
+                              "type": "integer",
+                              "minimum": 3000,
+                              "maximum": 10000
+                            }
+                          },
+                          "required": ["type", "count", "responseWindowMs"],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "wait_without_tap"
+                            },
+                            "durationMs": {
+                              "type": "integer",
+                              "minimum": 3000,
+                              "maximum": 8000
+                            }
+                          },
+                          "required": ["type", "durationMs"],
+                          "additionalProperties": false
+                        }
+                      ]
+                    },
+                    "instruction": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 160
+                    },
+                    "reminder": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    }
+                  },
+                  "required": ["id", "stimulus", "expectedAction", "instruction", "reminder"],
+                  "additionalProperties": false
+                }
+              },
+              "roundPlan": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "const": "manual"
+                  },
+                  "rounds": {
+                    "minItems": 3,
+                    "maxItems": 10,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "ruleId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        }
+                      },
+                      "required": ["ruleId"],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": ["mode", "rounds"],
+                "additionalProperties": false
+              },
+              "feedback": {
+                "type": "object",
+                "properties": {
+                  "expectedActionMatched": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "tapWhileWaiting": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "tooFewTaps": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "tooManyTaps": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "noResponse": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "roundTransition": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  }
+                },
+                "required": [
+                  "expectedActionMatched",
+                  "tapWhileWaiting",
+                  "tooFewTaps",
+                  "tooManyTaps",
+                  "noResponse",
+                  "roundTransition"
+                ],
+                "additionalProperties": false
+              },
+              "difficulty": {
+                "type": "object",
+                "properties": {
+                  "level": {
+                    "type": "string",
+                    "enum": ["starter", "growing", "advanced"]
+                  },
+                  "interRoundDelayMs": {
+                    "type": "integer",
+                    "minimum": 500,
+                    "maximum": 3000
+                  },
+                  "reminderMode": {
+                    "type": "string",
+                    "enum": ["every_round", "when_needed"]
+                  },
+                  "ruleChangeEnabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["level", "interRoundDelayMs", "reminderMode", "ruleChangeEnabled"],
+                "additionalProperties": false
+              },
+              "adaptation": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "minimumRoundCount": {
+                    "type": "integer",
+                    "minimum": 3,
+                    "maximum": 10
+                  },
+                  "maximumRoundCount": {
+                    "type": "integer",
+                    "minimum": 3,
+                    "maximum": 10
+                  },
+                  "minimumResponseWindowMs": {
+                    "type": "integer",
+                    "minimum": 3000,
+                    "maximum": 10000
+                  },
+                  "maximumResponseWindowMs": {
+                    "type": "integer",
+                    "minimum": 3000,
+                    "maximum": 10000
+                  },
+                  "allowedReminderModes": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["every_round", "when_needed"]
+                    }
+                  }
+                },
+                "required": [
+                  "enabled",
+                  "minimumRoundCount",
+                  "maximumRoundCount",
+                  "minimumResponseWindowMs",
+                  "maximumResponseWindowMs",
+                  "allowedReminderModes"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schemaVersion",
+              "id",
+              "version",
+              "status",
+              "productionSource",
+              "mechanic",
+              "title",
+              "description",
+              "ageBand",
+              "skillTags",
+              "presentation",
+              "rules",
+              "roundPlan",
+              "feedback",
+              "difficulty",
+              "adaptation"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schemaVersion": {
+                "type": "string",
+                "const": "game-v1"
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "version": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "status": {
+                "type": "string",
+                "enum": ["draft", "in_review", "published", "archived"]
+              },
+              "productionSource": {
+                "type": "string",
+                "enum": ["manual", "ai", "automation"]
+              },
+              "mechanic": {
+                "type": "string",
+                "const": "classify_and_sort"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "ageBand": {
+                "type": "string",
+                "enum": ["2-4", "4-7"]
+              },
+              "skillTags": {
+                "minItems": 1,
+                "maxItems": 5,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                }
+              },
+              "presentation": {
+                "type": "object",
+                "properties": {
+                  "mascotAssetId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "introNarration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240
+                  },
+                  "closingNarration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "ruleChangeNarration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "playAudioInstructions": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "introNarration",
+                  "closingNarration",
+                  "ruleChangeNarration",
+                  "playAudioInstructions"
+                ],
+                "additionalProperties": false
+              },
+              "rounds": {
+                "minItems": 2,
+                "maxItems": 5,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "dimension": {
+                      "type": "string",
+                      "enum": ["color", "category", "size"]
+                    },
+                    "targetValue": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 40
+                    },
+                    "instruction": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 160
+                    },
+                    "objects": {
+                      "minItems": 3,
+                      "maxItems": 6,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "label": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80
+                          },
+                          "shape": {
+                            "type": "string",
+                            "enum": ["ball", "car", "bear", "fish", "block", "star"]
+                          },
+                          "color": {
+                            "type": "string",
+                            "enum": ["red", "blue", "yellow", "green", "purple"]
+                          },
+                          "category": {
+                            "type": "string",
+                            "enum": ["toy", "animal"]
+                          },
+                          "size": {
+                            "type": "string",
+                            "enum": ["small", "large"]
+                          }
+                        },
+                        "required": ["id", "label", "shape", "color", "category", "size"],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": ["id", "dimension", "targetValue", "instruction", "objects"],
+                  "additionalProperties": false
+                }
+              },
+              "feedback": {
+                "type": "object",
+                "properties": {
+                  "matched": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "retry": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "transition": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  }
+                },
+                "required": ["matched", "retry", "transition"],
+                "additionalProperties": false
+              },
+              "difficulty": {
+                "type": "object",
+                "properties": {
+                  "level": {
+                    "type": "string",
+                    "enum": ["starter", "growing", "advanced"]
+                  },
+                  "secondTryEnabled": {
+                    "type": "boolean"
+                  },
+                  "responseWindowMs": {
+                    "type": "integer",
+                    "minimum": 4000,
+                    "maximum": 30000
+                  }
+                },
+                "required": ["level", "secondTryEnabled", "responseWindowMs"],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schemaVersion",
+              "id",
+              "version",
+              "status",
+              "productionSource",
+              "mechanic",
+              "title",
+              "description",
+              "ageBand",
+              "skillTags",
+              "presentation",
+              "rounds",
+              "feedback",
+              "difficulty"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schemaVersion": {
+                "type": "string",
+                "const": "game-v1"
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "version": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "status": {
+                "type": "string",
+                "enum": ["draft", "in_review", "published", "archived"]
+              },
+              "productionSource": {
+                "type": "string",
+                "enum": ["manual", "ai", "automation"]
+              },
+              "mechanic": {
+                "type": "string",
+                "const": "sequence_and_place"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "ageBand": {
+                "type": "string",
+                "enum": ["2-4", "4-7"]
+              },
+              "skillTags": {
+                "minItems": 1,
+                "maxItems": 5,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                }
+              },
+              "presentation": {
+                "type": "object",
+                "properties": {
+                  "mascotAssetId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "introNarration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240
+                  },
+                  "closingNarration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "playAudioInstructions": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["introNarration", "closingNarration", "playAudioInstructions"],
+                "additionalProperties": false
+              },
+              "rounds": {
+                "minItems": 3,
+                "maxItems": 6,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "instruction": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 180
+                    },
+                    "items": {
+                      "minItems": 2,
+                      "maxItems": 3,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100
+                          },
+                          "label": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 80
+                          },
+                          "assetKey": {
+                            "type": "string",
+                            "enum": [
+                              "blocks",
+                              "toy-basket",
+                              "toothbrush",
+                              "storybook",
+                              "pajamas",
+                              "bed",
+                              "wash-hands",
+                              "towel",
+                              "coat",
+                              "shoes"
+                            ]
+                          }
+                        },
+                        "required": ["id", "label", "assetKey"],
+                        "additionalProperties": false
+                      }
+                    },
+                    "correctOrder": {
+                      "minItems": 2,
+                      "maxItems": 3,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                      }
+                    }
+                  },
+                  "required": ["id", "instruction", "items", "correctOrder"],
+                  "additionalProperties": false
+                }
+              },
+              "feedback": {
+                "type": "object",
+                "properties": {
+                  "matched": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "retry": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "hint": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  }
+                },
+                "required": ["matched", "retry", "hint"],
+                "additionalProperties": false
+              },
+              "difficulty": {
+                "type": "object",
+                "properties": {
+                  "level": {
+                    "type": "string",
+                    "enum": ["starter", "growing", "advanced"]
+                  },
+                  "secondTryEnabled": {
+                    "type": "boolean"
+                  },
+                  "hintDelayMs": {
+                    "type": "integer",
+                    "minimum": 5000,
+                    "maximum": 30000
+                  }
+                },
+                "required": ["level", "secondTryEnabled", "hintDelayMs"],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schemaVersion",
+              "id",
+              "version",
+              "status",
+              "productionSource",
+              "mechanic",
+              "title",
+              "description",
+              "ageBand",
+              "skillTags",
+              "presentation",
+              "rounds",
+              "feedback",
+              "difficulty"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schemaVersion": {
+                "type": "string",
+                "const": "game-v1"
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "version": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "status": {
+                "type": "string",
+                "enum": ["draft", "in_review", "published", "archived"]
+              },
+              "productionSource": {
+                "type": "string",
+                "enum": ["manual", "ai", "automation"]
+              },
+              "mechanic": {
+                "type": "string",
+                "const": "emotion_clues"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "ageBand": {
+                "type": "string",
+                "enum": ["2-4", "4-7"]
+              },
+              "skillTags": {
+                "minItems": 1,
+                "maxItems": 5,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                }
+              },
+              "presentation": {
+                "type": "object",
+                "properties": {
+                  "mascotAssetId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "introNarration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240
+                  },
+                  "closingNarration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "playAudioInstructions": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["introNarration", "closingNarration", "playAudioInstructions"],
+                "additionalProperties": false
+              },
+              "rounds": {
+                "minItems": 2,
+                "maxItems": 5,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "sceneAssetKey": {
+                      "type": "string",
+                      "enum": ["sad-bear", "happy-rabbit", "angry-fox"]
+                    },
+                    "storyPrompt": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 180
+                    },
+                    "emotionPrompt": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 140
+                    },
+                    "correctEmotion": {
+                      "type": "string",
+                      "enum": ["happy", "sad", "angry", "scared"]
+                    },
+                    "cluePrompt": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 160
+                    },
+                    "correctClue": {
+                      "type": "string",
+                      "enum": ["mouth", "eyes", "body"]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "sceneAssetKey",
+                    "storyPrompt",
+                    "emotionPrompt",
+                    "correctEmotion",
+                    "cluePrompt",
+                    "correctClue"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "feedback": {
+                "type": "object",
+                "properties": {
+                  "emotionMatched": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "clueMatched": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "retry": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  }
+                },
+                "required": ["emotionMatched", "clueMatched", "retry"],
+                "additionalProperties": false
+              },
+              "difficulty": {
+                "type": "object",
+                "properties": {
+                  "level": {
+                    "type": "string",
+                    "enum": ["starter", "growing", "advanced"]
+                  },
+                  "secondTryEnabled": {
+                    "type": "boolean"
+                  },
+                  "askClueQuestion": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["level", "secondTryEnabled", "askClueQuestion"],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schemaVersion",
+              "id",
+              "version",
+              "status",
+              "productionSource",
+              "mechanic",
+              "title",
+              "description",
+              "ageBand",
+              "skillTags",
+              "presentation",
+              "rounds",
+              "feedback",
+              "difficulty"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schemaVersion": {
+                "type": "string",
+                "const": "game-v1"
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "version": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "status": {
+                "type": "string",
+                "enum": ["draft", "in_review", "published", "archived"]
+              },
+              "productionSource": {
+                "type": "string",
+                "enum": ["manual", "ai", "automation"]
+              },
+              "mechanic": {
+                "type": "string",
+                "const": "fish_patterns"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "ageBand": {
+                "type": "string",
+                "enum": ["2-4", "4-7"]
+              },
+              "skillTags": {
+                "minItems": 1,
+                "maxItems": 5,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                }
+              },
+              "presentation": {
+                "type": "object",
+                "properties": {
+                  "introNarration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240
+                  },
+                  "closingNarration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "playAudioInstructions": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["introNarration", "closingNarration", "playAudioInstructions"],
+                "additionalProperties": false
+              },
+              "rounds": {
+                "minItems": 2,
+                "maxItems": 5,
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "kind": {
+                          "type": "string",
+                          "const": "color_prediction"
+                        },
+                        "sequence": {
+                          "minItems": 3,
+                          "maxItems": 4,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "red",
+                              "blue",
+                              "yellow",
+                              "teal",
+                              "green",
+                              "purple",
+                              "pink",
+                              "orange"
+                            ]
+                          }
+                        },
+                        "correctColor": {
+                          "type": "string",
+                          "enum": [
+                            "red",
+                            "blue",
+                            "yellow",
+                            "teal",
+                            "green",
+                            "purple",
+                            "pink",
+                            "orange"
+                          ]
+                        },
+                        "choices": {
+                          "minItems": 2,
+                          "maxItems": 3,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "red",
+                              "blue",
+                              "yellow",
+                              "teal",
+                              "green",
+                              "purple",
+                              "pink",
+                              "orange"
+                            ]
+                          }
+                        },
+                        "prompt": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 160
+                        }
+                      },
+                      "required": ["id", "kind", "sequence", "correctColor", "choices", "prompt"],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "kind": {
+                          "type": "string",
+                          "const": "sequence_memory"
+                        },
+                        "fish": {
+                          "minItems": 2,
+                          "maxItems": 4,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "red",
+                              "blue",
+                              "yellow",
+                              "teal",
+                              "green",
+                              "purple",
+                              "pink",
+                              "orange"
+                            ]
+                          }
+                        },
+                        "sequence": {
+                          "minItems": 2,
+                          "maxItems": 4,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "red",
+                              "blue",
+                              "yellow",
+                              "teal",
+                              "green",
+                              "purple",
+                              "pink",
+                              "orange"
+                            ]
+                          }
+                        },
+                        "prompt": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 160
+                        },
+                        "revealMs": {
+                          "type": "integer",
+                          "minimum": 500,
+                          "maximum": 1800
+                        }
+                      },
+                      "required": ["id", "kind", "fish", "sequence", "prompt", "revealMs"],
+                      "additionalProperties": false
+                    }
+                  ]
+                }
+              },
+              "feedback": {
+                "type": "object",
+                "properties": {
+                  "matched": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "retry": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  }
+                },
+                "required": ["matched", "retry"],
+                "additionalProperties": false
+              },
+              "difficulty": {
+                "type": "object",
+                "properties": {
+                  "level": {
+                    "type": "string",
+                    "enum": ["starter", "growing", "advanced"]
+                  },
+                  "secondTryEnabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["level", "secondTryEnabled"],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schemaVersion",
+              "id",
+              "version",
+              "status",
+              "productionSource",
+              "mechanic",
+              "title",
+              "description",
+              "ageBand",
+              "skillTags",
+              "presentation",
+              "rounds",
+              "feedback",
+              "difficulty"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schemaVersion": {
+                "type": "string",
+                "const": "game-v1"
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "version": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "status": {
+                "type": "string",
+                "enum": ["draft", "in_review", "published", "archived"]
+              },
+              "productionSource": {
+                "type": "string",
+                "enum": ["manual", "ai", "automation"]
+              },
+              "mechanic": {
+                "type": "string",
+                "const": "balloon_counting"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "ageBand": {
+                "type": "string",
+                "const": "2-4"
+              },
+              "skillTags": {
+                "minItems": 1,
+                "maxItems": 5,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                }
+              },
+              "presentation": {
+                "type": "object",
+                "properties": {
+                  "introNarration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240
+                  },
+                  "closingNarration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "playAudioInstructions": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["introNarration", "closingNarration", "playAudioInstructions"],
+                "additionalProperties": false
+              },
+              "rounds": {
+                "minItems": 3,
+                "maxItems": 5,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": ["count", "color", "order"]
+                    },
+                    "prompt": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 160
+                    },
+                    "balloons": {
+                      "minItems": 2,
+                      "maxItems": 5,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "red",
+                          "blue",
+                          "green",
+                          "yellow",
+                          "orange",
+                          "purple",
+                          "pink",
+                          "cyan"
+                        ]
+                      }
+                    },
+                    "targetCount": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 3
+                    },
+                    "targetColor": {
+                      "type": "string",
+                      "enum": ["red", "blue", "green", "yellow", "orange", "purple", "pink", "cyan"]
+                    },
+                    "targetOrder": {
+                      "maxItems": 2,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "red",
+                          "blue",
+                          "green",
+                          "yellow",
+                          "orange",
+                          "purple",
+                          "pink",
+                          "cyan"
+                        ]
+                      }
+                    }
+                  },
+                  "required": ["id", "kind", "prompt", "balloons", "targetCount"],
+                  "additionalProperties": false
+                }
+              },
+              "feedback": {
+                "type": "object",
+                "properties": {
+                  "matched": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "retry": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  }
+                },
+                "required": ["matched", "retry"],
+                "additionalProperties": false
+              },
+              "difficulty": {
+                "type": "object",
+                "properties": {
+                  "level": {
+                    "type": "string",
+                    "enum": ["starter", "growing"]
+                  },
+                  "secondTryEnabled": {
+                    "type": "boolean"
+                  },
+                  "inactivityHintMs": {
+                    "type": "number",
+                    "const": 10000
+                  }
+                },
+                "required": ["level", "secondTryEnabled", "inactivityHintMs"],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schemaVersion",
+              "id",
+              "version",
+              "status",
+              "productionSource",
+              "mechanic",
+              "title",
+              "description",
+              "ageBand",
+              "skillTags",
+              "presentation",
+              "rounds",
+              "feedback",
+              "difficulty"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schemaVersion": {
+                "type": "string",
+                "const": "game-v1"
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "version": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "status": {
+                "type": "string",
+                "enum": ["draft", "in_review", "published", "archived"]
+              },
+              "productionSource": {
+                "type": "string",
+                "enum": ["manual", "ai", "automation"]
+              },
+              "mechanic": {
+                "type": "string",
+                "const": "mini_challenge"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "ageBand": {
+                "type": "string",
+                "const": "2-4"
+              },
+              "skillTags": {
+                "minItems": 1,
+                "maxItems": 5,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                }
+              },
+              "presentation": {
+                "type": "object",
+                "properties": {
+                  "introNarration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240
+                  },
+                  "closingNarration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "playAudioInstructions": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["introNarration", "closingNarration", "playAudioInstructions"],
+                "additionalProperties": false
+              },
+              "rounds": {
+                "minItems": 2,
+                "maxItems": 5,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": ["rhythm", "sequence", "single"]
+                    },
+                    "prompt": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 180
+                    },
+                    "choices": {
+                      "minItems": 2,
+                      "maxItems": 4,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 50
+                          },
+                          "label": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 60
+                          },
+                          "icon": {
+                            "type": "string",
+                            "enum": [
+                              "clap",
+                              "bell",
+                              "drum",
+                              "toothbrush",
+                              "shirt",
+                              "breakfast",
+                              "box",
+                              "ball",
+                              "chair",
+                              "circle",
+                              "square",
+                              "triangle",
+                              "star",
+                              "small-bear",
+                              "large-bear",
+                              "maya-brush",
+                              "maya-shirt",
+                              "maya-breakfast",
+                              "riko-inside",
+                              "riko-under",
+                              "riko-on",
+                              "zuzu-circle",
+                              "zuzu-square",
+                              "zuzu-triangle",
+                              "zuzu-star",
+                              "kiki-small-apple",
+                              "kiki-large-apple",
+                              "kiki-small-acorn",
+                              "kiki-large-acorn"
+                            ]
+                          }
+                        },
+                        "required": ["id", "label", "icon"],
+                        "additionalProperties": false
+                      }
+                    },
+                    "correctSequence": {
+                      "minItems": 1,
+                      "maxItems": 3,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "demoSequence": {
+                      "maxItems": 3,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  },
+                  "required": ["id", "kind", "prompt", "choices", "correctSequence"],
+                  "additionalProperties": false
+                }
+              },
+              "feedback": {
+                "type": "object",
+                "properties": {
+                  "matched": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "retry": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  }
+                },
+                "required": ["matched", "retry"],
+                "additionalProperties": false
+              },
+              "difficulty": {
+                "type": "object",
+                "properties": {
+                  "secondTryEnabled": {
+                    "type": "boolean"
+                  },
+                  "inactivityHintMs": {
+                    "type": "integer",
+                    "minimum": 7000,
+                    "maximum": 15000
+                  }
+                },
+                "required": ["secondTryEnabled", "inactivityHintMs"],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schemaVersion",
+              "id",
+              "version",
+              "status",
+              "productionSource",
+              "mechanic",
+              "title",
+              "description",
+              "ageBand",
+              "skillTags",
+              "presentation",
+              "rounds",
+              "feedback",
+              "difficulty"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
     }
   },
   "required": [

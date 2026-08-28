@@ -817,5 +817,716 @@
         }
       ]
     }
+  ],
+  "games": [
+    {
+      "schemaVersion": "game-v1",
+      "id": "color-lights-001",
+      "version": 1,
+      "status": "published",
+      "productionSource": "manual",
+      "mechanic": "tap_or_wait",
+      "title": "Lila’nın Işık Bahçesi",
+      "description": "Yeşil ışıklara dokunarak ve kırmızı ışıklarda bekleyerek bahçeyi uyandırma oyunu.",
+      "ageBand": "2-4",
+      "skillTags": ["yönerge-takibi", "bekleme-pratiği"],
+      "presentation": {
+        "mascotAssetId": "character-mino-happy",
+        "introNarration": "Lila’nın bahçesini uyandıralım! Yeşil ışığa dokun. Kırmızı ışıkta sessizce bekle.",
+        "closingNarration": "Bahçeyi birlikte uyandırdık!",
+        "showRuleReminder": true,
+        "playAudioInstructions": true
+      },
+      "rules": [
+        {
+          "id": "green-tap",
+          "stimulus": {
+            "kind": "signal",
+            "color": "#45B96B",
+            "symbol": "✓",
+            "accessibilityLabel": "Yeşil dokunma ışığı"
+          },
+          "expectedAction": {
+            "type": "tap_count",
+            "count": 1,
+            "responseWindowMs": 5000
+          },
+          "instruction": "Yeşil ışığa bir kere dokun.",
+          "reminder": "Yeşil! Işığı uyandır."
+        },
+        {
+          "id": "red-wait",
+          "stimulus": {
+            "kind": "signal",
+            "color": "#D9534F",
+            "symbol": "■",
+            "accessibilityLabel": "Kırmızı bekleme ışığı"
+          },
+          "expectedAction": {
+            "type": "wait_without_tap",
+            "durationMs": 3000
+          },
+          "instruction": "Kırmızı ışıkta bekle.",
+          "reminder": "Şşş, küçük ay dinleniyor."
+        }
+      ],
+      "roundPlan": {
+        "mode": "manual",
+        "rounds": [
+          { "ruleId": "green-tap" },
+          { "ruleId": "red-wait" },
+          { "ruleId": "green-tap" },
+          { "ruleId": "green-tap" },
+          { "ruleId": "red-wait" }
+        ]
+      },
+      "feedback": {
+        "expectedActionMatched": "Pıt! Bir çiçek uyandı!",
+        "tapWhileWaiting": "Şşş, bu ışık biraz dinleniyor. Bir daha deneyelim.",
+        "tooFewTaps": "Bir dokunuş daha yapabilirsin.",
+        "tooManyTaps": "Yeni tur geliyor.",
+        "noResponse": "İstersen ışığa dokunabilirsin. Bir daha deneyelim.",
+        "roundTransition": "Hazır ol, yeni bir ışık geliyor!"
+      },
+      "difficulty": {
+        "level": "starter",
+        "interRoundDelayMs": 1200,
+        "reminderMode": "every_round",
+        "ruleChangeEnabled": false
+      },
+      "adaptation": {
+        "enabled": true,
+        "minimumRoundCount": 3,
+        "maximumRoundCount": 6,
+        "minimumResponseWindowMs": 4000,
+        "maximumResponseWindowMs": 8000,
+        "allowedReminderModes": ["every_round", "when_needed"]
+      }
+    },
+    {
+      "schemaVersion": "game-v1",
+      "id": "rule-changed-garden-001",
+      "version": 1,
+      "status": "published",
+      "productionSource": "manual",
+      "mechanic": "classify_and_sort",
+      "title": "Pati’nin Kural Sepeti",
+      "description": "Renk, tür ve büyüklük kurallarına göre doğru nesneyi sepete taşıma oyunu.",
+      "ageBand": "2-4",
+      "skillTags": ["bilişsel-esneklik", "yönerge-takibi", "sınıflandırma"],
+      "presentation": {
+        "mascotAssetId": "character-mino-happy",
+        "introNarration": "Pati ile bahçedeki doğru nesneleri bulup sepete koyalım!",
+        "closingNarration": "Harika! Bahçemizde rengârenk çiçekler açtı!",
+        "ruleChangeNarration": "Kural değişti! Şimdi başka bir şeye bakıyoruz.",
+        "playAudioInstructions": true
+      },
+      "rounds": [
+        {
+          "id": "find-red",
+          "dimension": "color",
+          "targetValue": "red",
+          "instruction": "Kırmızı olanı sepete sürükle ve bırak.",
+          "objects": [
+            {
+              "id": "red-balloon",
+              "label": "kırmızı balon",
+              "shape": "ball",
+              "color": "red",
+              "category": "toy",
+              "size": "small"
+            },
+            {
+              "id": "purple-soap",
+              "label": "mor sabun",
+              "shape": "block",
+              "color": "purple",
+              "category": "toy",
+              "size": "small"
+            },
+            {
+              "id": "green-toothbrush",
+              "label": "yeşil diş fırçası",
+              "shape": "block",
+              "color": "green",
+              "category": "toy",
+              "size": "small"
+            }
+          ]
+        },
+        {
+          "id": "find-animal",
+          "dimension": "category",
+          "targetValue": "animal",
+          "instruction": "Kural değişti! Hayvanı sepete sürükle ve bırak.",
+          "objects": [
+            {
+              "id": "happy-dog",
+              "label": "mutlu köpek",
+              "shape": "bear",
+              "color": "yellow",
+              "category": "animal",
+              "size": "small"
+            },
+            {
+              "id": "ice-cream",
+              "label": "dondurma",
+              "shape": "star",
+              "color": "purple",
+              "category": "toy",
+              "size": "small"
+            },
+            {
+              "id": "spinning-top",
+              "label": "topaç",
+              "shape": "ball",
+              "color": "blue",
+              "category": "toy",
+              "size": "small"
+            }
+          ]
+        },
+        {
+          "id": "find-large",
+          "dimension": "size",
+          "targetValue": "large",
+          "instruction": "Kural değişti! En büyük olanı sepete sürükle ve bırak.",
+          "objects": [
+            {
+              "id": "large-play-ball",
+              "label": "büyük renkli top",
+              "shape": "ball",
+              "color": "red",
+              "category": "toy",
+              "size": "large"
+            },
+            {
+              "id": "small-play-ball-a",
+              "label": "küçük renkli top",
+              "shape": "ball",
+              "color": "red",
+              "category": "toy",
+              "size": "small"
+            },
+            {
+              "id": "small-play-ball-b",
+              "label": "küçük renkli top",
+              "shape": "ball",
+              "color": "red",
+              "category": "toy",
+              "size": "small"
+            }
+          ]
+        }
+      ],
+      "feedback": {
+        "matched": "Hop! Doğru nesne sepette, bir filiz uyandı!",
+        "retry": "Bu başka bir gruba ait. Birlikte yeniden bakalım.",
+        "transition": "Hazır ol, yeni bir kural geliyor!"
+      },
+      "difficulty": {
+        "level": "starter",
+        "secondTryEnabled": true,
+        "responseWindowMs": 15000
+      }
+    },
+    {
+      "schemaVersion": "game-v1",
+      "id": "mino-routine-path-001",
+      "version": 1,
+      "status": "published",
+      "productionSource": "manual",
+      "mechanic": "sequence_and_place",
+      "title": "Tomo’nun Rutin Yolu",
+      "description": "Günlük adımları önce ve sonra alanlarına sürükleyerek sıralama oyunu.",
+      "ageBand": "2-4",
+      "skillTags": ["öz-yönetim", "sıralama", "yönerge-takibi"],
+      "presentation": {
+        "mascotAssetId": "character-mino-happy",
+        "introNarration": "Tomo’nun rutin yolunu tamamlayalım. Kartları önce ve sonra alanlarına sürükle.",
+        "closingNarration": "Rutin yolu tamamlandı, bütün yıldızlar parlıyor!",
+        "playAudioInstructions": true
+      },
+      "rounds": [
+        {
+          "id": "tidy-toys",
+          "instruction": "Tomo önce bloklarla oynuyor, sonra oyuncaklarını sepete koyuyor.",
+          "items": [
+            { "id": "blocks", "label": "oyuncak blokları", "assetKey": "blocks" },
+            { "id": "toy-basket", "label": "oyuncak sepeti", "assetKey": "toy-basket" }
+          ],
+          "correctOrder": ["blocks", "toy-basket"]
+        },
+        {
+          "id": "wash-and-dry",
+          "instruction": "Tomo önce ellerini yıkıyor, sonra havluyla kuruluyor.",
+          "items": [
+            { "id": "wash-hands", "label": "ellerini yıkayan Tomo", "assetKey": "wash-hands" },
+            { "id": "towel", "label": "havlu", "assetKey": "towel" }
+          ],
+          "correctOrder": ["wash-hands", "towel"]
+        },
+        {
+          "id": "pajamas-and-book",
+          "instruction": "Tomo önce pijamasını giyiyor, sonra kitabını okuyor.",
+          "items": [
+            { "id": "pajamas", "label": "pijama", "assetKey": "pajamas" },
+            { "id": "storybook", "label": "hikâye kitabı", "assetKey": "storybook" }
+          ],
+          "correctOrder": ["pajamas", "storybook"]
+        },
+        {
+          "id": "book-and-bed",
+          "instruction": "Tomo önce kitabını okuyor, sonra yatağına giriyor.",
+          "items": [
+            { "id": "storybook-bedtime", "label": "hikâye kitabı", "assetKey": "storybook" },
+            { "id": "bed", "label": "yatak", "assetKey": "bed" }
+          ],
+          "correctOrder": ["storybook-bedtime", "bed"]
+        }
+      ],
+      "feedback": {
+        "matched": "Harika, rutin yolu doğru sırada!",
+        "retry": "Bu sıra biraz karıştı. Kartları yeniden deneyelim.",
+        "hint": "İlk yapılacak kart parlıyor. Onu önce alanına sürükle."
+      },
+      "difficulty": {
+        "level": "starter",
+        "secondTryEnabled": true,
+        "hintDelayMs": 12000
+      }
+    },
+    {
+      "schemaVersion": "game-v1",
+      "id": "mino-emotion-detective-001",
+      "version": 1,
+      "status": "published",
+      "productionSource": "manual",
+      "mechanic": "emotion_clues",
+      "title": "Duru Duygu Dedektifi",
+      "description": "Karakterlerin duygularını ve bu duyguyu anlatan yüz-vücut ipuçlarını keşfetme oyunu.",
+      "ageBand": "2-4",
+      "skillTags": ["duygu-tanıma", "duygusal-ipuçları", "bakış-açısı"],
+      "presentation": {
+        "mascotAssetId": "character-mino-happy",
+        "introNarration": "Duygu dedektifi olmaya hazır mısın? Karakterlere dikkatlice bakalım.",
+        "closingNarration": "Bütün duygu ipuçlarını buldun. Harika bir duygu dedektifisin!",
+        "playAudioInstructions": true
+      },
+      "rounds": [
+        {
+          "id": "bear-sad",
+          "sceneAssetKey": "sad-bear",
+          "storyPrompt": "Ayının dondurması yere düştü.",
+          "emotionPrompt": "Sence ayı nasıl hissediyor?",
+          "correctEmotion": "sad",
+          "cluePrompt": "Ayının üzgün olduğunu nereden anladın?",
+          "correctClue": "eyes"
+        },
+        {
+          "id": "rabbit-happy",
+          "sceneAssetKey": "happy-rabbit",
+          "storyPrompt": "Tavşan sevdiği balonuyla oynuyor.",
+          "emotionPrompt": "Sence tavşan nasıl hissediyor?",
+          "correctEmotion": "happy",
+          "cluePrompt": "Tavşanın mutlu olduğunu nereden anladın?",
+          "correctClue": "mouth"
+        },
+        {
+          "id": "fox-angry",
+          "sceneAssetKey": "angry-fox",
+          "storyPrompt": "Tilkinin blok kulesi yıkıldı.",
+          "emotionPrompt": "Sence tilki nasıl hissediyor?",
+          "correctEmotion": "angry",
+          "cluePrompt": "Tilkinin kızgın olduğunu nereden anladın?",
+          "correctClue": "body"
+        }
+      ],
+      "feedback": {
+        "emotionMatched": "Evet, duyguyu fark ettin!",
+        "clueMatched": "Harika gözlem! Duygu ipucunu buldun.",
+        "retry": "Birlikte tekrar bakalım. Yüzüne ve vücuduna dikkat et."
+      },
+      "difficulty": {
+        "level": "starter",
+        "secondTryEnabled": true,
+        "askClueQuestion": true
+      }
+    },
+    {
+      "schemaVersion": "game-v1",
+      "id": "bobi-fish-patterns-2-4-001",
+      "version": 1,
+      "status": "published",
+      "productionSource": "manual",
+      "mechanic": "fish_patterns",
+      "title": "Bobi'nin Balık Desenleri",
+      "description": "Gölde beliren renk örüntüsünü tamamla ve sıradaki balığı bul.",
+      "ageBand": "2-4",
+      "skillTags": ["örüntü", "renk", "görsel-dikkat"],
+      "presentation": {
+        "introNarration": "Bobi'nin gölündeki balıkların renklerine dikkatlice bakalım.",
+        "closingNarration": "Bütün balık desenlerini tamamladın. Göl şimdi neşeyle parlıyor!",
+        "playAudioInstructions": true
+      },
+      "rounds": [
+        {
+          "id": "red-blue",
+          "kind": "color_prediction",
+          "sequence": ["red", "blue", "red", "blue"],
+          "correctColor": "red",
+          "choices": ["red", "yellow"],
+          "prompt": "Sırada hangi renk balık var?"
+        },
+        {
+          "id": "yellow-green",
+          "kind": "color_prediction",
+          "sequence": ["yellow", "green", "yellow"],
+          "correctColor": "green",
+          "choices": ["green", "blue", "pink"],
+          "prompt": "Desene dikkat et. Sıradaki balığın rengi ne?"
+        },
+        {
+          "id": "pink-purple",
+          "kind": "color_prediction",
+          "sequence": ["pink", "pink", "purple"],
+          "correctColor": "pink",
+          "choices": ["purple", "pink", "orange"],
+          "prompt": "Renk sırasını tamamlayabilir misin?"
+        }
+      ],
+      "feedback": {
+        "matched": "Doğru renk! Balık hop diye sıçradı!",
+        "retry": "Bir daha bakalım. Renkler nasıl tekrar ediyor?"
+      },
+      "difficulty": { "level": "starter", "secondTryEnabled": true }
+    },
+    {
+      "schemaVersion": "game-v1",
+      "id": "bobi-fish-memory-4-7-001",
+      "version": 1,
+      "status": "published",
+      "productionSource": "manual",
+      "mechanic": "fish_patterns",
+      "title": "Bobi'nin Balık Hafızası",
+      "description": "Parlayan balıkların sırasını hatırla ve aynı sırayla dokun.",
+      "ageBand": "4-7",
+      "skillTags": ["çalışma-belleği", "sıralama", "dikkat"],
+      "presentation": {
+        "introNarration": "Bobi balıkları sırayla parlatacak. İyi izle, sonra aynı sırayla dokun.",
+        "closingNarration": "Balıkların bütün sıralarını hatırladın. Harika bir hafızan var!",
+        "playAudioInstructions": true
+      },
+      "rounds": [
+        {
+          "id": "two-fish",
+          "kind": "sequence_memory",
+          "fish": ["red", "blue", "yellow"],
+          "sequence": ["red", "blue"],
+          "prompt": "Parlayan balıklara aynı sırayla dokun.",
+          "revealMs": 950
+        },
+        {
+          "id": "three-fish",
+          "kind": "sequence_memory",
+          "fish": ["green", "purple", "orange"],
+          "sequence": ["purple", "green", "orange"],
+          "prompt": "Sırayı hatırla ve balıklara dokun.",
+          "revealMs": 850
+        },
+        {
+          "id": "four-fish",
+          "kind": "sequence_memory",
+          "fish": ["red", "teal", "yellow", "pink"],
+          "sequence": ["teal", "red", "pink", "yellow"],
+          "prompt": "Dört balığın sırasını hatırlayabilir misin?",
+          "revealMs": 750
+        }
+      ],
+      "feedback": {
+        "matched": "Harika! Sıranın hepsini hatırladın!",
+        "retry": "Çok yaklaştın. Bobi balıkları bir kez daha gösterecek."
+      },
+      "difficulty": { "level": "growing", "secondTryEnabled": true }
+    },
+    {
+      "schemaVersion": "game-v1",
+      "id": "pofi-balloon-counting-001",
+      "version": 1,
+      "status": "published",
+      "productionSource": "manual",
+      "mechanic": "balloon_counting",
+      "title": "Pofi’nin Balon Saymacası",
+      "description": "Renkli balonları say, istenen renge dokun ve kısa renk sıralarını takip et.",
+      "ageBand": "2-4",
+      "skillTags": ["sayma", "renk", "yönerge-takibi", "görsel-dikkat"],
+      "presentation": {
+        "introNarration": "Pofi'nin balon parkına hoş geldin. Balonlara dikkatlice bakalım!",
+        "closingNarration": "Bütün balon görevlerini tamamladın. Park rengârenk oldu!",
+        "playAudioInstructions": true
+      },
+      "rounds": [
+        {
+          "id": "pop-two",
+          "kind": "count",
+          "prompt": "İki balonu patlat.",
+          "balloons": ["red", "blue", "yellow", "green"],
+          "targetCount": 2
+        },
+        {
+          "id": "pop-yellow",
+          "kind": "color",
+          "prompt": "Sarı balona dokun.",
+          "balloons": ["purple", "yellow", "pink"],
+          "targetCount": 1,
+          "targetColor": "yellow"
+        },
+        {
+          "id": "red-then-blue",
+          "kind": "order",
+          "prompt": "Önce kırmızıya, sonra maviye dokun.",
+          "balloons": ["red", "blue", "orange"],
+          "targetCount": 2,
+          "targetOrder": ["red", "blue"]
+        },
+        {
+          "id": "pop-three",
+          "kind": "count",
+          "prompt": "Üç balonu patlat.",
+          "balloons": ["cyan", "green", "pink", "orange", "blue"],
+          "targetCount": 3
+        }
+      ],
+      "feedback": {
+        "matched": "Harika yaptın!",
+        "retry": "Bir daha bakalım. Doğru balon hafifçe parlıyor."
+      },
+      "difficulty": { "level": "starter", "secondTryEnabled": true, "inactivityHintMs": 10000 }
+    },
+    {
+      "schemaVersion": "game-v1",
+      "id": "nino-sound-rhythm-001",
+      "version": 1,
+      "status": "published",
+      "productionSource": "manual",
+      "mechanic": "mini_challenge",
+      "title": "Nino’nun Sesli Ritmi",
+      "description": "Sesleri dinle ve düğmelere aynı sırayla dokun.",
+      "ageBand": "2-4",
+      "skillTags": ["işitsel-dikkat", "sıralı-bellek"],
+      "presentation": {
+        "introNarration": "Nino'nun ritmini dinle ve aynı sırayla dokun.",
+        "closingNarration": "Bütün ritimleri tamamladın!",
+        "playAudioInstructions": true
+      },
+      "rounds": [
+        {
+          "id": "clap",
+          "kind": "rhythm",
+          "prompt": "Dinle: alkış. Şimdi sen dokun.",
+          "choices": [
+            { "id": "clap", "label": "Alkış", "icon": "clap" },
+            { "id": "bell", "label": "Zil", "icon": "bell" },
+            { "id": "drum", "label": "Davul", "icon": "drum" }
+          ],
+          "correctSequence": ["clap"],
+          "demoSequence": ["clap"]
+        },
+        {
+          "id": "clap-bell",
+          "kind": "rhythm",
+          "prompt": "Dinle: alkış, zil. Aynı sırayla dokun.",
+          "choices": [
+            { "id": "clap", "label": "Alkış", "icon": "clap" },
+            { "id": "bell", "label": "Zil", "icon": "bell" },
+            { "id": "drum", "label": "Davul", "icon": "drum" }
+          ],
+          "correctSequence": ["clap", "bell"],
+          "demoSequence": ["clap", "bell"]
+        },
+        {
+          "id": "drum-clap",
+          "kind": "rhythm",
+          "prompt": "Dinle: davul, alkış. Aynı sırayla dokun.",
+          "choices": [
+            { "id": "clap", "label": "Alkış", "icon": "clap" },
+            { "id": "bell", "label": "Zil", "icon": "bell" },
+            { "id": "drum", "label": "Davul", "icon": "drum" }
+          ],
+          "correctSequence": ["drum", "clap"],
+          "demoSequence": ["drum", "clap"]
+        }
+      ],
+      "feedback": { "matched": "Ritmi doğru yaptın!", "retry": "Bir kez daha dinleyelim." },
+      "difficulty": { "secondTryEnabled": true, "inactivityHintMs": 10000 }
+    },
+    {
+      "schemaVersion": "game-v1",
+      "id": "maya-morning-order-001",
+      "version": 1,
+      "status": "published",
+      "productionSource": "manual",
+      "mechanic": "mini_challenge",
+      "title": "Maya’nın Sabah Sırası",
+      "description": "Sabah rutinlerini doğru sıraya koy.",
+      "ageBand": "2-4",
+      "skillTags": ["öz-yönetim", "sıralama"],
+      "presentation": {
+        "introNarration": "Maya'nın sabahını doğru sırayla hazırlayalım.",
+        "closingNarration": "Maya güne hazır!",
+        "playAudioInstructions": true
+      },
+      "rounds": [
+        {
+          "id": "brush-dress",
+          "kind": "sequence",
+          "prompt": "Önce dişlerini fırçala, sonra giyin.",
+          "choices": [
+            { "id": "brush", "label": "Diş fırçala", "icon": "maya-brush" },
+            { "id": "dress", "label": "Giyin", "icon": "maya-shirt" }
+          ],
+          "correctSequence": ["brush", "dress"]
+        },
+        {
+          "id": "dress-breakfast",
+          "kind": "sequence",
+          "prompt": "Önce giyin, sonra kahvaltı yap.",
+          "choices": [
+            { "id": "dress", "label": "Giyin", "icon": "maya-shirt" },
+            { "id": "eat", "label": "Kahvaltı", "icon": "maya-breakfast" }
+          ],
+          "correctSequence": ["dress", "eat"]
+        }
+      ],
+      "feedback": { "matched": "Doğru sıra!", "retry": "Sırayı yeniden düşünelim." },
+      "difficulty": { "secondTryEnabled": true, "inactivityHintMs": 10000 }
+    },
+    {
+      "schemaVersion": "game-v1",
+      "id": "riko-where-001",
+      "version": 1,
+      "status": "published",
+      "productionSource": "manual",
+      "mechanic": "mini_challenge",
+      "title": "Riko Nerede?",
+      "description": "Nesnelerin konumunu bul.",
+      "ageBand": "2-4",
+      "skillTags": ["mekânsal-kavram", "dil"],
+      "presentation": {
+        "introNarration": "Riko'nun topunun nerede olduğunu bulalım.",
+        "closingNarration": "Bütün konumları buldun!",
+        "playAudioInstructions": true
+      },
+      "rounds": [
+        {
+          "id": "inside",
+          "kind": "single",
+          "prompt": "Top kutunun neresinde?",
+          "choices": [
+            { "id": "inside", "label": "İçinde", "icon": "riko-inside" },
+            { "id": "under", "label": "Altında", "icon": "riko-under" }
+          ],
+          "correctSequence": ["inside"]
+        },
+        {
+          "id": "under",
+          "kind": "single",
+          "prompt": "Top kutunun neresinde?",
+          "choices": [
+            { "id": "over", "label": "Üstünde", "icon": "riko-on" },
+            { "id": "under", "label": "Altında", "icon": "riko-under" }
+          ],
+          "correctSequence": ["under"]
+        }
+      ],
+      "feedback": { "matched": "Konumu buldun!", "retry": "Resme bir daha bakalım." },
+      "difficulty": { "secondTryEnabled": true, "inactivityHintMs": 10000 }
+    },
+    {
+      "schemaVersion": "game-v1",
+      "id": "zuzu-missing-piece-001",
+      "version": 1,
+      "status": "published",
+      "productionSource": "manual",
+      "mechanic": "mini_challenge",
+      "title": "Zuzu’nun Blok Bulmacası",
+      "description": "Boşluğa uyan blok parçasını bul ve tabloyu tamamla.",
+      "ageBand": "2-4",
+      "skillTags": ["görsel-tamamlama", "şekil"],
+      "presentation": {
+        "introNarration": "Zuzu'nun blok tablosundaki boşluğu tamamlayalım.",
+        "closingNarration": "Bütün blok tablolarını tamamladın!",
+        "playAudioInstructions": true
+      },
+      "rounds": [
+        {
+          "id": "circle",
+          "kind": "single",
+          "prompt": "Boşluğu tamamlayan blok parçasını seç.",
+          "choices": [
+            { "id": "circle", "label": "Köşe parçası", "icon": "zuzu-circle" },
+            { "id": "square", "label": "Yatay parça", "icon": "zuzu-square" },
+            { "id": "triangle", "label": "Dikey parça", "icon": "zuzu-triangle" }
+          ],
+          "correctSequence": ["circle"]
+        },
+        {
+          "id": "star",
+          "kind": "single",
+          "prompt": "Şimdi bu boşluğa uyan parçayı seç.",
+          "choices": [
+            { "id": "star", "label": "T parçası", "icon": "zuzu-star" },
+            { "id": "circle", "label": "Köşe parçası", "icon": "zuzu-circle" }
+          ],
+          "correctSequence": ["star"]
+        }
+      ],
+      "feedback": {
+        "matched": "Bloklar tamamlandı!",
+        "retry": "Boşluğun şekline bir daha bakalım."
+      },
+      "difficulty": { "secondTryEnabled": true, "inactivityHintMs": 10000 }
+    },
+    {
+      "schemaVersion": "game-v1",
+      "id": "kiki-big-small-shop-001",
+      "version": 1,
+      "status": "published",
+      "productionSource": "manual",
+      "mechanic": "mini_challenge",
+      "title": "Kiki’nin Büyük-Küçük Dükkânı",
+      "description": "Büyük ve küçük nesneleri karşılaştır.",
+      "ageBand": "2-4",
+      "skillTags": ["karşılaştırma", "boyut"],
+      "presentation": {
+        "introNarration": "Kiki'nin dükkânında büyük ve küçük olanı bulalım.",
+        "closingNarration": "Dükkândaki bütün boyutları buldun!",
+        "playAudioInstructions": true
+      },
+      "rounds": [
+        {
+          "id": "large-apple",
+          "kind": "single",
+          "prompt": "Büyük elmayı bul.",
+          "choices": [
+            { "id": "small", "label": "Küçük elma", "icon": "kiki-small-apple" },
+            { "id": "large", "label": "Büyük elma", "icon": "kiki-large-apple" }
+          ],
+          "correctSequence": ["large"]
+        },
+        {
+          "id": "small-acorn",
+          "kind": "single",
+          "prompt": "Şimdi küçük palamudu bul.",
+          "choices": [
+            { "id": "large", "label": "Büyük palamut", "icon": "kiki-large-acorn" },
+            { "id": "small", "label": "Küçük palamut", "icon": "kiki-small-acorn" }
+          ],
+          "correctSequence": ["small"]
+        }
+      ],
+      "feedback": { "matched": "Doğru boyutu buldun!", "retry": "Büyüklüklerine yeniden bakalım." },
+      "difficulty": { "secondTryEnabled": true, "inactivityHintMs": 10000 }
+    }
   ]
 }

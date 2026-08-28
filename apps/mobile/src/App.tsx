@@ -20,6 +20,13 @@ import {
   PasswordUpdateScreen,
 } from "./features/account/PasswordUpdateScreen";
 import { SetupRequiredScreen } from "./features/account/SetupRequiredScreen";
+import { BalloonCountingGame } from "./features/game/BalloonCountingGame";
+import { ClassifyAndSortGame } from "./features/game/ClassifyAndSortGame";
+import { EmotionCluesGame } from "./features/game/EmotionCluesGame";
+import { FishPatternsGame } from "./features/game/FishPatternsGame";
+import { MiniChallengeGame } from "./features/game/MiniChallengeGame";
+import { SequenceAndPlaceGame } from "./features/game/SequenceAndPlaceGame";
+import { TapOrWaitGame } from "./features/game/TapOrWaitGame";
 import { MinoStory } from "./features/story/MinoStory";
 import { StorySelectionScreen } from "./features/story/StorySelectionScreen";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
@@ -32,9 +39,17 @@ import {
   persistActiveChildId,
 } from "./services/childMode";
 import { loadChildConsentSettings } from "./services/consents";
+import { loadPublishedGames } from "./services/gameCatalog";
 import { initializeInteractionEventSync } from "./services/interactionEvents";
 
 type PasswordRecoveryStatus = "checking" | "idle" | "processing" | "ready" | "error";
+
+function withTimeout<T>(operation: Promise<T>, timeoutMs = 8000): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Bağlantı zaman aşımına uğradı.")), timeoutMs);
+    operation.then(resolve, reject).finally(() => clearTimeout(timer));
+  });
+}
 
 const content = contentVersionSchema.parse(contentV1);
 
@@ -48,6 +63,8 @@ export default function App() {
   const [activeChild, setActiveChild] = useState<ChildSessionProfile | null>(null);
   const [showParentPinGate, setShowParentPinGate] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
+  const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [availableGames, setAvailableGames] = useState(content.games ?? []);
   const [recommendedStoryId, setRecommendedStoryId] = useState<string | null>(null);
   const [passwordRecoveryStatus, setPasswordRecoveryStatus] =
     useState<PasswordRecoveryStatus>("checking");
@@ -60,10 +77,10 @@ export default function App() {
     setLoadingAccount(true);
     setAccountError(null);
     try {
-      const parentProfile = await loadParentProfile(userId);
+      const parentProfile = await withTimeout(loadParentProfile(userId));
       const onboardingComplete = Boolean(parentProfile?.pin_configured_at);
       setParentOnboarded(onboardingComplete);
-      const childProfiles = onboardingComplete ? await loadChildProfiles() : [];
+      const childProfiles = onboardingComplete ? await withTimeout(loadChildProfiles()) : [];
       setChildren(childProfiles);
 
       const activeChildId = onboardingComplete ? await getPersistedActiveChildId() : null;
@@ -72,7 +89,7 @@ export default function App() {
         persistedChild &&
         resolveAgeBand(persistedChild.birthMonth, persistedChild.birthYear) === "2-4"
       ) {
-        const consentSettings = await loadChildConsentSettings(persistedChild.id);
+        const consentSettings = await withTimeout(loadChildConsentSettings(persistedChild.id));
         setActiveChild(
           createChildSessionProfile(persistedChild, {
             personalizationEnabled: consentSettings.personalization,
@@ -94,11 +111,21 @@ export default function App() {
     if (!supabase) return;
 
     let mounted = true;
-    void supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setSession(data.session);
-      setLoadingSession(false);
-    });
+    const loadingTimeout = setTimeout(() => {
+      if (mounted) setLoadingSession(false);
+    }, 5000);
+    void supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (mounted) setSession(data.session);
+      })
+      .catch(() => {
+        if (mounted) setSession(null);
+      })
+      .finally(() => {
+        clearTimeout(loadingTimeout);
+        if (mounted) setLoadingSession(false);
+      });
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession);
@@ -113,18 +140,25 @@ export default function App() {
         setActiveChild(null);
         setShowParentPinGate(false);
         setSelectedStoryId(null);
+        setSelectedGameId(null);
         void clearPersistedActiveChildId();
       }
     });
 
     return () => {
       mounted = false;
+      clearTimeout(loadingTimeout);
       listener.subscription.unsubscribe();
     };
   }, []);
 
   useEffect(() => {
     let mounted = true;
+    const recoveryTimeout = setTimeout(() => {
+      if (mounted) {
+        setPasswordRecoveryStatus((current) => (current === "checking" ? "idle" : current));
+      }
+    }, 3000);
 
     const handleUrl = async (url: string | null) => {
       if (!url || !isPasswordRecoveryUrl(url)) {
@@ -160,6 +194,7 @@ export default function App() {
 
     return () => {
       mounted = false;
+      clearTimeout(recoveryTimeout);
       subscription.remove();
     };
   }, []);
@@ -182,6 +217,20 @@ export default function App() {
       .catch(() => {
         if (!cancelled) setRecommendedStoryId(null);
       });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeChild]);
+
+  useEffect(() => {
+    if (!activeChild) {
+      setAvailableGames(content.games ?? []);
+      return;
+    }
+    let cancelled = false;
+    void loadPublishedGames(activeChild.ageBand, content.games ?? []).then((games) => {
+      if (!cancelled) setAvailableGames(games);
+    });
     return () => {
       cancelled = true;
     };
@@ -276,14 +325,44 @@ export default function App() {
 
   if (activeChild) {
     const selectedStory = content.stories.find((story) => story.id === selectedStoryId);
+    const eligibleGames = availableGames.filter(
+      (game) => game.status === "published" && game.ageBand === activeChild.ageBand,
+    );
+    const selectedGame = eligibleGames.find((game) => game.id === selectedGameId);
+
+    if (selectedGame) {
+      return selectedGame.mechanic === "classify_and_sort" ? (
+        <ClassifyAndSortGame game={selectedGame} onExit={() => setSelectedGameId(null)} />
+      ) : selectedGame.mechanic === "sequence_and_place" ? (
+        <SequenceAndPlaceGame game={selectedGame} onExit={() => setSelectedGameId(null)} />
+      ) : selectedGame.mechanic === "emotion_clues" ? (
+        <EmotionCluesGame game={selectedGame} onExit={() => setSelectedGameId(null)} />
+      ) : selectedGame.mechanic === "fish_patterns" ? (
+        <FishPatternsGame game={selectedGame} onExit={() => setSelectedGameId(null)} />
+      ) : selectedGame.mechanic === "balloon_counting" ? (
+        <BalloonCountingGame game={selectedGame} onExit={() => setSelectedGameId(null)} />
+      ) : selectedGame.mechanic === "mini_challenge" ? (
+        <MiniChallengeGame game={selectedGame} onExit={() => setSelectedGameId(null)} />
+      ) : (
+        <TapOrWaitGame game={selectedGame} onExit={() => setSelectedGameId(null)} />
+      );
+    }
 
     if (!selectedStory) {
       return (
         <StorySelectionScreen
           assets={content.assets}
           childName={activeChild.nickname}
+          games={eligibleGames}
           onRequestParentArea={() => setShowParentPinGate(true)}
-          onSelectStory={setSelectedStoryId}
+          onSelectGame={(gameId) => {
+            setSelectedStoryId(null);
+            setSelectedGameId(gameId);
+          }}
+          onSelectStory={(storyId) => {
+            setSelectedGameId(null);
+            setSelectedStoryId(storyId);
+          }}
           recommendedStoryId={recommendedStoryId}
           stories={content.stories}
         />
@@ -313,6 +392,7 @@ export default function App() {
         const consentSettings = await loadChildConsentSettings(profile.id);
         await persistActiveChildId(profile.id);
         setSelectedStoryId(null);
+        setSelectedGameId(null);
         setActiveChild(
           createChildSessionProfile(profile, {
             personalizationEnabled: consentSettings.personalization,
