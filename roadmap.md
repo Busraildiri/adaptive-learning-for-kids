@@ -1,6 +1,6 @@
 # Adaptive Learning for Kids — Roadmap
 
-Son güncelleme: 27 Ağustos 2026
+Son güncelleme: 28 Ağustos 2026
 
 Bu belge projenin yaşayan yol haritasıdır. Yapılan işler, devam eden işler, sıradaki işler ve karar bekleyen konular burada takip edilir.
 
@@ -618,6 +618,73 @@ Doğrulama notu: **Kod, soyut olay akışı formu, server-only üretim route'u, 
 audit-before-publication bağlantısı ve service-role erişim sınırı tamamlandı. OpenAI `gpt-5.4-mini`
 ile gerçek üretici/denetleyici smoke testi yapıldı; üretilen taslak isteğe uygun biçimde 15 günlük
 inceleme kuyruğuna düştü. Generation audit migration'ı staging projesine uygulandı.**
+
+### R9.2 — Üç sahneli etkileşimli hikâye videosu ve gerçek dallanma
+
+Birincil amaç: **Mevcut MP4 üretimini bozmadan, tek hikâye planından uygulamada seçimlerle
+ilerleyen kısa video bölümleri üretmek.**
+
+#### Tamamlanan üretim temeli
+
+- [x] Mevcut OpenMontage/HyperFrames hattıyla görsel, Türkçe TTS ve MP4 üretimini koru.
+- [x] Tek serbest metin promptunu yapılandırılmış, kronolojik ve tam üç sahneli `StoryVideoInput`
+      planına dönüştür.
+- [x] Üç sahneyi başlangıç, hafif gündelik sorun ve güvenli çözüm sırasıyla birbirine bağımlı üret.
+- [x] Karakter kitabını, görsel stili ve mekân sürekliliğini bütün sahne promptlarına taşı.
+- [x] Her sahne için ayrı görsel promptu ve ayrı anlatım metni oluştur.
+- [x] Sahne anlatımlarını Türkçe Piper TTS ile üretip gerçek ses süresine göre zaman çizelgesine yerleştir.
+- [x] Bütün sahneleri tek zaman çizgisinde birleştirerek isteğe bağlı tam hikâye `final.mp4` çıktısı üret.
+- [x] Mevcut onaylı görsellerle API maliyeti oluşturmadan render alma ve eksik görselleri sağlayıcıyla
+      üretme yollarını aynı sözleşmede destekle.
+
+#### Sıradaki — sahne klipleri ve mobil oynatma
+
+- [ ] `StoryVideoInput` ve üretim sonucunu `clips[]` alanıyla genişlet; her klipte `sceneId`, dosya URI'si,
+      süre, seçim kapısı ve olası sonraki klip kimliklerini taşı.
+- [ ] Hikâyeyi 20 saniyelik MP4'ten üç eşit süreyle kesmek yerine planlanan gerçek sahne sınırlarından
+      ayrı `scene-01.mp4`, `scene-02.mp4` ve `scene-03.mp4` dosyaları olarak render et.
+- [ ] Üç sahne klibinin yanında inceleme ve doğrusal oynatma için birleşik `final.mp4` üretmeye devam et.
+- [ ] Tek bir sahne başarısız olduğunda yalnızca o klibi yeniden üretecek tekrar deneme davranışını ekle.
+- [ ] Mobil içerik sözleşmesini statik `VIDEO_ASSETS` eşlemesi yerine dinamik klip URI'larını kabul edecek
+      biçimde genişlet.
+- [ ] Mobil oynatıcıda klip tamamlanınca akışı `WAITING_FOR_INPUT` durumuna al ve seçim yapılmadan sonraki
+      klibi başlatma.
+- [ ] Anlatım sesi klibin içine gömülü olduğunda mobil cihaz TTS'sinin aynı metni ikinci kez okumasını engelle.
+
+#### Sıradaki — gerçek dallanma
+
+- [ ] Seçim adımlarına `choiceId -> nextClipId` eşlemesi ekle; dalları yalnızca duraklatma etkisi değil,
+      farklı video sonucu üretecek şekilde tanımla.
+- [ ] İlk dikey kesitte ikinci sahneden sonra en az iki sonuç klibi üret: örneğin
+      `scene-03-sarilma.mp4` ve `scene-03-yeni-balon.mp4`.
+- [ ] Her dal promptuna ana hikâye planını, karakter kitabını, görsel stili, önceki sahnenin bitiş durumunu
+      ve seçilen yardım eylemini aktar.
+- [ ] Eksik veya başarısız dal videosunda çocuk akışını kesmeyen, onaylı ortak çözüm klibine güvenli geri
+      dönüş ekle.
+- [ ] Dallanma grafiğinde eksik hedef, erişilemeyen klip, istemsiz döngü ve hikâye dışı seçim bulunmadığını
+      şema ve unit testlerle doğrula.
+- [ ] Aynı seçimle aynı sürümlü hikâye dalının deterministik biçimde açıldığını mobil testle doğrula.
+
+#### Sonraki entegrasyon — admin ve otomasyon
+
+- [ ] Yönetim panelindeki hikâye üretim formuna “üç sahneli etkileşimli video üret” işlemini bağla.
+- [ ] Yöneticiye ana hikâyeyi, sahne promptlarını, sesleri, klipleri ve bütün dal sonuçlarını yayın öncesi
+      ayrı ayrı önizlet.
+- [ ] Yalnızca bütün zorunlu klipleri hazır, güvenlik kontrolleri geçmiş ve insan onayı verilmiş hikâye
+      sürümünü mobil uygulamaya yayınla.
+- [ ] Job durumlarını planlama, görsel üretimi, TTS, sahne render'ı, dal render'ı, birleştirme, yükleme ve
+      yayın aşamalarında izlenebilir yap.
+- [ ] Panel akışı doğrulandıktan sonra kuyruk tabanlı otomatik üretim ve kontrollü yeniden deneme ekle.
+
+#### R9.2 kabul kriterleri
+
+- Tek ana prompttan aynı karakter ve olay sürekliliğini koruyan üç temel sahne üretilir.
+- Her temel sahne ayrı MP4'tür; birleşik MP4 mevcut çıktı olarak korunur.
+- Uygulama klipler arasında doğru noktada durur ve çocuğun seçimine göre farklı sonuç klibini oynatır.
+- Ses, kelime veya geçişler rastgele eşit süreli kesim nedeniyle bölünmez.
+- Bir dal veya sahne yeniden üretildiğinde diğer onaylı kliplerin yeniden render edilmesi gerekmez.
+- Eksik dal, hatalı hedef veya başarısız video çocuk akışını kilitlemez.
+- Admin paneli ve otomasyon bağlantısı, üç klipli ve dallı yerel akış doğrulanmadan başlatılmaz.
 
 ### R10 — MVP içerik paketi
 

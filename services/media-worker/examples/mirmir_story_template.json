@@ -1,0 +1,40 @@
+{
+  "storyId": "mirmir-kirmizi-balon-v1",
+  "title": "Mırmır ve Kırmızı Balon",
+  "characterDescription": "Mırmır is a small round orange tabby kitten with a cream muzzle and belly, large warm brown eyes, a red collar, and a tiny orange fish-shaped tag",
+  "visualStyle": "polished soft 3D children's animation, rounded shapes, lush colorful park, cinematic but gentle lighting, consistent orange kitten proportions and collar in every scene",
+  "mode": "local_animation",
+  "aspectRatio": "4:5",
+  "imageProvider": "openai",
+  "imageQuality": "low",
+  "imageSize": "1024x1536",
+  "scenes": [
+    {
+      "sceneId": "balonla-oyun",
+      "characterId": "mirmir",
+      "emotion": "happy",
+      "event": "Mırmır parkta kırmızı balonuyla oynar.",
+      "narration": "Mırmır parkta kırmızı balonuyla neşeyle oynuyordu.",
+      "visualPrompt": "Sunny flower-filled park. Mırmır happily holds one bright red balloon by its string and skips along the path.",
+      "duration": 5
+    },
+    {
+      "sceneId": "balon-kacar",
+      "characterId": "mirmir",
+      "emotion": "sad",
+      "event": "Balonun ipi Mırmır'ın patisinden kayar.",
+      "narration": "Bir anda balonun ipi patisinden kaydı. Mırmır çok üzüldü.",
+      "visualPrompt": "Same park and same kitten. The red balloon string has just slipped from Mırmır's paw and floats gently upward; Mırmır looks sad but safe, with no danger and no popped balloon.",
+      "duration": 5
+    },
+    {
+      "sceneId": "yardimla-cozum",
+      "characterId": "mirmir",
+      "emotion": "happy",
+      "event": "Bir görevli balonu güvenle indirir ve Mırmır teşekkür eder.",
+      "narration": "Park görevlisi balonu güvenle indirdi. Mırmır teşekkür edip yeniden gülümsedi.",
+      "visualPrompt": "Same park and same kitten. A friendly park helper safely returns the red balloon to Mırmır; Mırmır smiles with relief and gratitude. Calm reassuring ending.",
+      "duration": 5
+    }
+  ]
+}

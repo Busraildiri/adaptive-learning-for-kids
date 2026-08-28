@@ -1,0 +1,13 @@
+{
+  "scene": {
+    "sceneId": "trigger_01",
+    "storyId": "story_001",
+    "emotion": "neutral",
+    "event": "trigger_01",
+    "narration": "Öğretmeni, şimdi başka etkinliğe geçiyoruz, dedi. Momo bunu beklemiyordu.",
+    "visualPrompt": "Momo'nun Yarım Kalan Resmi — event — Öğretmeni, şimdi başka etkinliğe geçiyoruz, dedi. Momo bunu beklemiyordu.",
+    "duration": 5
+  },
+  "mode": "local_animation",
+  "aspectRatio": "4:5"
+}

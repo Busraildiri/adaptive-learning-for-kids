@@ -146,4 +146,9 @@ vite.config.ts.timestamp-*
 apps/mobile/.expo/
 apps/mobile/dist-ci/
 
+# Python media worker local runtime/output
+services/media-worker/.venv/
+services/media-worker/**/__pycache__/
+services/media-worker/renders/
+
 !pnpm-lock.yaml
