@@ -1,0 +1,4 @@
+-r ../openmontage/requirements.txt
+
+piper-tts>=1.7.0,<2
+supabase>=2.0.0,<3
