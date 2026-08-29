@@ -58,6 +58,25 @@ describe("audioOwner", () => {
     owner.play("clip.m4a", onFinish);
     player.emitFinish();
     expect(onFinish).toHaveBeenCalledTimes(1);
+    expect(player.pause).toHaveBeenCalledTimes(1);
+    expect(player.remove).toHaveBeenCalledTimes(1);
+  });
+
+  it("releases the finished audio before handing off to the next stage", async () => {
+    const { createAudioOwner } = await import("./audioOwner");
+    const player = makeFakePlayer();
+    createAudioPlayerMock.mockReturnValueOnce(player);
+
+    const owner = createAudioOwner();
+    const handOff = vi.fn(() => {
+      expect(player.pause).toHaveBeenCalledTimes(1);
+      expect(player.remove).toHaveBeenCalledTimes(1);
+    });
+
+    owner.play("choice-feedback.m4a", handOff);
+    player.emitFinish();
+
+    expect(handOff).toHaveBeenCalledTimes(1);
   });
 
   it("a stale player's finish event is ignored once a new one has taken over", async () => {

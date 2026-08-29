@@ -4,12 +4,8 @@
  * was playing first. Imperative (not a hook) so it can be driven from
  * event handlers and released deterministically on unmount/stage change.
  *
- * Built against expo-audio's documented createAudioPlayer/
- * playbackStatusUpdate API for the installed Expo SDK 54 generation. Not
- * yet verified against installed source (expo-audio is declared in
- * package.json but pnpm install has not run in this environment) -- worth
- * a quick sanity check against node_modules/expo-audio's types once
- * installed, before relying on this in a device test.
+ * Built against expo-audio's createAudioPlayer/playbackStatusUpdate API for
+ * the installed Expo SDK 54 generation.
  */
 import { type AudioPlayer, type AudioStatus, createAudioPlayer } from "expo-audio";
 
@@ -38,7 +34,14 @@ export function createAudioOwner(): AudioOwner {
     const player = createAudioPlayer({ uri });
     current = player;
     player.addListener("playbackStatusUpdate", (status: AudioStatus) => {
-      if (status.didJustFinish && current === player) onFinish?.();
+      if (!status.didJustFinish || current !== player) return;
+
+      // Dispose the finished choice/question player BEFORE advancing to the
+      // next stage. Keeping it alive until ChoiceStage unmounts races the
+      // native audio-session teardown against the ending video's play(),
+      // which can leave the final video visible but silent on iOS.
+      release();
+      onFinish?.();
     });
     player.play();
   }
