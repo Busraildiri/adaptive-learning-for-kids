@@ -75,13 +75,18 @@ async function main() {
   if (!url || !serviceRoleKey) throw new Error("Supabase service credentials are missing.");
 
   const bundledGames = JSON.parse(contentSource).games ?? [];
-  const publishedRows = await request(
-    url,
-    serviceRoleKey,
-    "published_game_versions?select=game_id,game_version,age_band,game,published_by&order=game_id.asc,game_version.asc",
-  );
+  const [publishedRows, tombstoneRows] = await Promise.all([
+    request(
+      url,
+      serviceRoleKey,
+      "published_game_versions?select=game_id,game_version,age_band,game,published_by&order=game_id.asc,game_version.asc",
+    ),
+    request(url, serviceRoleKey, "game_catalog_tombstones?select=game_id"),
+  ]);
   const adminId = publishedRows.find((row) => row.published_by)?.published_by;
   if (!adminId) throw new Error("A publishing administrator could not be resolved.");
+  const deletedGameIds = new Set(tombstoneRows.map((row) => row.game_id));
+  const activeBundledGames = bundledGames.filter((game) => !deletedGameIds.has(game.id));
 
   const rowsById = new Map();
   for (const row of publishedRows) {
@@ -91,7 +96,7 @@ async function main() {
   }
 
   const inserts = [];
-  for (const game of bundledGames) {
+  for (const game of activeBundledGames) {
     const existing = rowsById.get(game.id) ?? [];
     const current = existing.some(
       (row) => row.game_version >= game.version && sameGameContent(row.game, game),
@@ -120,6 +125,7 @@ async function main() {
       {
         mode: apply ? "apply" : "dry-run",
         bundledGameCount: bundledGames.length,
+        skippedDeletedGameCount: deletedGameIds.size,
         inserts: inserts.map((row) => ({
           id: row.game_id,
           version: row.game_version,
@@ -152,7 +158,7 @@ async function main() {
     serviceRoleKey,
     "published_game_versions?select=game_id,game_version,age_band,game&order=game_id.asc,game_version.desc",
   );
-  for (const game of bundledGames) {
+  for (const game of activeBundledGames) {
     const latest = rowsAfterInsert.find((row) => row.game_id === game.id);
     if (
       !latest ||
@@ -186,7 +192,7 @@ async function main() {
     serviceRoleKey,
     "published_game_versions?select=game_id,game_version,age_band,game&order=game_id.asc,game_version.desc",
   );
-  const canonicalIds = new Set(bundledGames.map((game) => game.id));
+  const canonicalIds = new Set(activeBundledGames.map((game) => game.id));
   const finalCanonicalIds = new Set(
     finalRows.filter((row) => canonicalIds.has(row.game_id)).map((row) => row.game_id),
   );
@@ -197,7 +203,7 @@ async function main() {
     (row) => row.game_id === "mino-routine-path-001" && row.age_band !== "2-4",
   );
   if (
-    finalCanonicalIds.size !== bundledGames.length ||
+    finalCanonicalIds.size !== activeBundledGames.length ||
     remainingBobiDuplicates.length > 0 ||
     remainingInvalidTomo.length > 0
   ) {

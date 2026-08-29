@@ -56,10 +56,16 @@ async function authorizedGameClients(request: Request) {
 export async function GET(request: Request) {
   try {
     const { adminId, serviceClient } = await authorizedGameClients(request);
-    const result = await serviceClient.rpc("list_game_catalog", { actor_id: adminId });
+    const [result, tombstoneResult] = await Promise.all([
+      serviceClient.rpc("list_game_catalog", { actor_id: adminId }),
+      serviceClient.from("game_catalog_tombstones").select("game_id"),
+    ]);
     if (result.error) throw result.error;
     const catalog = parseGameCatalogRows(result.data as Array<Record<string, unknown>>);
-    return NextResponse.json(catalog);
+    const deletedGameIds = tombstoneResult.error
+      ? []
+      : (tombstoneResult.data ?? []).map((row) => row.game_id);
+    return NextResponse.json({ ...catalog, deletedGameIds });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Oyun kataloğu yüklenemedi.";
     return NextResponse.json({ error: message }, { status: 400 });
@@ -161,6 +167,16 @@ export async function DELETE(request: Request) {
       if (result.error) throw result.error;
       return NextResponse.json({ status: "deleted", deletedDrafts: result.data });
     }
+    const catalogStatus = searchParams.get("catalogStatus");
+    if (catalogStatus === "published" || catalogStatus === "archived") {
+      const result = await serviceClient.rpc("delete_game_catalog_entry", {
+        target_game_id: gameId,
+        target_catalog_status: catalogStatus,
+        actor_id: adminId,
+      });
+      if (result.error) throw result.error;
+      return NextResponse.json({ status: "deleted", deletedVersions: result.data });
+    }
     const result = await serviceClient.rpc("archive_published_game", {
       target_game_id: gameId,
       actor_id: adminId,
@@ -168,7 +184,7 @@ export async function DELETE(request: Request) {
     if (result.error) throw result.error;
     return NextResponse.json({ status: "archived", archivedVersions: result.data });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Oyun arşivlenemedi.";
+    const message = error instanceof Error ? error.message : "Oyun işlemi tamamlanamadı.";
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

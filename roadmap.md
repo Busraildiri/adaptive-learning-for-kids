@@ -1,6 +1,6 @@
 # Adaptive Learning for Kids — Roadmap
 
-Son güncelleme: 28 Ağustos 2026
+Son güncelleme: 29 Ağustos 2026
 
 Bu belge projenin yaşayan yol haritasıdır. Yapılan işler, devam eden işler, sıradaki işler ve karar bekleyen konular burada takip edilir.
 
@@ -19,6 +19,18 @@ Durum göstergeleri:
 - `[-]` Devam ediyor
 - `[ ]` Başlanmadı
 - `[!]` Karar veya dış inceleme bekliyor
+
+### Mevcut durum özeti
+
+- R0–R11 kapsamındaki repo, mobil akış, içerik şeması, hesap/izin, olay senkronizasyonu, kanıt,
+  kişiselleştirme, içerik üretimi, admin yayın kapısı ve ebeveyn özeti çekirdekleri tamamlandı.
+- E1 oyun genişlemesinde veri modeli tamamlandı; Büşra’nın ilk beş ana adımı bitti, 5–7 yaş fiziksel
+  cihaz kullanılabilirlik doğrulaması devam ediyor.
+- Admin oyun düzenleyicisinde örnekten başlama, doğrulama, onay, yayın, arşiv ve katalogdan kalıcı
+  silme var; tamamen boş oyun, mobil önizleme ve sürüm geri alma açık kalıyor.
+- Zamanlanmış günlük oyun üretimi, dengeli dağılım, benzerlik kontrolü ve tam model audit’i henüz
+  geliştirilmedi.
+- R12 ekip/uzman/aile pilotu ve R3 görsel–TTS sağlayıcı benchmark’ı başlamadı.
 
 ## Ekip ve çalışma sırası
 
@@ -100,8 +112,10 @@ Pedagojik ve gizlilik kararları
 - [x] Hedef yaş aralığı 2–7 olarak belirlendi.
 - [x] 2–4 ve 4–7 yaş katmanları ayrıldı.
 - [x] Katman sınırlarının ay yaşıyla belirlenmesi kararlaştırıldı: 2–4 katmanı 24–47 ayı, 4–7 katmanı 48–83 ayı kapsar.
-- [x] 2–4 yaşta bireysel öğrenme insight’ı üretilmemesi kararlaştırıldı.
-- [x] 4–7 yaş insight’larının izin ve veri yeterliliğine bağlı olması kararlaştırıldı.
+- [x] 2–4 ve 4–7 yaş katmanlarında yalnızca açık izin ve yeterli oturum verisiyle insight
+      üretilebilmesi kararlaştırıldı.
+- [x] Insight’ların tanısal olmayan, yargılamayan ve dayandığı oturumları açıklayabilen gözlemlerle
+      sınırlandırılması; puan, tanı ve akran karşılaştırması içermemesi kararlaştırıldı.
 - [x] Mevcut eski profillerde gözlemlerin kapalı kalması; yeni profillerde üç tercihin açık başlayıp ebeveyn tarafından kapatılabilmesi kararlaştırıldı.
 - [x] Kişiselleştirme, insight ve anonim ürün geliştirme izinleri birbirinden ayrıldı.
 - [x] Ebeveynin ham olayları standart panelde görmemesi kararlaştırıldı.
@@ -155,18 +169,49 @@ Pedagojik ve gizlilik kararları
 - [x] Serenay’ın Büşra başlangıç vermeden geliştirmeye başlamaması kararlaştırıldı.
 - [x] Monorepo için ilk aşamada Turborepo eklemeden pnpm workspace kullanılması kararlaştırıldı.
 
+### Oyun platformu, insight ve kişiselleştirme — 29 Ağustos 2026
+
+- [x] Mobil uygulamanın çalıştırabildiği yedi sürümlü oyun mekaniği ortak içerik şemasında tanımlandı:
+      dokun/bekle, sınıflandır, sırala/yerleştir, duygu ipuçları, balık desenleri, balon sayma ve
+      mini beceri oyunları.
+- [x] `starter`, `growing` ve `advanced` zorluk düzeyleri; tur, süre, ipucu, ikinci deneme ve kural
+      değişimi gibi güvenli parametrelerle sürümlendirildi.
+- [x] Admin oyun kataloğuna yaş grubu, mekanik ve zorluk filtreleri; ayrı onay bekleyen, yayındaki ve
+      arşivlenen içerik sayfaları ile responsive görünüm eklendi.
+- [x] Onaylı uygulama şablonlarından güvenli parametrelerle taslak üreten otomasyon, şema doğrulama,
+      onay/yayın, arşivleme ve taslak/yayın/arşiv kayıtlarını kalıcı silme akışları eklendi.
+- [x] Piko’nun Desen Treni, Mavi’nin Gölge Eşleri, Lumi’nin Ses Avı, Toko’nun Minik Haritası ve
+      Zuzu’nun Blok Bulmacası dahil yeni oyunlar sürümlü kataloğa eklendi; Lumi için gerçek ses
+      dosyaları uygulamaya bağlandı.
+- [x] Oyun oturumlarından yalnızca tamamlama, yardım, tekrar, uzun bekleme ve erken ayrılma
+      sinyallerini alan izin kontrollü olay sözleşmesi tamamlandı.
+- [x] Ebeveyn özetine son oyun oturumları ve RAG yaklaşımıyla yalnızca izinli oturum kanıtından
+      türetilen, yargılamayan ve açıklanabilir insight kartları eklendi.
+- [x] Oyun insight eşiği en az üç uygun oturum, en az bir takvim günü ve aynı sinyal için en az iki
+      destekleyici oturum olarak sürümlü politikada tanımlandı.
+- [x] Onaylı oyun varyantları arasında aynı yaş katmanı içinde açıklanabilir zorluk seçimi eklendi;
+      tek dokunuş veya tek oyundan kalıcı çıkarım üretilmesi engellendi.
+- [x] Tomo’nun Rutin Yolu için BKT tabanlı 5, 8 ve 12 turluk seviyeler ve yeterli tur kanıtı oluşur
+      oluşmaz en fazla bir seviye değiştiren kişiselleştirme eklendi.
+- [x] 2–4 yaş çocuk ana görünümü 4–7 yaş katmanıyla aynı katalog yapısına taşındı; iki yaş katmanı
+      için uygun oyun varyantları ve Supabase senkronizasyon aracı eklendi.
+
+Doğrulama notu: **İlgili içerik şeması, admin otomasyonu, mobil oyun, ebeveyn insight, RAG kanıtı,
+oyun varyantı ve BKT davranışları unit ve pgTAP testleriyle kapsanmıştır. Katalog silme
+migration’larının uzak Supabase ortamına uygulanması ve yeni 5–7 arayüzünün fiziksel cihaz
+kullanılabilirlik doğrulaması ayrı operasyon adımı olarak açık kalır.**
+
 ---
 
 ## Şimdi
 
 ### R0 — Repo ve geliştirme temeli
 
-Aktif sorumlu: **Büşra**  
-Serenay durumu: **Büşra’nın başlangıç bildirimini bekliyor**
+Durum: **Temel tamamlandı; Büşra ve Serenay paralel geliştirmeye geçti.**
 
 - [x] **Büşra:** GitHub reposunu yerel bilgisayara clone et.
 - [x] **Büşra:** Repo klasörünü VS Code’da aç.
-- [ ] **Büşra:** Serenay’ı GitHub collaborator olarak ekle.
+- [x] **Büşra:** Serenay’ı GitHub collaborator olarak ekle.
 - [ ] **Büşra:** `main` branch korumasını aç.
 - [ ] **Büşra:** Pull request için en az bir onay zorunluluğu getir.
 - [x] **Büşra:** `feature/project-foundation` branch’ini oluştur.
@@ -179,7 +224,7 @@ Serenay durumu: **Büşra’nın başlangıç bildirimini bekliyor**
 - [x] **Büşra:** Proje temelini iPhone/iPad ve web build ile doğrula.
 - [x] **Büşra:** Foundation pull request’ini aç ve Serenay’dan inceleme iste.
 - [x] **Serenay:** Foundation pull request’ini incele; geliştirmeye henüz başlama.
-- [ ] **Büşra:** Foundation merge edildikten sonra Serenay’a başlangıç bildirimi ver.
+- [x] **Büşra:** Foundation merge edildikten sonra Serenay’a başlangıç bildirimi ver.
 
 #### R0 kabul kriterleri
 
@@ -708,8 +753,16 @@ geçti. Video `happy/playing` adayı olarak kaydedildi fakat kare incelemesi tam
 ### R11 — Ebeveyn oturum özeti ve insight altyapısı
 
 - [x] Tamamlanan hikâye sayısı ve son beş oturumu gösteren tarafsız ebeveyn özeti oluştur.
+- [x] Tamamlanan oyunlar, yardım gösterimi, yeniden deneme, uzun bekleme ve erken ayrılmayı yalnızca
+      izinli ve tanısal olmayan oyun oturumu sinyalleri olarak kaydet.
+- [x] Son beş oyun oturumunu hikâye oturumlarından ayrı göster; ham cevap ve doğruluk değerlerini
+      ebeveyn RPC’sinden çıkar.
 - [x] İzin kapalı, hiç etkinlik yok ve yetersiz veri durumları için ayrı cold start ekranlarını geliştir.
 - [x] Öğrenme gözlemi izni, ebeveyn sahipliği ve en az üç uygun oturum kapılarını uygula.
+- [x] Oyun insight’ları için en az üç uygun oturum, bir takvim günü ve tekrar eden sinyal başına iki
+      destekleyici oturum eşiğini uygula.
+- [x] Insight üretimini RAG yaklaşımıyla yalnızca ebeveynin çocuğuna ait izinli oturum kanıtını
+      getiren sürümlü retrieval sözleşmesine bağla.
 - [x] Yalnızca sabit, sürümlü ve tanısal olmayan nitel gözlem şablonları oluştur.
 - [x] Yüzde, puan, tanı ve yaşıt/akran karşılaştırmalarını yasaklayan unit testleri ekle.
 - [x] Yetersiz veride ve izin kapalıyken gözlem oluşmamasını test et.
@@ -717,12 +770,12 @@ geçti. Video `happy/playing` adayı olarak kaydedildi fakat kare incelemesi tam
 - [x] Her özet uygunluk kararını private ve eklemeli audit tablosunda sakla.
 - [x] Ebeveynin yalnızca kendi çocuğunun özetini okuyabildiğini pgTAP testiyle doğrula.
 
-Doğrulama notu: **`@adaptive/parent-insights`, `parent-insight-policy-v1` uygunluk kapısı,
-`get_parent_session_summary` güvenli RPC'si, private audit tablosu ve mobil ebeveyn “Özet” ekranı
-tamamlandı. Üç uygun oturumdan önce nitel gözlem üretilmez; izin kapalıysa sayaç ve geçmiş dahi
-döndürülmez. Monorepo genelinde 91 unit test, yerel Supabase/PostgreSQL üzerinde 90 pgTAP testi,
-TypeScript, Biome ve Expo iOS export başarılıdır. R11 migration'ı `adaptive-kids-staging` projesine
-uygulanmıştır.**
+Doğrulama notu: **`@adaptive/parent-insights`, `parent-insight-policy-v3`, RAG kanıt getirme
+sözleşmesi, `get_parent_session_summary` güvenli RPC'si, private audit tablosu ve mobil ebeveyn
+“Özet” ekranı tamamlandı. Üç uygun hikâye/oyun oturumundan önce nitel gözlem üretilmez; oyunlarda
+bir günlük veri ve tekrarlanan sinyal şartı ayrıca uygulanır. İzin kapalıysa sayaç ve geçmiş dahi
+döndürülmez. Oyun insight, RAG ve BKT dahil `20260829110000` sürümüne kadarki migration’lar uzak
+ortamda doğrulanmıştır; sonraki taslak silme migration’ı deployment öncesi ayrıca uygulanmalıdır.**
 
 #### R11 kabul kriterleri
 
@@ -762,94 +815,98 @@ Sorumluluk ayrımı:
 
 Bağımlılık ve uygulama sırasına göre:
 
-1. [ ] Oyun oturumlarından yalnızca gerekli ve izinli sinyalleri toplayan insight veri sözleşmesini
+1. [x] Oyun oturumlarından yalnızca gerekli ve izinli sinyalleri toplayan insight veri sözleşmesini
        tamamla; tamamlama, yardım ihtiyacı, tekrar, bekleme ve oyundan ayrılma olaylarını tanısal
        olmayan gözlemlere dönüştürmek için eşik ve yeterli veri kurallarını belirle.
-2. [ ] Ebeveyn panelini detaylandır; hikâye özetlerinin yanında oyun oturumlarını ve oyunlara dair
+2. [x] Ebeveyn panelini detaylandır; hikâye özetlerinin yanında oyun oturumlarını ve oyunlara dair
        yargılamayan, açıklanabilir insight kartlarını göster. Yetersiz veri ve izin kapalı durumlarını
        ayrı ele al; puan, tanı ve akran karşılaştırması kullanma.
-3. [ ] Oyunlar için sürümlü zorluk seviyeleri ve zorluk parametreleri tanımla; admin panelinde oyunları
+3. [x] Oyunlar için sürümlü zorluk seviyeleri ve zorluk parametreleri tanımla; admin panelinde oyunları
        yaş grubu, mekanik ve zorluk düzeyine göre filtreleme imkânı ekle.
-4. [ ] Admin panelini otomatik oyun üretim akışına bağla; otomasyonun yalnızca uygulamada var olan oyun
+4. [x] Admin panelini otomatik oyun üretim akışına bağla; otomasyonun yalnızca uygulamada var olan oyun
        mekaniklerini, onaylı seçenekleri, asset'leri ve güvenli parametre aralıklarını kullanarak yeni
        oyun taslakları oluşturmasını sağla. Taslakları doğrulama ve onay kuyruğundan sonra yayınla.
-5. [ ] Yeterli ve birden fazla oturuma yayılan oyun verisi oluştuğunda, çocuğun yaş katmanı içinde daha
+5. [x] Yeterli ve birden fazla oturuma yayılan oyun verisi oluştuğunda, çocuğun yaş katmanı içinde daha
        kolay veya daha zor onaylı oyun varyantları gösteren açıklanabilir kişiselleştirmeyi uygula;
        tek oyun veya tek hatadan kalıcı çıkarım üretme.
-6. [ ] 5–7 yaş katmanının çocuk arayüzünü oluşturmaya başla; görsel dil, gezinme, yönerge yoğunluğu,
+6. [-] 5–7 yaş katmanının çocuk arayüzünü oluşturmaya başla; görsel dil, gezinme, yönerge yoğunluğu,
        seçenek sayısı ve etkileşim karmaşıklığını bu yaş grubuna göre tasarla ve mevcut oyunların
-       5–7 yaş varyantlarını yeni arayüzde doğrula.
+       5–7 yaş varyantlarını yeni arayüzde doğrula. Temel arayüz ve oyun varyantları hazırdır; fiziksel
+       cihaz kullanılabilirlik doğrulaması devam eder.
 
 #### E1.1 — Oyun mekaniği ve veri modeli
 
-- [ ] İçerikten bağımsız, mobil uygulamanın güvenli biçimde çalıştırabileceği 5–8 yapılandırılabilir
+- [x] İçerikten bağımsız, mobil uygulamanın güvenli biçimde çalıştırabileceği 5–8 yapılandırılabilir
       oyun mekaniğini tanımla.
-- [ ] İlk mekanik adaylarını duygu ve duygusal ipucu bulma, dokun/bekle, kural değiştirme,
+- [x] İlk mekanik adaylarını duygu ve duygusal ipucu bulma, dokun/bekle, kural değiştirme,
       sıralama/gruplama, renk-sayı, işitsel yönerge ve zamanlı hareket olarak değerlendir.
-- [ ] Oyun mekaniği ile değişken oyun içeriğini birbirinden ayıran sürümlü oyun şeması oluştur.
-- [ ] Oyun adımları için seçim, hedefe dokunma, dokunma sayısı, dokunmadan bekleme, sıralama,
+- [x] Oyun mekaniği ile değişken oyun içeriğini birbirinden ayıran sürümlü oyun şeması oluştur.
+- [x] Oyun adımları için seçim, hedefe dokunma, dokunma sayısı, dokunmadan bekleme, sıralama,
       gruplama, dinle-seç, yalnızca gözlem ve doğrulanmayan zamanlı katılım etkileşimlerini tanımla.
-- [ ] Mobil uygulamanın desteklemediği yeni sensör veya etkileşimlerin yalnızca admin içeriğiyle
+- [x] Mobil uygulamanın desteklemediği yeni sensör veya etkileşimlerin yalnızca admin içeriğiyle
       etkinleştirilememesini sağla.
-- [ ] Oyunların asset, seslendirme, yönerge, geri bildirim, tur ve zorluk parametrelerini
+- [x] Oyunların asset, seslendirme, yönerge, geri bildirim, tur ve zorluk parametrelerini
       yapılandırılmış alanlarda sakla.
 
 #### E1.2 — Admin oyun düzenleyicisi
 
-- [ ] Yöneticiye önce oyun mekaniği seçtiren, ardından boş oyun düzenleyicisi açan akışı geliştir.
-- [ ] Oyun adı, yaş uygunluğu, hedef beceri, karakter, sahne, yönerge, kural, seçenek, tur,
+- [-] Yöneticiye onaylı oyun mekaniği/şablonu seçtiren ve hazır alanları düzenleyicide açan akış
+      eklendi; tamamen boş bir oyunu mekanik seçerek başlatma seçeneği henüz yoktur.
+- [-] Oyun adı, yaş uygunluğu, hedef beceri, karakter, sahne, yönerge, kural, seçenek, tur,
       geri bildirim, asset ve zorluk alanlarını düzenlenebilir yap.
-- [ ] “Boş oyun oluştur” ve “örnekten başla” seçeneklerini destekle.
-- [ ] Aynı oyunun 2–4 ve 4–7 yaş yapılandırmalarını ayrı ayrı düzenleme ve mobil görünümde
-      önizleme imkânı sağla.
-- [ ] Taslak kaydetme, doğrulama, inceleme, yayınlama, arşivleme ve sürüm geri alma akışlarını ekle.
-- [ ] Duygu oyunlarında tek doğru duygu varsayımını ve yargılayıcı doğru/yanlış geri bildirimini
+- [-] “Örnekten başla” tamamlandı; “boş oyun oluştur” açık kalır.
+- [-] Aynı oyunun 2–4 ve 4–7 yaş yapılandırmaları ayrı varyantlar olarak düzenlenebilir; admin içindeki
+      gerçek mobil görünüm önizlemesi henüz eklenmedi.
+- [-] Taslak kaydetme, doğrulama, inceleme, yayınlama, arşivleme ve taslak/yayın/arşiv kayıtlarını
+      kalıcı silme tamamlandı; sürüm geri alma henüz yoktur.
+- [x] Duygu oyunlarında tek doğru duygu varsayımını ve yargılayıcı doğru/yanlış geri bildirimini
       engelle.
-- [ ] Tanı, tedavi veya “ADHD'yi geliştirir/tedavi eder” benzeri klinik iddiaları oyun metinlerinde
-      yasakla; becerileri yalnızca pratik edilen genel alanlar olarak tanımla.
+- [-] Hikâye üretim kapısında tanı ve klinik iddialar reddedilir; aynı kontrolü manuel oyun metinlerine
+      uygulayan sunucu tarafı doğrulaması henüz tamamlanmadı.
 
 #### E1.3 — Yaş uygunluğu ve zorluk
 
-- [ ] Yaş uygunluğunu `2-4` (24–47 ay), `4-7` (48–83 ay) veya iki katman olarak açıkça sakla.
-- [ ] Yaş uygunluğu, oyun zorluğu ve çocuk bazlı kişiselleştirmeyi birbirinden bağımsız kavramlar
+- [x] Her oyun varyantının yaş uygunluğunu `2-4` (24–47 ay) veya `4-7` (48–83 ay) olarak açıkça
+      sakla; iki katmanı destekleyen oyunları ayrı varyantlarla yayınla.
+- [x] Yaş uygunluğu, oyun zorluğu ve çocuk bazlı kişiselleştirmeyi birbirinden bağımsız kavramlar
       olarak modelle.
-- [ ] 2–4 yaş varyantlarında kısa ve tek aşamalı yönerge, 2–4 büyük seçenek, düşük tur sayısı,
-      sesli/görsel destek ve süre baskısı olmaması için doğrulama kuralları belirle.
-- [ ] 4–7 yaş varyantlarında kontrollü kural değişimi, daha fazla seçenek, duygusal ipucu yorumlama,
+- [-] 2–4 yaş varyantlarında seçenek, kural ve tur sınırları şemaya eklendi; kısa yönerge, bütün
+      mekaniklerde süre baskısı olmaması ve cihaz kullanılabilirliği kontrolleri genişletilecek.
+- [x] 4–7 yaş varyantlarında kontrollü kural değişimi, daha fazla seçenek, duygusal ipucu yorumlama,
       çok adımlı sıralama ve çalışma belleği parametrelerini destekle.
-- [ ] Çocuk zorlandığında onu daha küçük yaş katmanına geçirmek yerine kendi yaş katmanında seçenek,
+- [x] Çocuk zorlandığında onu daha küçük yaş katmanına geçirmek yerine kendi yaş katmanında seçenek,
       çeldirici, süre, tur, hatırlatma ve yönerge karmaşıklığını uyarlamayı sağla.
-- [ ] Uygulamanın önce kesin yaş filtresi uygulamasını, ardından uygun oyun havuzu içinde zorluk ve
+- [x] Uygulamanın önce kesin yaş filtresi uygulamasını, ardından uygun oyun havuzu içinde zorluk ve
       kişiselleştirme seçimi yapmasını sağla.
 
 #### E1.4 — Otomatik oyun üretimi
 
-- [ ] Manuel düzenleyici ile gelecekteki AI üretiminin aynı sürümlü oyun şemasını kullanmasını sağla.
-- [ ] AI’ın yalnızca mobilde desteklenen mekanikleri, izin verilen asset’leri ve güvenli parametre
-      aralıklarını kullanabildiği üretim kapısını tasarla.
+- [-] Manuel düzenleyici ve güvenli şablon otomasyonu aynı sürümlü oyun şemasını kullanır; gelecekteki
+      model tabanlı oyun üretimi de bu sözleşmeye bağlanacaktır.
+- [x] Otomasyonun yalnızca mobilde desteklenen mekanikleri, onaylı oyun şablonlarını ve güvenli
+      parametre aralıklarını kullanabildiği üretim kapısını tamamla.
 - [ ] Günlük beş farklı oyun üretebilen zamanlanmış otomasyon akışını tasarla.
 - [ ] Günlük üretimde mekanik, yaş grubu, hedef beceri, karakter, tema ve zorluk dağılımını dengeli
       planla.
 - [ ] Aynı olayın yalnızca karakter veya küçük kelime değişiklikleriyle yeniden üretilmesini engelleyen
       benzerlik ve tekrar kontrolü ekle.
-- [ ] AI çıktısını oyun şeması, yaş uygunluğu, güvenlik, asset hakları ve oynatılabilirlik
-      kontrollerinden geçir.
-- [ ] İlk aşamada otomatik üretim ve insan onayı kullan; güvenilirliği doğrulanan düşük riskli
-      mekanikler için otomatik yayını ayrıca değerlendirmeye aç.
-- [ ] Üretim modeli, prompt, şema, güvenlik kuralları, denetim sonucu ve yayın kararını sürümlü audit
-      kaydında tut.
+- [-] Otomasyon çıktısı oyun şeması, yaş uygunluğu, desteklenen mekanik ve parametre kontrollerinden
+      geçer; asset hakları ve otomatik oynatılabilirlik kontrolü genişletilecektir.
+- [x] Otomatik üretilen oyunları doğrudan yayınlama; insan onayı gereken taslak kuyruğuna gönder.
+- [-] Üretim kaynağı, oyun sürümü ve yayın durumu kaydedilir; model/prompt/güvenlik denetimi içeren tam
+      oyun üretim audit’i model tabanlı üretimle birlikte tamamlanacaktır.
 
 #### E1.5 — Oyun kişiselleştirmesi
 
-- [ ] Yalnızca uygun izinler açıkken oyun seçimi ve zorluk uyarlaması yap.
-- [ ] Tamamlama, hatırlatma ihtiyacı, tekrar eden etkileşim örüntüsü, oyundan ayrılma ve farklı
+- [x] Yalnızca uygun izinler açıkken oyun seçimi ve zorluk uyarlaması yap.
+- [x] Tamamlama, hatırlatma ihtiyacı, tekrar eden etkileşim örüntüsü, oyundan ayrılma ve farklı
       oturumlardaki tutarlı tercihler gibi sınırlı sinyalleri değerlendir.
-- [ ] Tek dokunuştan veya tek oyundan kalıcı çocuk özelliği, tanı ya da beceri puanı üretme.
-- [ ] Seçenek sayısı, çeldirici sayısı, tur, süre, kural sayısı, kural değişim sıklığı ve ipucu düzeyini
-      güvenli sınırlar içinde uyarlanabilir yap.
-- [ ] Her çocuğa ayrı içerik üretmek yerine onaylı oyun havuzundan uygun varyant seçimini varsayılan
+- [x] Tek dokunuştan veya tek oyundan kalıcı çocuk özelliği, tanı ya da beceri puanı üretme.
+- [-] Onaylı varyantlar arasında zorluk, tur, süre, ikinci deneme, kural ve ipucu parametreleri
+      uyarlanabilir; bütün mekaniklerde seçenek/çeldirici sayısını dinamik uyarlama açık kalır.
+- [x] Her çocuğa ayrı içerik üretmek yerine onaylı oyun havuzundan uygun varyant seçimini varsayılan
       ve daha kontrollü yaklaşım olarak kullan.
-- [ ] Her kişiselleştirme kararını yargılamayan ve geriye dönük açıklanabilir neden kodlarıyla kaydet.
+- [x] Her kişiselleştirme kararını yargılamayan ve geriye dönük açıklanabilir neden kodlarıyla kaydet.
 
 #### E1 kabul kriterleri
 
@@ -887,7 +944,6 @@ Bu maddeler MVP’ye otomatik olarak dahil değildir.
 - [!] Desteklenecek minimum iOS sürümü.
 - [!] Cevap bekleme süresi.
 - [!] Gürültü sınıflandırma katsayıları.
-- [!] Insight için minimum veri eşikleri.
 - [!] Veri sınıflarının kesin saklama süreleri.
 - [!] Çocuk gelişimi uzmanıyla çalışma modeli.
 - [!] Gelir ve abonelik modeli.
