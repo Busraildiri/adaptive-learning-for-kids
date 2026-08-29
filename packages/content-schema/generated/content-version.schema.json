@@ -824,7 +824,14 @@
                             },
                             "action": {
                               "type": "string",
-                              "enum": ["hug", "new_balloon", "breathe"]
+                              "enum": [
+                                "hug",
+                                "new_balloon",
+                                "pet_head",
+                                "say_love",
+                                "give_gift",
+                                "breathe"
+                              ]
                             },
                             "accessibilityLabel": {
                               "type": "string",
@@ -847,7 +854,14 @@
                             },
                             "action": {
                               "type": "string",
-                              "enum": ["hug", "new_balloon", "breathe"]
+                              "enum": [
+                                "hug",
+                                "new_balloon",
+                                "pet_head",
+                                "say_love",
+                                "give_gift",
+                                "breathe"
+                              ]
                             },
                             "accessibilityLabel": {
                               "type": "string",
@@ -871,7 +885,14 @@
                           },
                           "action": {
                             "type": "string",
-                            "enum": ["hug", "new_balloon", "breathe"]
+                            "enum": [
+                              "hug",
+                              "new_balloon",
+                              "pet_head",
+                              "say_love",
+                              "give_gift",
+                              "breathe"
+                            ]
                           },
                           "accessibilityLabel": {
                             "type": "string",

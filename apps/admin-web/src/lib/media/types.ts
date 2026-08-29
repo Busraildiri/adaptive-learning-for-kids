@@ -27,6 +27,8 @@ export interface MediaGenerationInput {
   imageQuality?: ImageQuality;
   imageSize?: string;
   voiceModel?: string;
+  characterDescription?: string;
+  visualStyle?: string;
 }
 
 export interface StoryVideoInput {

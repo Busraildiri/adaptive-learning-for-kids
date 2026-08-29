@@ -350,7 +350,11 @@ export default function App() {
     const eligiblePublishedStories = publishedStories.filter((experience) =>
       experience.ageBands.includes(activeChild.ageBand),
     );
-    const storyRoute = resolveStoryRoute(selectedStoryId, content.stories, eligiblePublishedStories);
+    const storyRoute = resolveStoryRoute(
+      selectedStoryId,
+      content.stories,
+      eligiblePublishedStories,
+    );
 
     if (selectedGame) {
       return selectedGame.mechanic === "classify_and_sort" ? (
@@ -393,7 +397,9 @@ export default function App() {
     }
 
     if (storyRoute.kind === "published") {
-      return <StoryPlayer experience={storyRoute.experience} onExit={() => setSelectedStoryId(null)} />;
+      return (
+        <StoryPlayer experience={storyRoute.experience} onExit={() => setSelectedStoryId(null)} />
+      );
     }
 
     return (

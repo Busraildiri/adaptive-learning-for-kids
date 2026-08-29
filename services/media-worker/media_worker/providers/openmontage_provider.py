@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import sys
 import re
+import shutil
 import subprocess
 import wave
 import os
@@ -39,6 +40,107 @@ _DEFAULT_VOICE_MODEL = os.environ.get(
     "MEDIA_WORKER_DEFAULT_VOICE_MODEL",
     str(_MEDIA_WORKER_ROOT / "voices" / "tr_TR-dfki-medium.onnx"),
 )
+
+
+# Windows-only: subprocess.run() on a .cmd wrapper (npm.cmd/npx.cmd) can
+# flash a visible console window even with capture_output=True, because
+# cmd.exe wants its own console unless explicitly told not to create one.
+_NO_WINDOW_FLAGS = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0  # type: ignore[attr-defined]
+
+
+def _patched_run_hf(
+    self, args: list, *, cwd, timeout: int, check: bool
+) -> subprocess.CompletedProcess:
+    """Drop-in replacement for HyperFramesCompose._run_hf (vendored,
+    services/openmontage) that adds Windows' CREATE_NO_WINDOW flag -- the
+    vendored method is otherwise identical, we are not changing its
+    behavior, only suppressing the console-window flash. Monkeypatched
+    onto the class in patch_hyperframes_windows_console(), never edits the
+    vendored clone's source.
+    """
+    cmd = ["npx", "--yes", "hyperframes", *args]
+    if os.name == "nt":
+        resolved = shutil.which(cmd[0])
+        if resolved:
+            cmd[0] = resolved
+    try:
+        return subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            cwd=str(cwd) if cwd else None,
+            check=False,
+            creationflags=_NO_WINDOW_FLAGS,
+        )
+    except subprocess.TimeoutExpired as e:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=124,
+            stdout=e.stdout or "",
+            stderr=(e.stderr or "") + f"\n[timeout after {timeout}s]",
+        )
+
+
+def patch_hyperframes_windows_console() -> None:
+    """Suppress the console-window flash from every `npx hyperframes ...`
+    subprocess call HyperFramesCompose makes internally, by monkeypatching
+    its _run_hf method at runtime -- the vendored clone (services/openmontage,
+    a separate git repository) is never edited. A no-op on non-Windows.
+    """
+    if os.name != "nt":
+        return
+    from tools.video.hyperframes_compose import HyperFramesCompose
+
+    HyperFramesCompose._run_hf = _patched_run_hf
+
+
+def prewarm_hyperframes_runtime(timeout_seconds: int = 90) -> None:
+    """HyperFramesCompose._probe_cli() (vendored, services/openmontage) caches
+    its result on the class for the life of this process -- but only gives
+    itself a fixed 20s. `npx --yes hyperframes ...` has been observed taking
+    ~17s even with a warm local package cache (it still does a real registry
+    round-trip every invocation), which leaves a hair-thin margin that a busy
+    dev machine easily blows past -- and once it times out, EVERY render in
+    this process fails with the same cached error until the worker restarts.
+
+    Runs the identical checks here, in our own code (never editing the
+    vendored clone), with a realistic timeout, and seeds the class-level
+    caches with the real result -- so by the time an actual job runs
+    _probe_cli() itself, the answer is already cached and instant. On
+    failure this leaves the caches unset, so the real check still runs and
+    reports the real, honest error rather than being silently faked.
+    """
+    from tools.video.hyperframes_compose import HyperFramesCompose
+
+    if HyperFramesCompose._npm_resolve_cache is None:
+        npm = shutil.which("npm")
+        if npm:
+            try:
+                proc = subprocess.run(
+                    [npm, "view", HyperFramesCompose._NPM_PACKAGE, "version"],
+                    capture_output=True, text=True, timeout=timeout_seconds,
+                    creationflags=_NO_WINDOW_FLAGS,
+                )
+                if proc.returncode == 0 and (proc.stdout or "").strip():
+                    HyperFramesCompose._npm_resolve_cache = {"version": proc.stdout.strip()}
+            except (subprocess.TimeoutExpired, OSError, subprocess.SubprocessError):
+                pass
+
+    if HyperFramesCompose._cli_probe_cache is None:
+        npx = shutil.which("npx")
+        if npx:
+            try:
+                proc = subprocess.run(
+                    [npx, "--yes", HyperFramesCompose._NPM_PACKAGE, "doctor", "--json"],
+                    capture_output=True, text=True, timeout=timeout_seconds,
+                    creationflags=_NO_WINDOW_FLAGS,
+                )
+                if proc.returncode == 0:
+                    HyperFramesCompose._cli_probe_cache = {"status": "ok"}
+            except (subprocess.TimeoutExpired, OSError, subprocess.SubprocessError):
+                pass
+
 
 if not _OPENMONTAGE_ROOT.is_dir():
     raise ImportError(
@@ -100,12 +202,16 @@ class OpenMontageProvider:
         )
         style_bible = f" Visual style bible: {visual_style}." if visual_style else ""
         return (
+            "A SINGLE full-bleed illustration frame -- absolutely NOT a comic strip, "
+            "storyboard, grid, sequence of panels, or multiple frames. One image, one "
+            "moment in time, no panel borders or gutters anywhere in the frame. "
             "Preschool-safe children's storybook illustration, warm and reassuring, "
             "one clear action, expressive but non-frightening emotion, soft natural light, "
             "clean composition, no written words, no letters, no logo, no watermark. "
             f"Portrait composition for a {input.aspect_ratio} mobile story. "
-            f"Scene: {scene.visual_prompt}. Emotion: {scene.emotion}.{character}"
-            f"{character_bible}{style_bible}"
+            f"Scene (depict only this one frozen moment, not a sequence leading up to or "
+            f"following it): {scene.visual_prompt}. Emotion: {scene.emotion}.{character}"
+            f"{character_bible}{style_bible} Reminder: single frame only, no panels."
         )
 
     def _resolve_image(
@@ -293,9 +399,22 @@ class OpenMontageProvider:
         workspace = scene_dir / "hyperframes"
         output_path = scene_dir / "final.mp4"
         narration_path = scene_dir / "narration.wav"
-        image_path = self._resolve_image(input, scene_dir)
+        image_path = self._resolve_image(
+            input,
+            scene_dir,
+            character_description=input.character_description,
+            visual_style=input.visual_style,
+        )
 
         self._synthesize_narration(scene, narration_path, input.voice_model)
+
+        # scene.duration is the AI plan's estimate, not a measurement -- if
+        # the actual synthesized narration runs longer, cutting the video at
+        # scene.duration truncates the narration mid-sentence (baked into
+        # the rendered file, not a playback issue). Extend to fit the real
+        # narration length, same safety margin already used for decision
+        # audio and the legacy combined-preview path.
+        duration = max(float(scene.duration), self._wav_duration(narration_path) + 0.25)
 
         self._render_video(
             workspace=workspace,
@@ -306,14 +425,14 @@ class OpenMontageProvider:
                     "source": "scene_image",
                     "type": "image",
                     "in_seconds": 0,
-                    "out_seconds": scene.duration,
+                    "out_seconds": duration,
                 }
             ],
             narration_segments=[
                 {
                     "asset_id": "scene_narration",
                     "start_seconds": 0,
-                    "end_seconds": scene.duration,
+                    "end_seconds": duration,
                 }
             ],
             assets=[
@@ -326,9 +445,24 @@ class OpenMontageProvider:
             kind="video",
             asset_uri=str(output_path),
             mime_type="video/mp4",
-            duration_ms=int(scene.duration * 1000),
+            duration_ms=int(duration * 1000),
             width=1080,
             height=1350,
+        )
+
+    def generate_audio(self, input: MediaGenerationInput) -> MediaGenerationResult:
+        """Render one decision question/response as a standalone WAV asset."""
+        scene = input.scene
+        audio_dir = _OUTPUT_ROOT / self._safe_id(scene.story_id) / "decision-audio"
+        audio_dir.mkdir(parents=True, exist_ok=True)
+        output_path = audio_dir / f"{self._safe_id(scene.scene_id)}.wav"
+        self._synthesize_narration(scene, output_path, input.voice_model)
+        duration = self._wav_duration(output_path)
+        return MediaGenerationResult(
+            kind="audio",
+            asset_uri=str(output_path),
+            mime_type="audio/wav",
+            duration_ms=max(1, int(duration * 1000)),
         )
 
     def generate_story(self, input: StoryVideoInput) -> MediaGenerationResult:

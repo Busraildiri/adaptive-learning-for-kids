@@ -11,11 +11,12 @@ import {
   type ReviewItem,
   storyTitle,
 } from "../lib/reviewQueue";
+import { AiVideoPanel } from "./AiVideoPanel";
 import { GamePanel } from "./GamePanel";
 import { AssetFrame, StoryCopyList } from "./studio/StoryCopyList";
 import { ContentProductionStudio } from "./studio/ContentProductionStudio";
 
-type Screen = "stories" | "games";
+type Screen = "stories" | "games" | "ai-video";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -38,7 +39,7 @@ export default function HomePage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [screen, setScreen] = useState<Screen>("stories");
+  const [screen, setScreen] = useState<Screen>("ai-video");
 
   const loadQueue = useCallback(async () => {
     if (!supabase) return;
@@ -215,13 +216,10 @@ export default function HomePage() {
         </button>
       </header>
       <nav className="screen-tabs">
-        <button
-          className={screen === "stories" ? "selected" : ""}
-          onClick={() => setScreen("stories")}
-          type="button"
-        >
-          Hikâye Üretimi
-        </button>
+        {/* "Hikâye Üretimi" (the pre-AI story review panel) is disabled --
+            not deleted -- per request; ContentProductionStudio and its
+            review-queue state below are unreachable via the UI but kept
+            intact so this can be reversed by restoring the tab button. */}
         <button
           className={screen === "games" ? "selected" : ""}
           onClick={() => setScreen("games")}
@@ -229,10 +227,19 @@ export default function HomePage() {
         >
           Oyun Üretimi
         </button>
+        <button
+          className={screen === "ai-video" ? "selected" : ""}
+          onClick={() => setScreen("ai-video")}
+          type="button"
+        >
+          AI ile Hikâye Üretimi
+        </button>
       </nav>
       {message && <p className="alert global-alert">{message}</p>}
       {screen === "games" ? (
         <GamePanel supabase={supabase} />
+      ) : screen === "ai-video" ? (
+        <AiVideoPanel supabase={supabase} />
       ) : (
         <>
           <ContentProductionStudio supabase={supabase} />

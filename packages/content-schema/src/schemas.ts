@@ -72,7 +72,14 @@ export const choiceSchema = z.strictObject({
   supportiveFeedback: supportiveFeedbackSchema,
 });
 
-export const helpActionSchema = z.enum(["hug", "new_balloon", "breathe"]);
+export const helpActionSchema = z.enum([
+  "hug",
+  "new_balloon",
+  "pet_head",
+  "say_love",
+  "give_gift",
+  "breathe",
+]);
 
 export const storyChoiceVisualSchema = z.discriminatedUnion("kind", [
   z.strictObject({

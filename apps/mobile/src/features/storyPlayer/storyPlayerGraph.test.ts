@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import type { PublishedStoryExperience } from "@adaptive/media-schema";
+import { describe, expect, it } from "vitest";
 import {
   buildClipLookup,
   initialStage,
@@ -31,7 +31,12 @@ function experience(): PublishedStoryExperience {
         question: { text: "Nasıl yardım edelim?", audio: media("help_01-question.m4a") },
         options: [
           { id: "hug", label: "Sarıl", nextClipId: "help_01-hug", audio: media("hug.m4a") },
-          { id: "balloon", label: "Balon bul", nextClipId: "help_01-balloon", audio: media("balloon.m4a") },
+          {
+            id: "balloon",
+            label: "Balon bul",
+            nextClipId: "help_01-balloon",
+            audio: media("balloon.m4a"),
+          },
         ],
       },
       { kind: "ending", id: "help_01-hug", video: media("help_01-hug.mp4") },
@@ -45,9 +50,9 @@ describe("storyPlayerGraph", () => {
     expect(initialStage(experience())).toEqual({ stage: "video", clipId: "scene-01" });
   });
 
-  it("a linear clip's video completion moves to the next clip's video stage", () => {
+  it("a linear clip's video completion enters a following decision's choice stage", () => {
     const clips = buildClipLookup(experience());
-    expect(stageAfterVideo(clips, "scene-01")).toEqual({ stage: "video", clipId: "help_01" });
+    expect(stageAfterVideo(clips, "scene-01")).toEqual({ stage: "choice", clipId: "help_01" });
   });
 
   it("a decision clip's video completion moves to the SAME clip's choice stage", () => {

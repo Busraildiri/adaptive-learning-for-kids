@@ -65,4 +65,10 @@ export const publishedStoryExperienceSchema = z.strictObject({
   startClipId: z.string().trim().min(1),
   clips: z.array(publishedPlaybackClipSchema).min(1),
   publishedAt: z.string().trim().min(1),
+  // Optional, additive: a story-specific character name and cover image
+  // reference (an opaque mediaRef, same as clip video/audio) for a richer
+  // selection-screen card than the generic fallback symbol. Absent on
+  // experiences published before these existed.
+  characterName: z.string().trim().min(1).optional(),
+  coverMediaRef: z.string().trim().min(1).optional(),
 });

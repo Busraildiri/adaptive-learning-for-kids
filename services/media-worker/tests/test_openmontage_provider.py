@@ -63,6 +63,24 @@ class FakeHyperFrames:
 
 
 class OpenMontageProviderTests(unittest.TestCase):
+    def test_generates_standalone_decision_audio_without_visual_render(self) -> None:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            patch.object(provider_module, "_OUTPUT_ROOT", Path(temp_dir)),
+            patch.object(provider_module, "ImageSelector") as selector,
+            patch.object(provider_module, "PiperTTS", FakePiper),
+            patch.object(provider_module, "HyperFramesCompose") as hyperframes,
+        ):
+            result = provider_module.OpenMontageProvider().generate_audio(
+                media_generation_input_from_dict(manifest())
+            )
+
+        self.assertEqual(result.kind, "audio")
+        self.assertEqual(result.mime_type, "audio/wav")
+        self.assertTrue(result.asset_uri.endswith("scene-test.wav"))
+        selector.assert_not_called()
+        hyperframes.assert_not_called()
+
     def test_generates_visual_from_scene_prompt_before_tts_and_render(self) -> None:
         with (
             tempfile.TemporaryDirectory() as temp_dir,
@@ -165,6 +183,28 @@ class OpenMontageProviderTests(unittest.TestCase):
             ],
         )
         self.assertEqual(len(render["asset_manifest"]["assets"]), 4)
+
+
+class HyperFramesWindowsConsoleTests(unittest.TestCase):
+    def test_patches_run_hf_on_windows_only(self) -> None:
+        from tools.video.hyperframes_compose import HyperFramesCompose
+
+        original_run_hf = HyperFramesCompose._run_hf
+        self.addCleanup(setattr, HyperFramesCompose, "_run_hf", original_run_hf)
+
+        with patch.object(provider_module.os, "name", "nt"):
+            provider_module.patch_hyperframes_windows_console()
+        self.assertIs(HyperFramesCompose._run_hf, provider_module._patched_run_hf)
+
+    def test_does_nothing_on_non_windows(self) -> None:
+        from tools.video.hyperframes_compose import HyperFramesCompose
+
+        original_run_hf = HyperFramesCompose._run_hf
+        self.addCleanup(setattr, HyperFramesCompose, "_run_hf", original_run_hf)
+
+        with patch.object(provider_module.os, "name", "posix"):
+            provider_module.patch_hyperframes_windows_console()
+        self.assertIs(HyperFramesCompose._run_hf, original_run_hf)
 
 
 class FakePiperForAudio:

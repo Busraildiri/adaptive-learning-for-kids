@@ -52,6 +52,8 @@ class MediaGenerationInput:
     # Piper voice model name (e.g. a tr_TR voice). None = Piper's own default,
     # which is English and will mispronounce Turkish narration.
     voice_model: Optional[str] = None
+    character_description: str = ""
+    visual_style: str = ""
 
 
 @dataclass(frozen=True)
@@ -193,6 +195,8 @@ def media_generation_input_from_dict(data: dict) -> MediaGenerationInput:
         image_quality=data.get("imageQuality", "low"),
         image_size=data.get("imageSize", "1024x1536"),
         voice_model=data.get("voiceModel"),
+        character_description=data.get("characterDescription", ""),
+        visual_style=data.get("visualStyle", ""),
     )
 
 

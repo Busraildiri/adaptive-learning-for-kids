@@ -39,7 +39,11 @@ from typing import Optional
 from supabase import Client, create_client
 
 from .provider import get_provider, register_provider
-from .providers.openmontage_provider import OpenMontageProvider
+from .providers.openmontage_provider import (
+    OpenMontageProvider,
+    patch_hyperframes_windows_console,
+    prewarm_hyperframes_runtime,
+)
 from .render_manifest import (
     ClipRenderResult,
     decision_audio_input_from_dict,
@@ -93,6 +97,8 @@ def _render_video_job(job: dict, render_id: str) -> ClipRenderResult:
         image_quality=media_input.image_quality,
         image_size=media_input.image_size,
         voice_model=media_input.voice_model,
+        character_description=media_input.character_description,
+        visual_style=media_input.visual_style,
         render_id=render_id,
     )
 
@@ -228,6 +234,9 @@ def _process_job(client: Client, job: dict) -> None:
 
 def run_forever() -> None:
     register_provider(OpenMontageProvider())
+    patch_hyperframes_windows_console()
+    print("[media-worker] warming up HyperFrames runtime check (one-time, can take ~20-90s)...")
+    prewarm_hyperframes_runtime()
     client = _client()
     print(f"[media-worker] polling every {POLL_INTERVAL_SECONDS}s (Ctrl+C to stop)")
     while True:

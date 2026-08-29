@@ -74,54 +74,54 @@ export function StorySelectionScreen({
           <Text style={styles.eyebrow}>MİNO İLE OYUN VE HİKÂYE ZAMANI</Text>
           <Text style={styles.title}>Ne yapmak istersin, {childName}?</Text>
         </View>
-        <View style={styles.storyList}>
-          {cards.map((card, index) => (
-            <Pressable
-              accessibilityLabel={card.accessibilityLabel}
-              accessibilityRole="button"
-              key={card.storyId}
-              onPress={card.onPress}
-              style={({ pressed }) => [
-                styles.storyCard,
-                index % 2 === 1 && styles.storyCardAlternate,
-                pressed && styles.storyCardPressed,
-              ]}
-            >
-              {storyCoverImages[card.storyId] ? (
-                <View style={styles.storyCover}>
-                  <Image
-                    accessibilityIgnoresInvertColors
-                    accessibilityLabel={card.accessibilityLabel}
-                    resizeMode={card.storyId === "mirmir-red-balloon-story" ? "cover" : "contain"}
-                    source={storyCoverImages[card.storyId]}
-                    style={styles.storyCoverImage}
-                  />
-                  <Text style={styles.storySceneBadge}>{card.symbol}</Text>
-                </View>
-              ) : (
-                <Text accessibilityLabel={card.accessibilityLabel} style={styles.storySymbol}>
-                  {card.symbol}
-                </Text>
-              )}
-              <Text style={styles.storyTitle}>{card.title}</Text>
-              {card.recommended && <Text style={styles.recommendedSymbol}>★</Text>}
-              <Text style={styles.playLabel}>Başla ›</Text>
-            </Pressable>
-          ))}
-        </View>
-        {publishedCards.length > 0 ? (
+        {cards.length > 0 || publishedCards.length > 0 ? (
           <View style={styles.gameSection}>
             <Text style={styles.sectionTitle}>Video Hikâyeler</Text>
             <View style={styles.storyList}>
-              {publishedCards.map((card, index) => (
+              {cards.map((card, index) => (
                 <Pressable
                   accessibilityLabel={card.accessibilityLabel}
                   accessibilityRole="button"
-                  key={card.storyId}
+                  key={`bundled:${card.storyId}`}
                   onPress={card.onPress}
                   style={({ pressed }) => [
                     styles.storyCard,
                     index % 2 === 1 && styles.storyCardAlternate,
+                    pressed && styles.storyCardPressed,
+                  ]}
+                >
+                  {storyCoverImages[card.storyId] ? (
+                    <View style={styles.storyCover}>
+                      <Image
+                        accessibilityIgnoresInvertColors
+                        accessibilityLabel={card.accessibilityLabel}
+                        resizeMode={
+                          card.storyId === "mirmir-red-balloon-story" ? "cover" : "contain"
+                        }
+                        source={storyCoverImages[card.storyId]}
+                        style={styles.storyCoverImage}
+                      />
+                      <Text style={styles.storySceneBadge}>{card.symbol}</Text>
+                    </View>
+                  ) : (
+                    <Text accessibilityLabel={card.accessibilityLabel} style={styles.storySymbol}>
+                      {card.symbol}
+                    </Text>
+                  )}
+                  <Text style={styles.storyTitle}>{card.title}</Text>
+                  {card.recommended && <Text style={styles.recommendedSymbol}>★</Text>}
+                  <Text style={styles.playLabel}>Başla ›</Text>
+                </Pressable>
+              ))}
+              {publishedCards.map((card, index) => (
+                <Pressable
+                  accessibilityLabel={card.accessibilityLabel}
+                  accessibilityRole="button"
+                  key={`published:${card.storyId}`}
+                  onPress={card.onPress}
+                  style={({ pressed }) => [
+                    styles.storyCard,
+                    (cards.length + index) % 2 === 1 && styles.storyCardAlternate,
                     pressed && styles.storyCardPressed,
                   ]}
                 >

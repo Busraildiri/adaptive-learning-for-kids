@@ -21,6 +21,12 @@ interface MediaJobRow {
   id: string;
   story_id: string;
   scene_id: string | null;
+  graph_id: string | null;
+  media_kind: "video" | "audio";
+  audio_role: "question" | "choice" | null;
+  choice_id: string | null;
+  storage_path: string | null;
+  render_id: string | null;
   provider: string;
   mode: string;
   render_manifest: MediaGenerationInput | DecisionAudioRenderManifest;
@@ -44,6 +50,12 @@ function mapRow(row: MediaJobRow): MediaJob {
     id: row.id,
     storyId: row.story_id,
     sceneId: row.scene_id ?? undefined,
+    graphId: row.graph_id ?? undefined,
+    mediaKind: row.media_kind,
+    audioRole: row.audio_role ?? undefined,
+    choiceId: row.choice_id ?? undefined,
+    storagePath: row.storage_path ?? undefined,
+    renderId: row.render_id ?? undefined,
     provider: row.provider,
     mode: row.mode as MediaMode,
     renderManifest: row.render_manifest,

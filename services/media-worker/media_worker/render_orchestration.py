@@ -73,6 +73,8 @@ def render_single_clip(
     image_quality: str = "low",
     image_size: str = "1024x1536",
     voice_model: Optional[str] = None,
+    character_description: str = "",
+    visual_style: str = "",
     render_id: Optional[str] = None,
 ) -> ClipRenderResult:
     """The canonical render primitive: one SceneGenerationSpec -> one
@@ -86,7 +88,12 @@ def render_single_clip(
     """
     render_id = render_id or str(uuid.uuid4())
     relative_path = clip_storage_path(story_id, graph_id, scene.scene_id, render_id)
-    output_path = _OUTPUT_ROOT / relative_path
+    # Local scratch path is deliberately short (render_id only) -- the long,
+    # descriptive `relative_path` is what gets uploaded to Storage, but using
+    # it for the LOCAL path too can exceed Windows' 260-char MAX_PATH once
+    # story/graph/clip ids are long enough (seen in practice with piper.exe,
+    # which isn't long-path-aware).
+    output_path = _OUTPUT_ROOT / "tmp" / render_id / "clip.mp4"
     try:
         provider = get_provider(provider_id)
         media_input = MediaGenerationInput(
@@ -99,6 +106,8 @@ def render_single_clip(
             image_quality=image_quality,  # type: ignore[arg-type]
             image_size=image_size,
             voice_model=voice_model,
+            character_description=character_description,
+            visual_style=visual_style,
         )
         result = provider.generate(media_input)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -159,7 +168,9 @@ def render_decision_question_audio(
 ) -> ClipRenderResult:
     render_id = render_id or str(uuid.uuid4())
     relative_path = decision_question_storage_path(story_id, graph_id, decision_clip_id, render_id)
-    output_path = _OUTPUT_ROOT / relative_path
+    # See render_single_clip: short local scratch path, long descriptive
+    # path only for the Storage upload key.
+    output_path = _OUTPUT_ROOT / "tmp" / render_id / "narration.m4a"
     clip_id = f"{decision_clip_id}-question"
     try:
         provider = get_provider(provider_id)
@@ -195,7 +206,9 @@ def render_choice_option_audio(
     relative_path = choice_option_storage_path(
         story_id, graph_id, decision_clip_id, choice_id, render_id
     )
-    output_path = _OUTPUT_ROOT / relative_path
+    # See render_single_clip: short local scratch path, long descriptive
+    # path only for the Storage upload key.
+    output_path = _OUTPUT_ROOT / "tmp" / render_id / "narration.m4a"
     clip_id = f"{decision_clip_id}-{choice_id}"
     try:
         provider = get_provider(provider_id)

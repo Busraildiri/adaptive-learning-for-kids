@@ -1,14 +1,13 @@
 import type { PublishedPlaybackClip } from "@adaptive/media-schema";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { createAudioOwner } from "./audioOwner";
+import { getChoiceVisual } from "./choiceVisual";
 
 type DecisionClip = Extract<PublishedPlaybackClip, { kind: "decision" }>;
 
-function playAndWait(
-  owner: ReturnType<typeof createAudioOwner>,
-  uri: string,
-): Promise<void> {
+function playAndWait(owner: ReturnType<typeof createAudioOwner>, uri: string): Promise<void> {
   return new Promise((resolve) => owner.play(uri, resolve));
 }
 
@@ -24,36 +23,35 @@ export function ChoiceStage({
   resolvePublishedMediaRef: (mediaRef: string) => Promise<string>;
 }) {
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
+  const [questionFinished, setQuestionFinished] = useState(false);
   const audioOwnerRef = useRef(createAudioOwner());
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
 
   useEffect(() => {
     setSelectedOptionId(null);
+    setQuestionFinished(false);
     const owner = audioOwnerRef.current;
     let cancelled = false;
 
-    async function narrate() {
+    async function narrateQuestion() {
       try {
         const questionUri = await resolvePublishedMediaRef(clip.question.audio.mediaRef);
         if (cancelled) return;
         await playAndWait(owner, questionUri);
-        for (const option of clip.options) {
-          if (cancelled) return;
-          const optionUri = await resolvePublishedMediaRef(option.audio.mediaRef);
-          if (cancelled) return;
-          await playAndWait(owner, optionUri);
-        }
+        if (!cancelled) setQuestionFinished(true);
       } catch (error) {
         if (!cancelled) {
           onErrorRef.current(
-            error instanceof Error ? error.message : `Failed to play choice audio for clip "${clip.id}"`,
+            error instanceof Error
+              ? error.message
+              : `Failed to play question audio for clip "${clip.id}"`,
           );
         }
       }
     }
 
-    void narrate();
+    void narrateQuestion();
     return () => {
       cancelled = true;
       owner.release();
@@ -61,35 +59,78 @@ export function ChoiceStage({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by clip.id at the call site
   }, [clip.id]);
 
-  function handleSelect(optionId: string) {
-    if (selectedOptionId) return; // local guard: a card is already chosen, ignore further taps
+  async function handleSelect(optionId: string) {
+    if (selectedOptionId || !questionFinished) return;
+    const owner = audioOwnerRef.current;
+    const option = clip.options.find((candidate) => candidate.id === optionId);
+    if (!option) {
+      onErrorRef.current(`Unknown choice "${optionId}" for clip "${clip.id}"`);
+      return;
+    }
     setSelectedOptionId(optionId);
-    audioOwnerRef.current.release();
-    onSelect(optionId);
+    // Play the selected option's own reinforcement narration first (no
+    // correct/wrong framing -- both options carry positive feedback), then
+    // advance once it finishes. If it fails to resolve/play, report the
+    // failure instead of silently skipping the reinforcement.
+    try {
+      const optionUri = await resolvePublishedMediaRef(option.audio.mediaRef);
+      await playAndWait(owner, optionUri);
+      onSelect(optionId);
+    } catch (error) {
+      onErrorRef.current(
+        error instanceof Error
+          ? error.message
+          : `Failed to play choice audio for clip "${clip.id}"`,
+      );
+    }
   }
 
   return (
     <View style={styles.container}>
       <View style={styles.questionCard}>
         <Text style={styles.questionText}>{clip.question.text}</Text>
+        {!questionFinished && !selectedOptionId ? (
+          <Text style={styles.listeningText}>Soruyu dinliyoruz…</Text>
+        ) : null}
+        {selectedOptionId ? <Text style={styles.listeningText}>Harika, dinliyoruz…</Text> : null}
       </View>
       <View style={styles.optionsRow}>
-        {clip.options.map((option, index) => (
-          <Pressable
-            accessibilityLabel={option.label}
-            accessibilityRole="button"
-            disabled={Boolean(selectedOptionId)}
-            key={option.id}
-            onPress={() => handleSelect(option.id)}
-            style={({ pressed }) => [
-              styles.optionCard,
-              index === 1 && styles.optionCardAlternate,
-              pressed && styles.optionCardPressed,
-            ]}
-          >
-            <Text style={styles.optionLabel}>{option.label}</Text>
-          </Pressable>
-        ))}
+        {clip.options.map((option) => {
+          const visual = getChoiceVisual(option.id, option.label);
+          const selected = selectedOptionId === option.id;
+          return (
+            <Pressable
+              accessibilityLabel={option.label}
+              accessibilityRole="button"
+              accessibilityState={{
+                disabled: Boolean(selectedOptionId) || !questionFinished,
+                selected,
+              }}
+              disabled={Boolean(selectedOptionId) || !questionFinished}
+              key={option.id}
+              onPress={() => handleSelect(option.id)}
+              style={({ pressed }) => [
+                styles.optionCard,
+                {
+                  backgroundColor: visual.backgroundColor,
+                  borderColor: visual.borderColor,
+                },
+                selected && styles.optionCardSelected,
+                pressed && styles.optionCardPressed,
+              ]}
+            >
+              <View style={styles.optionIconCircle}>
+                <MaterialCommunityIcons
+                  accessibilityElementsHidden
+                  color={visual.iconColor}
+                  importantForAccessibility="no"
+                  name={visual.icon}
+                  size={82}
+                />
+              </View>
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
@@ -111,18 +152,35 @@ const styles = StyleSheet.create({
     backgroundColor: "#EAF5F2",
   },
   questionText: { color: "#463A31", fontSize: 22, fontWeight: "900", textAlign: "center" },
-  optionsRow: { width: "100%", gap: 16 },
+  listeningText: {
+    color: "#397F78",
+    fontSize: 15,
+    fontWeight: "700",
+    textAlign: "center",
+    marginTop: 10,
+  },
+  optionsRow: { width: "100%", flexDirection: "row", gap: 16 },
   optionCard: {
-    minHeight: 96,
-    borderWidth: 3,
-    borderColor: "#FFFFFF",
-    borderRadius: 24,
-    backgroundColor: "#FFD9C8",
+    flex: 1,
+    aspectRatio: 1,
+    minHeight: 144,
+    borderWidth: 4,
+    borderRadius: 30,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 20,
+    padding: 12,
   },
-  optionCardAlternate: { backgroundColor: "#CDEBE4" },
+  optionCardSelected: {
+    borderWidth: 7,
+    transform: [{ scale: 0.96 }],
+  },
   optionCardPressed: { opacity: 0.72, transform: [{ scale: 0.98 }] },
-  optionLabel: { color: "#463A31", fontSize: 22, fontWeight: "900", textAlign: "center" },
+  optionIconCircle: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    backgroundColor: "rgba(255, 255, 255, 0.72)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });
