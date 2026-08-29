@@ -14,6 +14,7 @@
     "check:fix": "biome check --write .",
     "db:start": "supabase start",
     "db:reset": "supabase db reset",
+    "db:sync-games": "node scripts/sync-bundled-games-to-supabase.mjs",
     "db:test": "supabase test db",
     "db:stop": "supabase stop",
     "typecheck": "pnpm --recursive --if-present typecheck",

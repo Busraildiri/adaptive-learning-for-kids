@@ -16,6 +16,7 @@ import {
   View,
 } from "react-native";
 import { isClueChoiceCorrect, isEmotionChoiceCorrect } from "./emotionCluesEngine";
+import { useGameObservation } from "./GameObservationContext";
 
 const sceneAssets: Record<EmotionClueRound["sceneAssetKey"], ImageSourcePropType> = {
   "sad-bear": require("../../../assets/game/emotion/sad-bear-v1.png"),
@@ -43,6 +44,7 @@ export function EmotionCluesGame({
   game: EmotionGameContent;
   onExit: () => void;
 }) {
+  const report = useGameObservation();
   const [roundIndex, setRoundIndex] = useState(0);
   const [stage, setStage] = useState<"emotion" | "clue">("emotion");
   const [attempt, setAttempt] = useState(0);
@@ -74,6 +76,7 @@ export function EmotionCluesGame({
 
   const finishRound = () => {
     if (roundIndex === game.rounds.length - 1) {
+      report({ type: "completed", stepId: round.id });
       setCompleted(true);
       speak(game.presentation.closingNarration);
       return;
@@ -116,6 +119,7 @@ export function EmotionCluesGame({
   };
 
   const retry = () => {
+    report({ type: "retry", stepId: round.id });
     if (attempt >= 2) return revealCorrectAnswer();
     Vibration.vibrate(20);
     setLocked(true);
@@ -140,7 +144,10 @@ export function EmotionCluesGame({
 
   useEffect(() => {
     if (locked || completed) return;
-    const timeout = setTimeout(revealCorrectAnswer, 7_000);
+    const timeout = setTimeout(() => {
+      report({ type: "wait", stepId: round.id, waitMs: 7_000 });
+      revealCorrectAnswer();
+    }, 7_000);
     return () => clearTimeout(timeout);
   }, [locked, completed, roundIndex, stage, attempt]);
 

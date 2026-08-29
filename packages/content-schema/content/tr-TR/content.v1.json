@@ -822,7 +822,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "color-lights-001",
-      "version": 1,
+      "version": 2,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "tap_or_wait",
@@ -877,7 +877,8 @@
           { "ruleId": "red-wait" },
           { "ruleId": "green-tap" },
           { "ruleId": "green-tap" },
-          { "ruleId": "red-wait" }
+          { "ruleId": "red-wait" },
+          { "ruleId": "green-tap" }
         ]
       },
       "feedback": {
@@ -906,7 +907,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "rule-changed-garden-001",
-      "version": 1,
+      "version": 2,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "classify_and_sort",
@@ -1017,6 +1018,86 @@
               "size": "small"
             }
           ]
+        },
+        {
+          "id": "find-blue",
+          "dimension": "color",
+          "targetValue": "blue",
+          "instruction": "Şimdi dört nesne var. Mavi olanı sepete sürükle ve bırak.",
+          "objects": [
+            {
+              "id": "blue-block",
+              "label": "mavi blok",
+              "shape": "block",
+              "color": "blue",
+              "category": "toy",
+              "size": "small"
+            },
+            {
+              "id": "yellow-star",
+              "label": "sarı yıldız",
+              "shape": "star",
+              "color": "yellow",
+              "category": "toy",
+              "size": "small"
+            },
+            {
+              "id": "green-ball",
+              "label": "yeşil top",
+              "shape": "ball",
+              "color": "green",
+              "category": "toy",
+              "size": "small"
+            },
+            {
+              "id": "purple-car",
+              "label": "mor araba",
+              "shape": "car",
+              "color": "purple",
+              "category": "toy",
+              "size": "small"
+            }
+          ]
+        },
+        {
+          "id": "find-large-final",
+          "dimension": "size",
+          "targetValue": "large",
+          "instruction": "Son görev! Dört nesnenin içinden büyük olanı bul.",
+          "objects": [
+            {
+              "id": "large-green-car",
+              "label": "büyük yeşil araba",
+              "shape": "car",
+              "color": "green",
+              "category": "toy",
+              "size": "large"
+            },
+            {
+              "id": "small-red-ball",
+              "label": "küçük kırmızı top",
+              "shape": "ball",
+              "color": "red",
+              "category": "toy",
+              "size": "small"
+            },
+            {
+              "id": "small-yellow-star",
+              "label": "küçük sarı yıldız",
+              "shape": "star",
+              "color": "yellow",
+              "category": "toy",
+              "size": "small"
+            },
+            {
+              "id": "small-purple-block",
+              "label": "küçük mor blok",
+              "shape": "block",
+              "color": "purple",
+              "category": "toy",
+              "size": "small"
+            }
+          ]
         }
       ],
       "feedback": {
@@ -1033,17 +1114,17 @@
     {
       "schemaVersion": "game-v1",
       "id": "mino-routine-path-001",
-      "version": 1,
+      "version": 4,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "sequence_and_place",
       "title": "Tomo’nun Rutin Yolu",
-      "description": "Günlük adımları önce ve sonra alanlarına sürükleyerek sıralama oyunu.",
+      "description": "Günlük rutinleri iki adımdan beş adıma doğru ilerleyerek sıralama oyunu.",
       "ageBand": "2-4",
       "skillTags": ["öz-yönetim", "sıralama", "yönerge-takibi"],
       "presentation": {
         "mascotAssetId": "character-mino-happy",
-        "introNarration": "Tomo’nun rutin yolunu tamamlayalım. Kartları önce ve sonra alanlarına sürükle.",
+        "introNarration": "Tomo’nun rutin yolunu tamamlayalım. Kartları adım sırasına göre sürükle veya dokunarak yerleştir.",
         "closingNarration": "Rutin yolu tamamlandı, bütün yıldızlar parlıyor!",
         "playAudioInstructions": true
       },
@@ -1059,30 +1140,72 @@
         },
         {
           "id": "wash-and-dry",
-          "instruction": "Tomo önce ellerini yıkıyor, sonra havluyla kuruluyor.",
+          "instruction": "Tomo önce ellerini yıkıyor, sonra havluyla kuruluyor, en son montunu giyiyor.",
           "items": [
             { "id": "wash-hands", "label": "ellerini yıkayan Tomo", "assetKey": "wash-hands" },
-            { "id": "towel", "label": "havlu", "assetKey": "towel" }
+            { "id": "towel", "label": "havlu", "assetKey": "towel" },
+            { "id": "coat", "label": "mont", "assetKey": "coat" }
           ],
-          "correctOrder": ["wash-hands", "towel"]
+          "correctOrder": ["wash-hands", "towel", "coat"]
         },
         {
           "id": "pajamas-and-book",
-          "instruction": "Tomo önce pijamasını giyiyor, sonra kitabını okuyor.",
+          "instruction": "Tomo önce dişlerini fırçalıyor, sonra pijamasını giyiyor, kitabını okuyor ve yatağına giriyor.",
           "items": [
+            { "id": "toothbrush", "label": "diş fırçası", "assetKey": "toothbrush" },
             { "id": "pajamas", "label": "pijama", "assetKey": "pajamas" },
-            { "id": "storybook", "label": "hikâye kitabı", "assetKey": "storybook" }
+            { "id": "storybook", "label": "hikâye kitabı", "assetKey": "storybook" },
+            { "id": "bed", "label": "yatak", "assetKey": "bed" }
           ],
-          "correctOrder": ["pajamas", "storybook"]
+          "correctOrder": ["toothbrush", "pajamas", "storybook", "bed"]
         },
         {
           "id": "book-and-bed",
-          "instruction": "Tomo önce kitabını okuyor, sonra yatağına giriyor.",
+          "instruction": "Tomo önce bloklarla oynuyor, oyuncaklarını topluyor, ellerini yıkıyor, kuruluyor ve pijamasını giyiyor.",
           "items": [
-            { "id": "storybook-bedtime", "label": "hikâye kitabı", "assetKey": "storybook" },
-            { "id": "bed", "label": "yatak", "assetKey": "bed" }
+            { "id": "blocks-evening", "label": "oyuncak blokları", "assetKey": "blocks" },
+            {
+              "id": "toy-basket-evening",
+              "label": "oyuncak sepeti",
+              "assetKey": "toy-basket"
+            },
+            {
+              "id": "wash-hands-evening",
+              "label": "ellerini yıkayan Tomo",
+              "assetKey": "wash-hands"
+            },
+            { "id": "towel-evening", "label": "havlu", "assetKey": "towel" },
+            { "id": "pajamas-evening", "label": "pijama", "assetKey": "pajamas" }
           ],
-          "correctOrder": ["storybook-bedtime", "bed"]
+          "correctOrder": [
+            "blocks-evening",
+            "toy-basket-evening",
+            "wash-hands-evening",
+            "towel-evening",
+            "pajamas-evening"
+          ]
+        },
+        {
+          "id": "wash-dry-and-pajamas",
+          "instruction": "Son tur! Tomo ellerini yıkıyor, kuruluyor, pijamasını giyiyor, kitabını okuyor ve yatağına giriyor.",
+          "items": [
+            {
+              "id": "wash-hands-night",
+              "label": "ellerini yıkayan Tomo",
+              "assetKey": "wash-hands"
+            },
+            { "id": "towel-night", "label": "havlu", "assetKey": "towel" },
+            { "id": "pajamas-night", "label": "pijama", "assetKey": "pajamas" },
+            { "id": "storybook-night", "label": "hikâye kitabı", "assetKey": "storybook" },
+            { "id": "bed-night", "label": "yatak", "assetKey": "bed" }
+          ],
+          "correctOrder": [
+            "wash-hands-night",
+            "towel-night",
+            "pajamas-night",
+            "storybook-night",
+            "bed-night"
+          ]
         }
       ],
       "feedback": {
@@ -1094,12 +1217,33 @@
         "level": "starter",
         "secondTryEnabled": true,
         "hintDelayMs": 12000
+      },
+      "leveling": {
+        "strategy": "bkt",
+        "modelVersion": "bkt-v1",
+        "skillId": "routine-ordering",
+        "parameters": {
+          "initialMastery": 0.25,
+          "learningRate": 0.15,
+          "guessRate": 0.2,
+          "slipRate": 0.1
+        },
+        "thresholds": {
+          "growing": {
+            "minimumMastery": 0.55,
+            "minimumObservations": 4
+          },
+          "advanced": {
+            "minimumMastery": 0.8,
+            "minimumObservations": 8
+          }
+        }
       }
     },
     {
       "schemaVersion": "game-v1",
       "id": "mino-emotion-detective-001",
-      "version": 1,
+      "version": 2,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "emotion_clues",
@@ -1140,6 +1284,24 @@
           "correctEmotion": "angry",
           "cluePrompt": "Tilkinin kızgın olduğunu nereden anladın?",
           "correctClue": "body"
+        },
+        {
+          "id": "bear-sad-again",
+          "sceneAssetKey": "sad-bear",
+          "storyPrompt": "Ayı sevdiği oyuncağını bulamıyor.",
+          "emotionPrompt": "Ayı şimdi nasıl hissediyor?",
+          "correctEmotion": "sad",
+          "cluePrompt": "Ayının üzgün olduğunu anlatan beden ipucunu bul.",
+          "correctClue": "body"
+        },
+        {
+          "id": "rabbit-happy-again",
+          "sceneAssetKey": "happy-rabbit",
+          "storyPrompt": "Tavşanın arkadaşı onunla oynamaya geldi.",
+          "emotionPrompt": "Tavşan arkadaşını görünce nasıl hissediyor?",
+          "correctEmotion": "happy",
+          "cluePrompt": "Tavşanın mutlu olduğunu anlatan yüz ipucunu bul.",
+          "correctClue": "mouth"
         }
       ],
       "feedback": {
@@ -1156,7 +1318,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "bobi-fish-patterns-2-4-001",
-      "version": 1,
+      "version": 2,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "fish_patterns",
@@ -1193,6 +1355,22 @@
           "correctColor": "pink",
           "choices": ["purple", "pink", "orange"],
           "prompt": "Renk sırasını tamamlayabilir misin?"
+        },
+        {
+          "id": "blue-orange",
+          "kind": "color_prediction",
+          "sequence": ["blue", "orange", "blue", "orange"],
+          "correctColor": "blue",
+          "choices": ["blue", "teal", "orange"],
+          "prompt": "Dört balığı izle. Sıradaki renk hangisi?"
+        },
+        {
+          "id": "green-green-yellow",
+          "kind": "color_prediction",
+          "sequence": ["green", "green", "yellow", "green"],
+          "correctColor": "green",
+          "choices": ["yellow", "green", "purple"],
+          "prompt": "Son deseni tamamla. Sıradaki balığın rengini bul."
         }
       ],
       "feedback": {
@@ -1204,7 +1382,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "bobi-fish-memory-4-7-001",
-      "version": 1,
+      "version": 3,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "fish_patterns",
@@ -1219,9 +1397,9 @@
       },
       "rounds": [
         {
-          "id": "two-fish",
+          "id": "four-visible-two-step",
           "kind": "sequence_memory",
-          "fish": ["red", "blue", "yellow"],
+          "fish": ["red", "blue", "yellow", "green"],
           "sequence": ["red", "blue"],
           "prompt": "Parlayan balıklara aynı sırayla dokun.",
           "revealMs": 950
@@ -1241,6 +1419,22 @@
           "sequence": ["teal", "red", "pink", "yellow"],
           "prompt": "Dört balığın sırasını hatırlayabilir misin?",
           "revealMs": 750
+        },
+        {
+          "id": "four-fish-turn",
+          "kind": "sequence_memory",
+          "fish": ["blue", "green", "orange", "purple"],
+          "sequence": ["green", "purple", "blue", "orange"],
+          "prompt": "Yeni dört balığın sırasını izle ve tekrar et.",
+          "revealMs": 700
+        },
+        {
+          "id": "four-fish-finale",
+          "kind": "sequence_memory",
+          "fish": ["red", "yellow", "teal", "pink"],
+          "sequence": ["pink", "yellow", "red", "teal"],
+          "prompt": "Son sırayı dikkatle izle ve aynı sırayla dokun.",
+          "revealMs": 650
         }
       ],
       "feedback": {
@@ -1252,7 +1446,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "pofi-balloon-counting-001",
-      "version": 1,
+      "version": 2,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "balloon_counting",
@@ -1295,6 +1489,14 @@
           "prompt": "Üç balonu patlat.",
           "balloons": ["cyan", "green", "pink", "orange", "blue"],
           "targetCount": 3
+        },
+        {
+          "id": "find-purple-final",
+          "kind": "color",
+          "prompt": "Son görev! Beş balonun içinden mor balona dokun.",
+          "balloons": ["red", "cyan", "yellow", "purple", "green"],
+          "targetCount": 1,
+          "targetColor": "purple"
         }
       ],
       "feedback": {
@@ -1306,7 +1508,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "nino-sound-rhythm-001",
-      "version": 1,
+      "version": 2,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "mini_challenge",
@@ -1355,6 +1557,30 @@
           ],
           "correctSequence": ["drum", "clap"],
           "demoSequence": ["drum", "clap"]
+        },
+        {
+          "id": "bell-clap-drum",
+          "kind": "rhythm",
+          "prompt": "Dinle: zil, alkış, davul. Üç sese aynı sırayla dokun.",
+          "choices": [
+            { "id": "clap", "label": "Alkış", "icon": "clap" },
+            { "id": "bell", "label": "Zil", "icon": "bell" },
+            { "id": "drum", "label": "Davul", "icon": "drum" }
+          ],
+          "correctSequence": ["bell", "clap", "drum"],
+          "demoSequence": ["bell", "clap", "drum"]
+        },
+        {
+          "id": "drum-bell-clap",
+          "kind": "rhythm",
+          "prompt": "Son ritmi dinle: davul, zil, alkış. Şimdi sen tekrar et.",
+          "choices": [
+            { "id": "clap", "label": "Alkış", "icon": "clap" },
+            { "id": "bell", "label": "Zil", "icon": "bell" },
+            { "id": "drum", "label": "Davul", "icon": "drum" }
+          ],
+          "correctSequence": ["drum", "bell", "clap"],
+          "demoSequence": ["drum", "bell", "clap"]
         }
       ],
       "feedback": { "matched": "Ritmi doğru yaptın!", "retry": "Bir kez daha dinleyelim." },
@@ -1363,7 +1589,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "maya-morning-order-001",
-      "version": 1,
+      "version": 2,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "mini_challenge",
@@ -1396,6 +1622,38 @@
             { "id": "eat", "label": "Kahvaltı", "icon": "maya-breakfast" }
           ],
           "correctSequence": ["dress", "eat"]
+        },
+        {
+          "id": "brush-breakfast",
+          "kind": "sequence",
+          "prompt": "Önce dişlerini fırçala, sonra kahvaltı yap.",
+          "choices": [
+            { "id": "brush", "label": "Diş fırçala", "icon": "maya-brush" },
+            { "id": "eat", "label": "Kahvaltı", "icon": "maya-breakfast" }
+          ],
+          "correctSequence": ["brush", "eat"]
+        },
+        {
+          "id": "brush-dress-breakfast",
+          "kind": "sequence",
+          "prompt": "Üç adımı sırala: önce dişlerini fırçala, sonra giyin, en son kahvaltı yap.",
+          "choices": [
+            { "id": "brush", "label": "Diş fırçala", "icon": "maya-brush" },
+            { "id": "dress", "label": "Giyin", "icon": "maya-shirt" },
+            { "id": "eat", "label": "Kahvaltı", "icon": "maya-breakfast" }
+          ],
+          "correctSequence": ["brush", "dress", "eat"]
+        },
+        {
+          "id": "brush-breakfast-dress",
+          "kind": "sequence",
+          "prompt": "Son üç adım: önce dişlerini fırçala, sonra kahvaltı yap, en son giyin.",
+          "choices": [
+            { "id": "brush", "label": "Diş fırçala", "icon": "maya-brush" },
+            { "id": "eat", "label": "Kahvaltı", "icon": "maya-breakfast" },
+            { "id": "dress", "label": "Giyin", "icon": "maya-shirt" }
+          ],
+          "correctSequence": ["brush", "eat", "dress"]
         }
       ],
       "feedback": { "matched": "Doğru sıra!", "retry": "Sırayı yeniden düşünelim." },
@@ -1404,7 +1662,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "riko-where-001",
-      "version": 1,
+      "version": 3,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "mini_challenge",
@@ -1421,7 +1679,7 @@
         {
           "id": "inside",
           "kind": "single",
-          "prompt": "Top kutunun neresinde?",
+          "prompt": "Resme bak. Top kutunun neresinde?",
           "choices": [
             { "id": "inside", "label": "İçinde", "icon": "riko-inside" },
             { "id": "under", "label": "Altında", "icon": "riko-under" }
@@ -1431,9 +1689,41 @@
         {
           "id": "under",
           "kind": "single",
-          "prompt": "Top kutunun neresinde?",
+          "prompt": "Resme bak. Top kutunun neresinde?",
           "choices": [
-            { "id": "over", "label": "Üstünde", "icon": "riko-on" },
+            { "id": "on", "label": "Üstünde", "icon": "riko-on" },
+            { "id": "under", "label": "Altında", "icon": "riko-under" }
+          ],
+          "correctSequence": ["under"]
+        },
+        {
+          "id": "on",
+          "kind": "single",
+          "prompt": "Resme bak. Top kutunun neresinde?",
+          "choices": [
+            { "id": "under", "label": "Altında", "icon": "riko-under" },
+            { "id": "on", "label": "Üstünde", "icon": "riko-on" }
+          ],
+          "correctSequence": ["on"]
+        },
+        {
+          "id": "inside-three-choices",
+          "kind": "single",
+          "prompt": "Resme bak. Top kutunun neresinde?",
+          "choices": [
+            { "id": "inside", "label": "İçinde", "icon": "riko-inside" },
+            { "id": "under", "label": "Altında", "icon": "riko-under" },
+            { "id": "on", "label": "Üstünde", "icon": "riko-on" }
+          ],
+          "correctSequence": ["inside"]
+        },
+        {
+          "id": "under-three-choices",
+          "kind": "single",
+          "prompt": "Son resme bak. Top kutunun neresinde?",
+          "choices": [
+            { "id": "on", "label": "Üstünde", "icon": "riko-on" },
+            { "id": "inside", "label": "İçinde", "icon": "riko-inside" },
             { "id": "under", "label": "Altında", "icon": "riko-under" }
           ],
           "correctSequence": ["under"]
@@ -1445,7 +1735,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "zuzu-missing-piece-001",
-      "version": 1,
+      "version": 2,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "mini_challenge",
@@ -1476,7 +1766,43 @@
           "prompt": "Şimdi bu boşluğa uyan parçayı seç.",
           "choices": [
             { "id": "star", "label": "T parçası", "icon": "zuzu-star" },
+            { "id": "circle", "label": "Köşe parçası", "icon": "zuzu-circle" },
+            { "id": "square", "label": "Yatay parça", "icon": "zuzu-square" }
+          ],
+          "correctSequence": ["star"]
+        },
+        {
+          "id": "triangle",
+          "kind": "single",
+          "prompt": "Üç parçadan boşluğa uyan dikey parçayı bul.",
+          "choices": [
+            { "id": "square", "label": "Yatay parça", "icon": "zuzu-square" },
+            { "id": "triangle", "label": "Dikey parça", "icon": "zuzu-triangle" },
             { "id": "circle", "label": "Köşe parçası", "icon": "zuzu-circle" }
+          ],
+          "correctSequence": ["triangle"]
+        },
+        {
+          "id": "square-four",
+          "kind": "single",
+          "prompt": "Dört parçaya bak ve yatay parçayı seç.",
+          "choices": [
+            { "id": "circle", "label": "Köşe parçası", "icon": "zuzu-circle" },
+            { "id": "triangle", "label": "Dikey parça", "icon": "zuzu-triangle" },
+            { "id": "square", "label": "Yatay parça", "icon": "zuzu-square" },
+            { "id": "star", "label": "T parçası", "icon": "zuzu-star" }
+          ],
+          "correctSequence": ["square"]
+        },
+        {
+          "id": "star-four-final",
+          "kind": "single",
+          "prompt": "Son tabloyu tamamlayan T parçasını dört seçenekten bul.",
+          "choices": [
+            { "id": "triangle", "label": "Dikey parça", "icon": "zuzu-triangle" },
+            { "id": "star", "label": "T parçası", "icon": "zuzu-star" },
+            { "id": "circle", "label": "Köşe parçası", "icon": "zuzu-circle" },
+            { "id": "square", "label": "Yatay parça", "icon": "zuzu-square" }
           ],
           "correctSequence": ["star"]
         }
@@ -1490,7 +1816,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "kiki-big-small-shop-001",
-      "version": 1,
+      "version": 2,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "mini_challenge",
@@ -1523,10 +1849,425 @@
             { "id": "small", "label": "Küçük palamut", "icon": "kiki-small-acorn" }
           ],
           "correctSequence": ["small"]
+        },
+        {
+          "id": "small-apple",
+          "kind": "single",
+          "prompt": "Küçük elmayı bul.",
+          "choices": [
+            { "id": "large", "label": "Büyük elma", "icon": "kiki-large-apple" },
+            { "id": "small", "label": "Küçük elma", "icon": "kiki-small-apple" }
+          ],
+          "correctSequence": ["small"]
+        },
+        {
+          "id": "large-acorn-three",
+          "kind": "single",
+          "prompt": "Üç nesnenin içinden büyük palamudu bul.",
+          "choices": [
+            { "id": "small-acorn", "label": "Küçük palamut", "icon": "kiki-small-acorn" },
+            { "id": "small-apple", "label": "Küçük elma", "icon": "kiki-small-apple" },
+            { "id": "large-acorn", "label": "Büyük palamut", "icon": "kiki-large-acorn" }
+          ],
+          "correctSequence": ["large-acorn"]
+        },
+        {
+          "id": "small-apple-four-final",
+          "kind": "single",
+          "prompt": "Son görev! Dört nesnenin içinden küçük elmayı bul.",
+          "choices": [
+            { "id": "large-acorn", "label": "Büyük palamut", "icon": "kiki-large-acorn" },
+            { "id": "large-apple", "label": "Büyük elma", "icon": "kiki-large-apple" },
+            { "id": "small-acorn", "label": "Küçük palamut", "icon": "kiki-small-acorn" },
+            { "id": "small-apple", "label": "Küçük elma", "icon": "kiki-small-apple" }
+          ],
+          "correctSequence": ["small-apple"]
         }
       ],
       "feedback": { "matched": "Doğru boyutu buldun!", "retry": "Büyüklüklerine yeniden bakalım." },
       "difficulty": { "secondTryEnabled": true, "inactivityHintMs": 10000 }
+    },
+    {
+      "schemaVersion": "game-v1",
+      "id": "piko-pattern-train-001",
+      "version": 1,
+      "status": "published",
+      "productionSource": "manual",
+      "mechanic": "mini_challenge",
+      "title": "Piko’nun Desen Treni",
+      "description": "Vagonlardaki renk ve şekil örüntüsünü tamamla.",
+      "ageBand": "2-4",
+      "skillTags": ["örüntü", "renk", "şekil"],
+      "presentation": {
+        "introNarration": "Piko'nun trenindeki örüntüleri birlikte tamamlayalım.",
+        "closingNarration": "Bütün vagon örüntülerini tamamladın!",
+        "playAudioInstructions": true
+      },
+      "rounds": [
+        {
+          "id": "red-blue",
+          "kind": "single",
+          "prompt": "Kırmızı, mavi, kırmızı. Sıradaki vagonu seç.",
+          "displaySequence": ["piko-red-circle", "piko-blue-square", "piko-red-circle"],
+          "choices": [
+            { "id": "red", "label": "Kırmızı daire", "icon": "piko-red-circle" },
+            { "id": "blue", "label": "Mavi kare", "icon": "piko-blue-square" }
+          ],
+          "correctSequence": ["blue"]
+        },
+        {
+          "id": "blue-yellow",
+          "kind": "single",
+          "prompt": "Mavi, sarı, mavi, sarı. Sırada hangisi var?",
+          "displaySequence": [
+            "piko-blue-square",
+            "piko-yellow-triangle",
+            "piko-blue-square",
+            "piko-yellow-triangle"
+          ],
+          "choices": [
+            { "id": "yellow", "label": "Sarı üçgen", "icon": "piko-yellow-triangle" },
+            { "id": "red", "label": "Kırmızı daire", "icon": "piko-red-circle" },
+            { "id": "blue", "label": "Mavi kare", "icon": "piko-blue-square" }
+          ],
+          "correctSequence": ["blue"]
+        },
+        {
+          "id": "double-red",
+          "kind": "single",
+          "prompt": "İki kırmızı, bir mavi; iki kırmızı, bir mavi. Sıradaki vagonu bul.",
+          "displaySequence": [
+            "piko-red-circle",
+            "piko-red-circle",
+            "piko-blue-square",
+            "piko-red-circle",
+            "piko-red-circle",
+            "piko-blue-square"
+          ],
+          "choices": [
+            { "id": "blue", "label": "Mavi kare", "icon": "piko-blue-square" },
+            { "id": "yellow", "label": "Sarı üçgen", "icon": "piko-yellow-triangle" },
+            { "id": "red", "label": "Kırmızı daire", "icon": "piko-red-circle" }
+          ],
+          "correctSequence": ["red"]
+        },
+        {
+          "id": "three-shapes",
+          "kind": "single",
+          "prompt": "Daire, kare, üçgen sırasını devam ettir.",
+          "displaySequence": [
+            "piko-red-circle",
+            "piko-blue-square",
+            "piko-yellow-triangle",
+            "piko-red-circle",
+            "piko-blue-square"
+          ],
+          "choices": [
+            { "id": "red", "label": "Kırmızı daire", "icon": "piko-red-circle" },
+            { "id": "yellow", "label": "Sarı üçgen", "icon": "piko-yellow-triangle" },
+            { "id": "blue", "label": "Mavi kare", "icon": "piko-blue-square" }
+          ],
+          "correctSequence": ["yellow"]
+        },
+        {
+          "id": "yellow-yellow-blue",
+          "kind": "single",
+          "prompt": "İki sarı, bir mavi örüntüsünün sıradaki vagonunu seç.",
+          "displaySequence": [
+            "piko-yellow-triangle",
+            "piko-yellow-triangle",
+            "piko-blue-square",
+            "piko-yellow-triangle",
+            "piko-yellow-triangle"
+          ],
+          "choices": [
+            { "id": "red", "label": "Kırmızı daire", "icon": "piko-red-circle" },
+            { "id": "blue", "label": "Mavi kare", "icon": "piko-blue-square" },
+            { "id": "yellow", "label": "Sarı üçgen", "icon": "piko-yellow-triangle" }
+          ],
+          "correctSequence": ["blue"]
+        }
+      ],
+      "feedback": {
+        "matched": "Vagon doğru yere bağlandı!",
+        "retry": "Renk ve şekil sırasına bir daha bakalım."
+      },
+      "difficulty": { "level": "starter", "secondTryEnabled": true, "inactivityHintMs": 9000 }
+    },
+    {
+      "schemaVersion": "game-v1",
+      "id": "mavi-shadow-pairs-001",
+      "version": 1,
+      "status": "published",
+      "productionSource": "manual",
+      "mechanic": "mini_challenge",
+      "title": "Mavi’nin Gölge Eşleri",
+      "description": "Nesneleri doğru ve döndürülmüş gölgeleriyle eşleştir.",
+      "ageBand": "2-4",
+      "skillTags": ["görsel eşleme", "döndürme", "şekil"],
+      "presentation": {
+        "introNarration": "Mavi nesnelerin gölgelerini arıyor. Aynı şekli bulalım.",
+        "closingNarration": "Bütün gölge eşlerini buldun!",
+        "playAudioInstructions": true
+      },
+      "rounds": [
+        {
+          "id": "cat-shadow",
+          "kind": "single",
+          "prompt": "Kedinin gölgesini bul.",
+          "previewIcon": "mavi-cat",
+          "choices": [
+            { "id": "cat", "label": "Birinci gölge", "icon": "mavi-cat", "silhouette": true },
+            { "id": "car", "label": "İkinci gölge", "icon": "mavi-car", "silhouette": true }
+          ],
+          "correctSequence": ["cat"]
+        },
+        {
+          "id": "turned-car-shadow",
+          "kind": "single",
+          "prompt": "Araba dönmüş olabilir. Aynı gölgeyi bul.",
+          "previewIcon": "mavi-car",
+          "choices": [
+            {
+              "id": "car",
+              "label": "Birinci gölge",
+              "icon": "mavi-car",
+              "rotationDegrees": 90,
+              "silhouette": true
+            },
+            { "id": "cat", "label": "İkinci gölge", "icon": "mavi-cat", "silhouette": true },
+            { "id": "tree", "label": "Üçüncü gölge", "icon": "mavi-tree", "silhouette": true }
+          ],
+          "correctSequence": ["car"]
+        },
+        {
+          "id": "turned-tree-shadow",
+          "kind": "single",
+          "prompt": "Ağacın döndürülmüş gölgesini seç.",
+          "previewIcon": "mavi-tree",
+          "choices": [
+            { "id": "boat", "label": "Birinci gölge", "icon": "mavi-boat", "silhouette": true },
+            {
+              "id": "tree",
+              "label": "İkinci gölge",
+              "icon": "mavi-tree",
+              "rotationDegrees": 180,
+              "silhouette": true
+            },
+            { "id": "car", "label": "Üçüncü gölge", "icon": "mavi-car", "silhouette": true }
+          ],
+          "correctSequence": ["tree"]
+        },
+        {
+          "id": "turned-boat-shadow",
+          "kind": "single",
+          "prompt": "Teknenin aynı şekle sahip gölgesini bul.",
+          "previewIcon": "mavi-boat",
+          "choices": [
+            { "id": "cat", "label": "Birinci gölge", "icon": "mavi-cat", "silhouette": true },
+            { "id": "tree", "label": "İkinci gölge", "icon": "mavi-tree", "silhouette": true },
+            {
+              "id": "boat",
+              "label": "Üçüncü gölge",
+              "icon": "mavi-boat",
+              "rotationDegrees": 270,
+              "silhouette": true
+            },
+            { "id": "car", "label": "Dördüncü gölge", "icon": "mavi-car", "silhouette": true }
+          ],
+          "correctSequence": ["boat"]
+        },
+        {
+          "id": "final-turned-cat-shadow",
+          "kind": "single",
+          "prompt": "Son eş: Döndürülmüş kedi gölgesini bul.",
+          "previewIcon": "mavi-cat",
+          "choices": [
+            { "id": "tree", "label": "Birinci gölge", "icon": "mavi-tree", "silhouette": true },
+            { "id": "boat", "label": "İkinci gölge", "icon": "mavi-boat", "silhouette": true },
+            { "id": "car", "label": "Üçüncü gölge", "icon": "mavi-car", "silhouette": true },
+            {
+              "id": "cat",
+              "label": "Dördüncü gölge",
+              "icon": "mavi-cat",
+              "rotationDegrees": 180,
+              "silhouette": true
+            }
+          ],
+          "correctSequence": ["cat"]
+        }
+      ],
+      "feedback": {
+        "matched": "Gölge eşini buldun!",
+        "retry": "Dış çizgilerine dikkat ederek yeniden bakalım."
+      },
+      "difficulty": { "level": "starter", "secondTryEnabled": true, "inactivityHintMs": 10000 }
+    },
+    {
+      "schemaVersion": "game-v1",
+      "id": "lumi-sound-hunt-001",
+      "version": 2,
+      "status": "published",
+      "productionSource": "manual",
+      "mechanic": "mini_challenge",
+      "title": "Lumi’nin Ses Avı",
+      "description": "Hayvan, araç ve doğa seslerini dinleyip doğru görsele dokun.",
+      "ageBand": "2-4",
+      "skillTags": ["işitsel dikkat", "ses eşleme", "dinleme"],
+      "presentation": {
+        "introNarration": "Lumi ile sesleri dinle ve sesin sahibini bul.",
+        "closingNarration": "Bütün seslerin sahibini buldun!",
+        "playAudioInstructions": true
+      },
+      "rounds": [
+        {
+          "id": "cat-sound",
+          "kind": "single",
+          "prompt": "Sesi dinle. Hangi hayvan bu sesi çıkarıyor?",
+          "soundCue": "Miyav... miyav.",
+          "choices": [
+            { "id": "cat", "label": "Kedi", "icon": "lumi-cat" },
+            { "id": "dog", "label": "Köpek", "icon": "lumi-dog" }
+          ],
+          "correctSequence": ["cat"]
+        },
+        {
+          "id": "dog-sound",
+          "kind": "single",
+          "prompt": "Yeni sesi dinle ve doğru görsele dokun.",
+          "soundCue": "Hav hav... hav hav.",
+          "choices": [
+            { "id": "car", "label": "Araba", "icon": "lumi-car" },
+            { "id": "dog", "label": "Köpek", "icon": "lumi-dog" },
+            { "id": "cat", "label": "Kedi", "icon": "lumi-cat" }
+          ],
+          "correctSequence": ["dog"]
+        },
+        {
+          "id": "car-sound",
+          "kind": "single",
+          "prompt": "Bu ses hangi araca ait?",
+          "soundCue": "Düt düt... vınnn.",
+          "choices": [
+            { "id": "bird", "label": "Kuş", "icon": "lumi-bird" },
+            { "id": "car", "label": "Araba", "icon": "lumi-car" },
+            { "id": "rain", "label": "Yağmur", "icon": "lumi-rain" }
+          ],
+          "correctSequence": ["car"]
+        },
+        {
+          "id": "rain-sound",
+          "kind": "single",
+          "prompt": "Doğa sesini dinle ve doğru resmi seç.",
+          "soundCue": "Şıp şıp... şırıl şırıl.",
+          "choices": [
+            { "id": "dog", "label": "Köpek", "icon": "lumi-dog" },
+            { "id": "bird", "label": "Kuş", "icon": "lumi-bird" },
+            { "id": "rain", "label": "Yağmur", "icon": "lumi-rain" },
+            { "id": "car", "label": "Araba", "icon": "lumi-car" }
+          ],
+          "correctSequence": ["rain"]
+        },
+        {
+          "id": "bird-sound",
+          "kind": "single",
+          "prompt": "Son sesi dinle. Sesin sahibini bul.",
+          "soundCue": "Cik cik... cik cik.",
+          "choices": [
+            { "id": "rain", "label": "Yağmur", "icon": "lumi-rain" },
+            { "id": "cat", "label": "Kedi", "icon": "lumi-cat" },
+            { "id": "car", "label": "Araba", "icon": "lumi-car" },
+            { "id": "bird", "label": "Kuş", "icon": "lumi-bird" }
+          ],
+          "correctSequence": ["bird"]
+        }
+      ],
+      "feedback": {
+        "matched": "Sesi doğru görselle eşledin!",
+        "retry": "Sesi bir daha dinleyelim."
+      },
+      "difficulty": { "level": "starter", "secondTryEnabled": true, "inactivityHintMs": 10000 }
+    },
+    {
+      "schemaVersion": "game-v1",
+      "id": "toko-little-map-001",
+      "version": 1,
+      "status": "published",
+      "productionSource": "manual",
+      "mechanic": "mini_challenge",
+      "title": "Toko’nun Minik Haritası",
+      "description": "Tek ve çok adımlı yönleri izleyerek Toko'yu haritada ilerlet.",
+      "ageBand": "2-4",
+      "skillTags": ["yön", "mekânsal dikkat", "sıralama"],
+      "presentation": {
+        "introNarration": "Toko'yu minik haritada yönlere dokunarak ilerletelim.",
+        "closingNarration": "Toko bütün harita yollarını tamamladı!",
+        "playAudioInstructions": true
+      },
+      "rounds": [
+        {
+          "id": "one-right",
+          "kind": "sequence",
+          "prompt": "Bir adım sağa git.",
+          "choices": [
+            { "id": "left", "label": "Sol", "icon": "direction-left" },
+            { "id": "right", "label": "Sağ", "icon": "direction-right" }
+          ],
+          "correctSequence": ["right"]
+        },
+        {
+          "id": "right-up",
+          "kind": "sequence",
+          "prompt": "Önce sağa, sonra yukarı git.",
+          "choices": [
+            { "id": "left", "label": "Sol", "icon": "direction-left" },
+            { "id": "right", "label": "Sağ", "icon": "direction-right" },
+            { "id": "up", "label": "Yukarı", "icon": "direction-up" }
+          ],
+          "correctSequence": ["right", "up"]
+        },
+        {
+          "id": "down-left",
+          "kind": "sequence",
+          "prompt": "Önce aşağı, sonra sola git.",
+          "choices": [
+            { "id": "up", "label": "Yukarı", "icon": "direction-up" },
+            { "id": "down", "label": "Aşağı", "icon": "direction-down" },
+            { "id": "left", "label": "Sol", "icon": "direction-left" },
+            { "id": "right", "label": "Sağ", "icon": "direction-right" }
+          ],
+          "correctSequence": ["down", "left"]
+        },
+        {
+          "id": "up-right-down",
+          "kind": "sequence",
+          "prompt": "Yukarı, sağa ve aşağı yönlerini sırayla takip et.",
+          "choices": [
+            { "id": "right", "label": "Sağ", "icon": "direction-right" },
+            { "id": "down", "label": "Aşağı", "icon": "direction-down" },
+            { "id": "left", "label": "Sol", "icon": "direction-left" },
+            { "id": "up", "label": "Yukarı", "icon": "direction-up" }
+          ],
+          "correctSequence": ["up", "right", "down"]
+        },
+        {
+          "id": "left-up-right",
+          "kind": "sequence",
+          "prompt": "Son yol: sola, yukarı ve sağa git.",
+          "choices": [
+            { "id": "down", "label": "Aşağı", "icon": "direction-down" },
+            { "id": "left", "label": "Sol", "icon": "direction-left" },
+            { "id": "up", "label": "Yukarı", "icon": "direction-up" },
+            { "id": "right", "label": "Sağ", "icon": "direction-right" }
+          ],
+          "correctSequence": ["left", "up", "right"]
+        }
+      ],
+      "feedback": {
+        "matched": "Toko yolu doğru izledi!",
+        "retry": "Yönleri sırayla bir daha dinleyelim."
+      },
+      "difficulty": { "level": "starter", "secondTryEnabled": true, "inactivityHintMs": 10000 }
     }
   ]
 }

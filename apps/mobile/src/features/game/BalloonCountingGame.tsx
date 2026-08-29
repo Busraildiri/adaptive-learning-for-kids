@@ -13,6 +13,7 @@ import {
   Vibration,
   View,
 } from "react-native";
+import { useGameObservation } from "./GameObservationContext";
 
 const park = require("../../../assets/game/balloon/park-balloons-v1.png");
 const assets: Record<string, ImageSourcePropType> = {
@@ -49,6 +50,7 @@ function FloatingBalloon({
   highlighted: boolean;
   onPress: () => void;
 }) {
+  const report = useGameObservation();
   const float = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const animation = Animated.loop(
@@ -108,6 +110,7 @@ export function BalloonCountingGame({
   game: BalloonGameContent;
   onExit: () => void;
 }) {
+  const report = useGameObservation();
   const [roundIndex, setRoundIndex] = useState(0);
   const [popped, setPopped] = useState<number[]>([]);
   const [wrong, setWrong] = useState(0);
@@ -141,6 +144,7 @@ export function BalloonCountingGame({
   useEffect(() => {
     if (locked || completed) return;
     const timeout = setTimeout(() => {
+      report({ type: "wait", stepId: round.id, waitMs: game.difficulty.inactivityHintMs });
       const target =
         round.kind === "color"
           ? round.targetColor
@@ -161,6 +165,7 @@ export function BalloonCountingGame({
     Vibration.vibrate(35);
     speak(game.feedback.matched, () => {
       if (roundIndex === game.rounds.length - 1) {
+        report({ type: "completed", stepId: round.id });
         setCompleted(true);
         speak(game.presentation.closingNarration);
       } else setRoundIndex((value) => value + 1);
@@ -185,6 +190,7 @@ export function BalloonCountingGame({
         setHighlight(expected ?? null);
       } else {
         setWrong(1);
+        report({ type: "retry", stepId: round.id });
         setFeedback(game.feedback.retry);
         speak(game.feedback.retry);
         Vibration.vibrate(20);

@@ -11,6 +11,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@adaptive/content-schema": "workspace:*",
     "zod": "4.4.3"
   },
   "devDependencies": {

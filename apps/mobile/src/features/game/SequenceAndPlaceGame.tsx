@@ -16,6 +16,7 @@ import {
   Vibration,
   View,
 } from "react-native";
+import { useGameObservation } from "./GameObservationContext";
 import { isRoutineOrderCorrect, shuffledRoutineItems } from "./sequenceAndPlaceEngine";
 
 const minoHappy = require("../../../assets/characters/mino-happy.png");
@@ -41,18 +42,38 @@ function DraggableRoutineCard({
   item,
   enabled,
   highlighted,
+  itemCount,
   slotBounds,
   onDrop,
+  onTap,
 }: {
   item: RoutineItem;
   enabled: boolean;
   highlighted: boolean;
+  itemCount: number;
   slotBounds: Array<Bounds | null>;
   onDrop: (item: RoutineItem, slotIndex: number) => void;
+  onTap: (item: RoutineItem) => void;
 }) {
   const position = useRef(new Animated.ValueXY()).current;
+  const densityStyle =
+    itemCount >= 5
+      ? styles.tinySourceCard
+      : itemCount === 4
+        ? styles.denseSourceCard
+        : itemCount === 3
+          ? styles.compactSourceCard
+          : undefined;
+  const imageDensityStyle =
+    itemCount >= 5
+      ? styles.tinySourceImage
+      : itemCount === 4
+        ? styles.denseSourceImage
+        : itemCount === 3
+          ? styles.compactSourceImage
+          : undefined;
   const responder = PanResponder.create({
-    onStartShouldSetPanResponder: () => enabled,
+    onStartShouldSetPanResponder: () => false,
     onMoveShouldSetPanResponder: (_, gesture) =>
       enabled && (Math.abs(gesture.dx) > 3 || Math.abs(gesture.dy) > 3),
     onPanResponderMove: Animated.event([null, { dx: position.x, dy: position.y }], {
@@ -73,18 +94,31 @@ function DraggableRoutineCard({
   });
   return (
     <Animated.View
-      accessible
-      accessibilityLabel={`${item.label}. Önce veya sonra alanına sürükle.`}
       {...responder.panHandlers}
       style={[
         styles.sourceCard,
+        densityStyle,
         highlighted && styles.highlightedCard,
         { transform: position.getTranslateTransform() },
       ]}
     >
-      <Image source={routineAssets[item.assetKey]} style={styles.sourceImage} />
-      <Text style={styles.cardLabel}>{item.label}</Text>
-      <Text style={styles.dragLabel}>Tut ve sürükle</Text>
+      <Pressable
+        accessibilityLabel={`${item.label}. Sürükle veya sıradaki boş alana yerleştirmek için dokun.`}
+        disabled={!enabled}
+        onPress={() => onTap(item)}
+        style={styles.cardContent}
+      >
+        <Image
+          source={routineAssets[item.assetKey]}
+          style={[styles.sourceImage, imageDensityStyle]}
+        />
+        <Text numberOfLines={2} style={[styles.cardLabel, itemCount >= 4 && styles.denseCardLabel]}>
+          {item.label}
+        </Text>
+        <Text style={[styles.dragLabel, itemCount >= 4 && styles.denseDragLabel]}>
+          Sürükle veya dokun
+        </Text>
+      </Pressable>
     </Animated.View>
   );
 }
@@ -96,16 +130,45 @@ export function SequenceAndPlaceGame({
   game: SequenceAndPlaceGameContent;
   onExit: () => void;
 }) {
+  const report = useGameObservation();
   const [roundIndex, setRoundIndex] = useState(0);
-  const [placedIds, setPlacedIds] = useState<Array<string | null>>([null, null]);
-  const [slotBounds, setSlotBounds] = useState<Array<Bounds | null>>([null, null]);
+  const initialStepCount = game.rounds[0]?.items.length ?? 2;
+  const [placedIds, setPlacedIds] = useState<Array<string | null>>(
+    Array(initialStepCount).fill(null),
+  );
+  const [slotBounds, setSlotBounds] = useState<Array<Bounds | null>>(
+    Array(initialStepCount).fill(null),
+  );
   const [feedback, setFeedback] = useState("");
   const [locked, setLocked] = useState(true);
   const [attempt, setAttempt] = useState(0);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [completed, setCompleted] = useState(false);
-  const slotRefs = [useRef<View>(null), useRef<View>(null)];
+  const slotRefs = [
+    useRef<View>(null),
+    useRef<View>(null),
+    useRef<View>(null),
+    useRef<View>(null),
+    useRef<View>(null),
+  ];
   const currentRound = game.rounds[roundIndex];
+  const itemCount = currentRound.items.length;
+  const sourceDensityStyle =
+    itemCount >= 5
+      ? styles.tinySourceCard
+      : itemCount === 4
+        ? styles.denseSourceCard
+        : itemCount === 3
+          ? styles.compactSourceCard
+          : undefined;
+  const slotDensityStyle =
+    itemCount >= 5
+      ? styles.tinySlot
+      : itemCount === 4
+        ? styles.denseSlot
+        : itemCount === 3
+          ? styles.compactSlot
+          : undefined;
   const displayedItems = useMemo(
     () => shuffledRoutineItems(currentRound.items, roundIndex),
     [currentRound.items, roundIndex],
@@ -122,6 +185,7 @@ export function SequenceAndPlaceGame({
 
   useEffect(() => {
     setPlacedIds(Array(currentRound.items.length).fill(null));
+    setSlotBounds(Array(currentRound.items.length).fill(null));
     setHighlightedId(null);
     setFeedback(roundIndex === 0 ? "" : "Yeni rutin geliyor!");
     setLocked(true);
@@ -138,6 +202,8 @@ export function SequenceAndPlaceGame({
   useEffect(() => {
     if (locked || completed) return;
     const timeout = setTimeout(() => {
+      report({ type: "help", stepId: currentRound.id });
+      report({ type: "wait", stepId: currentRound.id, waitMs: game.difficulty.hintDelayMs });
       const nextCorrectId = currentRound.correctOrder.find((id) => !placedIds.includes(id));
       setHighlightedId(nextCorrectId ?? null);
       setFeedback(game.feedback.hint);
@@ -156,7 +222,9 @@ export function SequenceAndPlaceGame({
 
   const finishRound = (orderedIds: string[]) => {
     const correct = isRoutineOrderCorrect(currentRound, orderedIds);
+    report({ type: "attempt", stepId: currentRound.id, correct });
     if (!correct) {
+      report({ type: "retry", stepId: currentRound.id });
       Vibration.vibrate(20);
       setLocked(true);
       setFeedback(game.feedback.retry);
@@ -173,6 +241,7 @@ export function SequenceAndPlaceGame({
     setFeedback(game.feedback.matched);
     speak(game.feedback.matched, () => {
       if (roundIndex === game.rounds.length - 1) {
+        report({ type: "completed", stepId: currentRound.id });
         setCompleted(true);
         speak(game.presentation.closingNarration);
       } else {
@@ -197,9 +266,13 @@ export function SequenceAndPlaceGame({
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.completedCard}>
-          <View style={styles.starPath}>
+          <View style={[styles.starPath, game.rounds.length > 6 && styles.longStarPath]}>
             {game.rounds.map((round) => (
-              <Image key={round.id} source={starLit} style={styles.bigStar} />
+              <Image
+                key={round.id}
+                source={starLit}
+                style={[styles.bigStar, game.rounds.length > 6 && styles.completedSmallStar]}
+              />
             ))}
           </View>
           <Image source={minoHappy} style={styles.completedMascot} />
@@ -224,40 +297,45 @@ export function SequenceAndPlaceGame({
         <Text style={styles.closeText}>×</Text>
       </Pressable>
       <View style={styles.gameArea}>
-        <View style={styles.starPath}>
+        <View style={[styles.starPath, game.rounds.length > 6 && styles.longStarPath]}>
           {game.rounds.map((round, index) => (
             <Image
               key={round.id}
               source={index < roundIndex ? starLit : starUnlit}
-              style={styles.star}
+              style={[styles.star, game.rounds.length > 6 && styles.smallStar]}
             />
           ))}
         </View>
         <Image source={minoHappy} style={styles.mascot} />
         <Text style={styles.title}>{game.title}</Text>
         <Text style={styles.instruction}>{currentRound.instruction}</Text>
-        <View style={styles.sourceRow}>
+        <View style={[styles.sourceRow, itemCount >= 4 && styles.denseRow]}>
           {displayedItems.map((item) =>
             placedIds.includes(item.id) ? (
-              <View key={item.id} style={styles.sourcePlaceholder} />
+              <View key={item.id} style={[styles.sourcePlaceholder, sourceDensityStyle]} />
             ) : (
               <DraggableRoutineCard
                 enabled={!locked}
                 highlighted={highlightedId === item.id}
                 item={item}
+                itemCount={itemCount}
                 key={item.id}
                 onDrop={placeItem}
+                onTap={(selectedItem) => {
+                  const firstEmptySlot = placedIds.findIndex((id) => id === null);
+                  if (firstEmptySlot >= 0) placeItem(selectedItem, firstEmptySlot);
+                }}
                 slotBounds={slotBounds}
               />
             ),
           )}
         </View>
-        <View style={styles.slotRow}>
+        <View style={[styles.slotRow, itemCount >= 4 && styles.denseRow]}>
           {placedIds.map((itemId, index) => {
             const item = currentRound.items.find((candidate) => candidate.id === itemId);
             return (
               <Pressable
-                accessibilityLabel={`${index === 0 ? "Önce" : "Sonra"} alanı`}
+                accessibilityLabel={`${index + 1}. adım alanı`}
                 key={`slot-${index}`}
                 onLayout={() =>
                   slotRefs[index]?.current?.measureInWindow((x, y, width, height) => {
@@ -276,11 +354,29 @@ export function SequenceAndPlaceGame({
                   )
                 }
                 ref={slotRefs[index]}
-                style={styles.slot}
+                style={[styles.slot, slotDensityStyle]}
               >
-                <Text style={styles.slotLabel}>{index === 0 ? "1 · ÖNCE" : "2 · SONRA"}</Text>
+                <Text style={[styles.slotLabel, itemCount >= 3 && styles.compactSlotLabel]}>
+                  {index === 0
+                    ? "1 · ÖNCE"
+                    : index === itemCount - 1
+                      ? `${index + 1} · EN SON`
+                      : `${index + 1} · SONRA`}
+                </Text>
                 {item ? (
-                  <Image source={routineAssets[item.assetKey]} style={styles.slotImage} />
+                  <Image
+                    source={routineAssets[item.assetKey]}
+                    style={[
+                      styles.slotImage,
+                      itemCount >= 5
+                        ? styles.tinySlotImage
+                        : itemCount === 4
+                          ? styles.denseSlotImage
+                          : itemCount === 3
+                            ? styles.compactSlotImage
+                            : undefined,
+                    ]}
+                  />
                 ) : (
                   <Text style={styles.slotArrow}>↓</Text>
                 )}
@@ -318,8 +414,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 4,
   },
+  longStarPath: { maxWidth: 340, flexWrap: "wrap", rowGap: 0 },
   star: { width: 48, height: 48, resizeMode: "contain" },
+  smallStar: { width: 28, height: 28 },
   bigStar: { width: 70, height: 70, resizeMode: "contain" },
+  completedSmallStar: { width: 42, height: 42 },
   mascot: { width: 76, height: 76, resizeMode: "contain" },
   title: { color: "#FFF8E8", fontSize: 27, fontWeight: "900" },
   instruction: {
@@ -340,6 +439,7 @@ const styles = StyleSheet.create({
     gap: 14,
     marginTop: 8,
   },
+  denseRow: { minHeight: 96, gap: 6 },
   sourceCard: {
     zIndex: 5,
     width: 145,
@@ -351,11 +451,20 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     backgroundColor: "#FDF7E9",
   },
+  cardContent: { width: "100%", height: "100%", alignItems: "center", justifyContent: "center" },
+  compactSourceCard: { width: 104, height: 116, borderRadius: 20 },
+  denseSourceCard: { width: 78, height: 96, borderRadius: 17 },
+  tinySourceCard: { width: 62, height: 86, borderRadius: 15, borderWidth: 2 },
   sourcePlaceholder: { width: 145, height: 145 },
   highlightedCard: { borderWidth: 6, borderColor: "#FFD95A", backgroundColor: "#FFF3B3" },
   sourceImage: { width: 100, height: 94, resizeMode: "contain" },
+  compactSourceImage: { width: 72, height: 70 },
+  denseSourceImage: { width: 54, height: 52 },
+  tinySourceImage: { width: 44, height: 42 },
   cardLabel: { color: "#4F443C", fontSize: 13, fontWeight: "900" },
+  denseCardLabel: { maxWidth: 58, fontSize: 9, lineHeight: 10, textAlign: "center" },
   dragLabel: { color: "#83776E", fontSize: 10, fontWeight: "700" },
+  denseDragLabel: { fontSize: 7 },
   slotRow: { flexDirection: "row", gap: 14, marginTop: 14 },
   slot: {
     width: 150,
@@ -368,8 +477,15 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     backgroundColor: "#243C63",
   },
+  compactSlot: { width: 104, height: 124, borderRadius: 22 },
+  denseSlot: { width: 78, height: 104, borderRadius: 18, borderWidth: 3 },
+  tinySlot: { width: 62, height: 92, borderRadius: 16, borderWidth: 3 },
   slotLabel: { position: "absolute", top: 9, color: "#FFD95A", fontSize: 14, fontWeight: "900" },
+  compactSlotLabel: { fontSize: 11 },
   slotImage: { width: 110, height: 110, marginTop: 20, resizeMode: "contain" },
+  compactSlotImage: { width: 78, height: 78 },
+  denseSlotImage: { width: 56, height: 56 },
+  tinySlotImage: { width: 45, height: 45 },
   slotArrow: { color: "#A7C7E8", fontSize: 42, fontWeight: "900" },
   feedback: {
     minHeight: 44,

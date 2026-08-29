@@ -8,6 +8,7 @@ import type {
   assetSemanticSchema,
   assetTypeSchema,
   balloonCountingGameSchema,
+  bktLevelingSchema,
   choiceSchema,
   classifyAndSortGameSchema,
   contentStatusSchema,
@@ -16,6 +17,7 @@ import type {
   emotionCluesGameSchema,
   emotionIdSchema,
   fishPatternsGameSchema,
+  gameDifficultyLevelSchema,
   gameExpectedActionSchema,
   gameMechanicSchema,
   gameProductionSourceSchema,
@@ -59,6 +61,7 @@ export type GameProductionSource = z.infer<typeof gameProductionSourceSchema>;
 export type GameMechanic = z.infer<typeof gameMechanicSchema>;
 export type GameReminderMode = z.infer<typeof gameReminderModeSchema>;
 export type GameExpectedAction = z.infer<typeof gameExpectedActionSchema>;
+export type GameDifficultyLevel = z.infer<typeof gameDifficultyLevelSchema>;
 export type GameRule = z.infer<typeof gameRuleSchema>;
 export type TapOrWaitGame = z.infer<typeof tapOrWaitGameSchema>;
 export type SortObject = z.infer<typeof sortObjectSchema>;
@@ -72,6 +75,7 @@ export type EmotionClueRound = z.infer<typeof emotionClueRoundSchema>;
 export type EmotionCluesGame = z.infer<typeof emotionCluesGameSchema>;
 export type FishPatternsGame = z.infer<typeof fishPatternsGameSchema>;
 export type BalloonCountingGame = z.infer<typeof balloonCountingGameSchema>;
+export type BktLeveling = z.infer<typeof bktLevelingSchema>;
 export type MiniChallengeGame = z.infer<typeof miniChallengeGameSchema>;
 export type Activity = z.infer<typeof activitySchema>;
 export type ContentStatus = z.infer<typeof contentStatusSchema>;
