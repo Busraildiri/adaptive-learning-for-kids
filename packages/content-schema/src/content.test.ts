@@ -48,12 +48,12 @@ describe("Turkish content v1", () => {
     }
   });
 
-  it("contains five valid playable stories so the personalization gate is reachable", () => {
+  it("contains six valid playable stories so the personalization gate is reachable", () => {
     const content = contentVersionSchema.parse(contentV1);
     const story = content.stories[0];
     const stepTypes = story.steps.map((step) => step.type);
 
-    expect(content.stories).toHaveLength(5);
+    expect(content.stories).toHaveLength(6);
     expect(story.ageBands).toContain("2-4");
     expect(stepTypes.filter((type) => type === "emotion_choice")).toHaveLength(1);
     expect(new Set(stepTypes)).toEqual(
@@ -74,7 +74,14 @@ describe("Turkish content v1", () => {
 
     expect(new Set(newStories.map((story) => story.sceneAssetId))).toEqual(expectedSceneAssets);
 
-    for (const story of content.stories) {
+    // The "every story has an emotion-recognition moment" convention is
+    // specific to the interactive_ui (MinoStory) content family. The new
+    // video_branching template intentionally has no emotion_choice step --
+    // Phase 5.5's MVP contract is [event, event, help_choice] only.
+    const interactiveUiStories = content.stories.filter(
+      (story) => story.experienceType === "interactive_ui",
+    );
+    for (const story of interactiveUiStories) {
       const emotionSteps = story.steps.filter((step) => step.type === "emotion_choice");
       expect(emotionSteps.length).toBeGreaterThanOrEqual(1);
 

@@ -63,6 +63,24 @@ class FakeHyperFrames:
 
 
 class OpenMontageProviderTests(unittest.TestCase):
+    def test_generates_standalone_decision_audio_without_visual_render(self) -> None:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            patch.object(provider_module, "_OUTPUT_ROOT", Path(temp_dir)),
+            patch.object(provider_module, "ImageSelector") as selector,
+            patch.object(provider_module, "PiperTTS", FakePiper),
+            patch.object(provider_module, "HyperFramesCompose") as hyperframes,
+        ):
+            result = provider_module.OpenMontageProvider().generate_audio(
+                media_generation_input_from_dict(manifest())
+            )
+
+        self.assertEqual(result.kind, "audio")
+        self.assertEqual(result.mime_type, "audio/wav")
+        self.assertTrue(result.asset_uri.endswith("scene-test.wav"))
+        selector.assert_not_called()
+        hyperframes.assert_not_called()
+
     def test_generates_visual_from_scene_prompt_before_tts_and_render(self) -> None:
         with (
             tempfile.TemporaryDirectory() as temp_dir,
@@ -165,6 +183,100 @@ class OpenMontageProviderTests(unittest.TestCase):
             ],
         )
         self.assertEqual(len(render["asset_manifest"]["assets"]), 4)
+
+
+class HyperFramesWindowsConsoleTests(unittest.TestCase):
+    def test_patches_run_hf_on_windows_only(self) -> None:
+        from tools.video.hyperframes_compose import HyperFramesCompose
+
+        original_run_hf = HyperFramesCompose._run_hf
+        self.addCleanup(setattr, HyperFramesCompose, "_run_hf", original_run_hf)
+
+        with patch.object(provider_module.os, "name", "nt"):
+            provider_module.patch_hyperframes_windows_console()
+        self.assertIs(HyperFramesCompose._run_hf, provider_module._patched_run_hf)
+
+    def test_does_nothing_on_non_windows(self) -> None:
+        from tools.video.hyperframes_compose import HyperFramesCompose
+
+        original_run_hf = HyperFramesCompose._run_hf
+        self.addCleanup(setattr, HyperFramesCompose, "_run_hf", original_run_hf)
+
+        with patch.object(provider_module.os, "name", "posix"):
+            provider_module.patch_hyperframes_windows_console()
+        self.assertIs(HyperFramesCompose._run_hf, original_run_hf)
+
+
+class FakePiperForAudio:
+    def execute(self, inputs: dict) -> SimpleNamespace:
+        # Not a structurally valid WAV -- _wav_duration() catches wave.Error
+        # and safely returns 0.0, which is fine for these tests.
+        Path(inputs["output_path"]).write_bytes(b"not-a-real-wav")
+        return SimpleNamespace(success=True, error=None)
+
+
+def _fake_ffmpeg_success(cmd, capture_output, text):  # noqa: ANN001, ARG001
+    Path(cmd[-1]).write_bytes(b"m4a-bytes")
+    return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+
+def _fake_ffmpeg_failure(cmd, capture_output, text):  # noqa: ANN001, ARG001
+    return SimpleNamespace(returncode=1, stdout="", stderr="conversion exploded")
+
+
+class SynthesizeNarrationAudioTests(unittest.TestCase):
+    def test_produces_an_m4a_file_and_cleans_up_the_temporary_wav(self) -> None:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            patch.object(provider_module, "PiperTTS", FakePiperForAudio),
+            patch.object(provider_module, "ensure_ffmpeg_on_path", return_value=Path("ffmpeg")),
+            patch.object(provider_module.subprocess, "run", side_effect=_fake_ffmpeg_success),
+        ):
+            output_path = Path(temp_dir) / "question.m4a"
+            result = provider_module.OpenMontageProvider().synthesize_narration_audio(
+                "Mırmır'a nasıl yardım etmek istersin?", None, output_path
+            )
+
+            # Must run inside the TemporaryDirectory block -- it deletes the
+            # directory (and any file check would trivially pass/fail) on exit.
+            self.assertTrue(output_path.is_file())
+            temp_wav = output_path.with_name(f".{output_path.stem}.tmp.wav")
+            self.assertFalse(temp_wav.exists(), "temporary WAV must be removed after a successful conversion")
+
+        self.assertEqual(output_path.suffix, ".m4a")
+        self.assertEqual(result.kind, "audio")
+        self.assertEqual(result.mime_type, "audio/mp4")
+
+    def test_conversion_failure_raises_and_still_cleans_up_the_temporary_wav(self) -> None:
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            patch.object(provider_module, "PiperTTS", FakePiperForAudio),
+            patch.object(provider_module, "ensure_ffmpeg_on_path", return_value=Path("ffmpeg")),
+            patch.object(provider_module.subprocess, "run", side_effect=_fake_ffmpeg_failure),
+        ):
+            output_path = Path(temp_dir) / "question.m4a"
+            with self.assertRaises(RuntimeError):
+                provider_module.OpenMontageProvider().synthesize_narration_audio("Merhaba", None, output_path)
+
+            temp_wav = output_path.with_name(f".{output_path.stem}.tmp.wav")
+            self.assertFalse(temp_wav.exists(), "temporary WAV must be removed even when conversion fails")
+
+    def test_piper_failure_raises_before_any_conversion_is_attempted(self) -> None:
+        class AlwaysFailingPiper:
+            def execute(self, inputs: dict) -> SimpleNamespace:
+                return SimpleNamespace(success=False, error="no voice model")
+
+        with (
+            tempfile.TemporaryDirectory() as temp_dir,
+            patch.object(provider_module, "PiperTTS", AlwaysFailingPiper),
+            patch.object(provider_module, "ensure_ffmpeg_on_path", return_value=Path("ffmpeg")),
+            patch.object(provider_module.subprocess, "run") as ffmpeg_run,
+        ):
+            output_path = Path(temp_dir) / "question.m4a"
+            with self.assertRaises(RuntimeError):
+                provider_module.OpenMontageProvider().synthesize_narration_audio("Merhaba", None, output_path)
+
+        ffmpeg_run.assert_not_called()
 
 
 if __name__ == "__main__":

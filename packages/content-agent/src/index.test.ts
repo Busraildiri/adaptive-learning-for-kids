@@ -21,6 +21,7 @@ const skeleton: Story = {
   ageBands: ["2-4"],
   targetSkills: ["emotion-recognition"],
   greetingTemplate: "Merhaba {{childName}}!",
+  experienceType: "interactive_ui",
   sceneAssetId: "scene-balloons",
   characterAssets: { happyAssetId: "mino-happy", sadAssetId: "mino-sad" },
   steps: [
@@ -208,6 +209,22 @@ describe("content agent", () => {
       status: "fallback",
       audit: { rejectionReasons: ["skeleton_changed"] },
     });
+  });
+
+  it("rejects a candidate that changes experienceType away from the skeleton's (Phase 5.5)", async () => {
+    const candidate: Story = { ...skeleton, experienceType: "video_branching" };
+    const { run } = harness(candidate, { approved: true, reasonCodes: [], notes: [] });
+    await expect(run()).resolves.toMatchObject({
+      status: "fallback",
+      audit: { rejectionReasons: ["skeleton_changed"] },
+    });
+  });
+
+  it("deterministicStoryReview flags experienceType drift directly", () => {
+    const candidate: Story = { ...skeleton, experienceType: "video_branching" };
+    expect(deterministicStoryReview(candidate, skeleton, allowedAssets)).toContain(
+      "skeleton_changed",
+    );
   });
 
   it("rejects forbidden assets, diagnosis, frightening language and judgmental emotions", () => {

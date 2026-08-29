@@ -12,6 +12,7 @@
   "dependencies": {
     "@adaptive/content-agent": "workspace:*",
     "@adaptive/content-schema": "workspace:*",
+    "@adaptive/media-schema": "workspace:*",
     "@supabase/supabase-js": "^2.57.4",
     "next": "latest",
     "react": "latest",

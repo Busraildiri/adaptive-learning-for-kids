@@ -5,7 +5,8 @@ registry; callers resolve a provider by id and call `.generate()`.
 """
 from __future__ import annotations
 
-from typing import Protocol, runtime_checkable
+from pathlib import Path
+from typing import Optional, Protocol, runtime_checkable
 
 from .render_manifest import MediaGenerationInput, MediaGenerationResult
 
@@ -15,6 +16,10 @@ class MediaProvider(Protocol):
     id: str
 
     def generate(self, input: MediaGenerationInput) -> MediaGenerationResult: ...
+
+    def synthesize_narration_audio(
+        self, text: str, voice_model: Optional[str], output_path: Path
+    ) -> MediaGenerationResult: ...
 
 
 _providers: dict[str, MediaProvider] = {}

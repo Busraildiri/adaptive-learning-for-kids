@@ -72,7 +72,14 @@ export const choiceSchema = z.strictObject({
   supportiveFeedback: supportiveFeedbackSchema,
 });
 
-export const helpActionSchema = z.enum(["hug", "new_balloon", "breathe"]);
+export const helpActionSchema = z.enum([
+  "hug",
+  "new_balloon",
+  "pet_head",
+  "say_love",
+  "give_gift",
+  "breathe",
+]);
 
 export const storyChoiceVisualSchema = z.discriminatedUnion("kind", [
   z.strictObject({
@@ -150,6 +157,18 @@ export const storyStepSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
+// Durable product contract, not UI-filtering metadata: which playback
+// experience a Story was authored/generated for.
+//   interactive_ui  -> MinoStory (existing mobile interactive UI)
+//   video_branching -> the new StoryPlayer (Phase 1-5 pipeline)
+// Defaulting to "interactive_ui" is a safe, additive default for every
+// existing story -- that is genuinely what they are. experienceType alone
+// is a declared intent, not a compatibility guarantee: a video_branching
+// Story must still separately pass structural validation (exactly one
+// decision-capable step, exactly two choices) before it can reach Scene
+// Planning -- see apps/admin-web's validateVideoBranchingCompatibility.
+export const experienceTypeSchema = z.enum(["interactive_ui", "video_branching"]);
+
 export const storySchema = z.strictObject({
   id: z.string().trim().min(1),
   version: z.number().int().positive(),
@@ -157,6 +176,7 @@ export const storySchema = z.strictObject({
   ageBands: z.tuple([ageBandSchema], ageBandSchema),
   targetSkills: z.array(z.string().trim().min(1)).min(1),
   greetingTemplate: z.string().trim().min(1),
+  experienceType: experienceTypeSchema.default("interactive_ui"),
   sceneAssetId: z.string().trim().min(1).optional(),
   introVideoAssetId: z.string().trim().min(1).optional(),
   characterAssets: z.strictObject({

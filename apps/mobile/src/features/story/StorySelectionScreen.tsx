@@ -1,4 +1,5 @@
 import type { AgeBand, Asset, Game, Story } from "@adaptive/content-schema";
+import type { PublishedStoryExperience } from "@adaptive/media-schema";
 import { DiscoveryScreen } from "./OlderDiscoveryScreen";
 
 interface StorySelectionScreenProps {
@@ -14,6 +15,7 @@ interface StorySelectionScreenProps {
   gameRecommendationExplanation: string | null;
   games: Game[];
   onSelectGame: (gameId: string) => void;
+  publishedStories?: PublishedStoryExperience[];
 }
 
 export function StorySelectionScreen({
@@ -28,6 +30,7 @@ export function StorySelectionScreen({
   recommendedGameId,
   games,
   onSelectGame,
+  publishedStories = [],
 }: StorySelectionScreenProps) {
   return (
     <DiscoveryScreen
@@ -39,6 +42,7 @@ export function StorySelectionScreen({
       onRequestParentArea={onRequestParentArea}
       onSelectGame={onSelectGame}
       onSelectStory={onSelectStory}
+      publishedStories={publishedStories}
       recommendedGameId={recommendedGameId}
       recommendedStoryId={recommendedStoryId}
       stories={stories}

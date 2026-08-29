@@ -137,6 +137,18 @@ function HelpVisual({ action }: { action: HelpAction }) {
     return <Balloon color="#F46F5E" scale={0.55} />;
   }
 
+  if (action === "pet_head") {
+    return <Text style={styles.helpActionSymbol}>✋</Text>;
+  }
+
+  if (action === "say_love") {
+    return <Text style={styles.helpActionSymbol}>♥</Text>;
+  }
+
+  if (action === "give_gift") {
+    return <Text style={styles.helpActionSymbol}>🎁</Text>;
+  }
+
   return (
     <View style={styles.breatheIcon}>
       <View style={styles.breatheFace}>
@@ -821,6 +833,7 @@ const styles = StyleSheet.create({
   },
   emotionSymbol: { fontSize: 72, lineHeight: 82 },
   heart: { color: "#EF6A73", fontSize: 76, lineHeight: 84 },
+  helpActionSymbol: { fontSize: 62, lineHeight: 72 },
   breatheIcon: {
     width: 94,
     height: 78,
