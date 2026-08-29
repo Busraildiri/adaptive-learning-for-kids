@@ -20,13 +20,7 @@ import {
   PasswordUpdateScreen,
 } from "./features/account/PasswordUpdateScreen";
 import { SetupRequiredScreen } from "./features/account/SetupRequiredScreen";
-import { BalloonCountingGame } from "./features/game/BalloonCountingGame";
-import { ClassifyAndSortGame } from "./features/game/ClassifyAndSortGame";
-import { EmotionCluesGame } from "./features/game/EmotionCluesGame";
-import { FishPatternsGame } from "./features/game/FishPatternsGame";
-import { MiniChallengeGame } from "./features/game/MiniChallengeGame";
-import { SequenceAndPlaceGame } from "./features/game/SequenceAndPlaceGame";
-import { TapOrWaitGame } from "./features/game/TapOrWaitGame";
+import { TrackedGame } from "./features/game/TrackedGame";
 import { MinoStory } from "./features/story/MinoStory";
 import { StorySelectionScreen } from "./features/story/StorySelectionScreen";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
@@ -40,6 +34,7 @@ import {
 } from "./services/childMode";
 import { loadChildConsentSettings } from "./services/consents";
 import { loadPublishedGames } from "./services/gameCatalog";
+import { loadGameVariantPreference } from "./services/gamePersonalization";
 import { initializeInteractionEventSync } from "./services/interactionEvents";
 
 type PasswordRecoveryStatus = "checking" | "idle" | "processing" | "ready" | "error";
@@ -64,8 +59,14 @@ export default function App() {
   const [showParentPinGate, setShowParentPinGate] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [lastPlayedBktGameId, setLastPlayedBktGameId] = useState<string | null>(null);
+  const [gameRecommendationRevision, setGameRecommendationRevision] = useState(0);
   const [availableGames, setAvailableGames] = useState(content.games ?? []);
   const [recommendedStoryId, setRecommendedStoryId] = useState<string | null>(null);
+  const [recommendedGameId, setRecommendedGameId] = useState<string | null>(null);
+  const [gameRecommendationExplanation, setGameRecommendationExplanation] = useState<string | null>(
+    null,
+  );
   const [passwordRecoveryStatus, setPasswordRecoveryStatus] =
     useState<PasswordRecoveryStatus>("checking");
   const [passwordRecoveryError, setPasswordRecoveryError] = useState<string | null>(null);
@@ -85,10 +86,7 @@ export default function App() {
 
       const activeChildId = onboardingComplete ? await getPersistedActiveChildId() : null;
       const persistedChild = childProfiles.find((child) => child.id === activeChildId);
-      if (
-        persistedChild &&
-        resolveAgeBand(persistedChild.birthMonth, persistedChild.birthYear) === "2-4"
-      ) {
+      if (persistedChild && resolveAgeBand(persistedChild.birthMonth, persistedChild.birthYear)) {
         const consentSettings = await withTimeout(loadChildConsentSettings(persistedChild.id));
         setActiveChild(
           createChildSessionProfile(persistedChild, {
@@ -225,6 +223,8 @@ export default function App() {
   useEffect(() => {
     if (!activeChild) {
       setAvailableGames(content.games ?? []);
+      setRecommendedGameId(null);
+      setGameRecommendationExplanation(null);
       return;
     }
     let cancelled = false;
@@ -235,6 +235,61 @@ export default function App() {
       cancelled = true;
     };
   }, [activeChild]);
+
+  useEffect(() => {
+    if (!activeChild) return;
+    const eligibleGames = availableGames.filter(
+      (game) => game.status === "published" && game.ageBand === activeChild.ageBand,
+    );
+    const currentGame =
+      eligibleGames.find(
+        (game) =>
+          game.id === lastPlayedBktGameId &&
+          game.mechanic === "sequence_and_place" &&
+          game.leveling?.strategy === "bkt",
+      ) ??
+      eligibleGames.find(
+        (game) =>
+          game.mechanic === "sequence_and_place" &&
+          game.leveling?.strategy === "bkt" &&
+          game.difficulty.level === "starter",
+      ) ??
+      eligibleGames[0];
+    if (!currentGame) {
+      setRecommendedGameId(null);
+      setGameRecommendationExplanation(null);
+      return;
+    }
+
+    let cancelled = false;
+    void loadGameVariantPreference(
+      activeChild.id,
+      activeChild.ageBand,
+      currentGame.difficulty.level,
+      currentGame.mechanic,
+    )
+      .then((decision) => {
+        if (cancelled) return;
+        const recommendedGame = decision.personalized
+          ? eligibleGames.find(
+              (game) =>
+                game.mechanic === currentGame.mechanic &&
+                game.difficulty.level === decision.preferredDifficulty,
+            )
+          : undefined;
+        setRecommendedGameId(recommendedGame?.id ?? null);
+        setGameRecommendationExplanation(recommendedGame ? decision.explanation : null);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setRecommendedGameId(null);
+          setGameRecommendationExplanation(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeChild, availableGames, gameRecommendationRevision, lastPlayedBktGameId]);
 
   useEffect(() => {
     if (!sessionUserId) return;
@@ -331,20 +386,21 @@ export default function App() {
     const selectedGame = eligibleGames.find((game) => game.id === selectedGameId);
 
     if (selectedGame) {
-      return selectedGame.mechanic === "classify_and_sort" ? (
-        <ClassifyAndSortGame game={selectedGame} onExit={() => setSelectedGameId(null)} />
-      ) : selectedGame.mechanic === "sequence_and_place" ? (
-        <SequenceAndPlaceGame game={selectedGame} onExit={() => setSelectedGameId(null)} />
-      ) : selectedGame.mechanic === "emotion_clues" ? (
-        <EmotionCluesGame game={selectedGame} onExit={() => setSelectedGameId(null)} />
-      ) : selectedGame.mechanic === "fish_patterns" ? (
-        <FishPatternsGame game={selectedGame} onExit={() => setSelectedGameId(null)} />
-      ) : selectedGame.mechanic === "balloon_counting" ? (
-        <BalloonCountingGame game={selectedGame} onExit={() => setSelectedGameId(null)} />
-      ) : selectedGame.mechanic === "mini_challenge" ? (
-        <MiniChallengeGame game={selectedGame} onExit={() => setSelectedGameId(null)} />
-      ) : (
-        <TapOrWaitGame game={selectedGame} onExit={() => setSelectedGameId(null)} />
+      return (
+        <TrackedGame
+          child={activeChild}
+          game={selectedGame}
+          onExit={() => {
+            if (
+              selectedGame.mechanic === "sequence_and_place" &&
+              selectedGame.leveling?.strategy === "bkt"
+            ) {
+              setLastPlayedBktGameId(selectedGame.id);
+            }
+            setSelectedGameId(null);
+            setGameRecommendationRevision((current) => current + 1);
+          }}
+        />
       );
     }
 
@@ -352,7 +408,9 @@ export default function App() {
       return (
         <StorySelectionScreen
           assets={content.assets}
+          ageBand={activeChild.ageBand}
           childName={activeChild.nickname}
+          gameRecommendationExplanation={gameRecommendationExplanation}
           games={eligibleGames}
           onRequestParentArea={() => setShowParentPinGate(true)}
           onSelectGame={(gameId) => {
@@ -364,6 +422,7 @@ export default function App() {
             setSelectedStoryId(storyId);
           }}
           recommendedStoryId={recommendedStoryId}
+          recommendedGameId={recommendedGameId}
           stories={content.stories}
         />
       );

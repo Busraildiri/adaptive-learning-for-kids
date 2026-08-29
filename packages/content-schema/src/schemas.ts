@@ -171,6 +171,8 @@ export const storySchema = z.strictObject({
 export const contentStatusSchema = z.enum(["draft", "in_review", "published", "archived"]);
 
 export const gameProductionSourceSchema = z.enum(["manual", "ai", "automation"]);
+export const GAME_DIFFICULTY_SCHEMA_VERSION = "game-difficulty-v1" as const;
+export const gameDifficultyLevelSchema = z.enum(["starter", "growing", "advanced"]);
 export const gameMechanicSchema = z.enum([
   "tap_or_wait",
   "classify_and_sort",
@@ -210,6 +212,9 @@ export const gameRuleSchema = z.strictObject({
 export const tapOrWaitGameSchema = z
   .strictObject({
     schemaVersion: z.literal("game-v1"),
+    difficultyVersion: z
+      .literal(GAME_DIFFICULTY_SCHEMA_VERSION)
+      .default(GAME_DIFFICULTY_SCHEMA_VERSION),
     id: z.string().trim().min(1).max(100),
     version: z.number().int().positive(),
     status: contentStatusSchema,
@@ -243,7 +248,7 @@ export const tapOrWaitGameSchema = z
       roundTransition: z.string().trim().min(1).max(120),
     }),
     difficulty: z.strictObject({
-      level: z.enum(["starter", "growing", "advanced"]),
+      level: gameDifficultyLevelSchema,
       interRoundDelayMs: z.number().int().min(500).max(3_000),
       reminderMode: gameReminderModeSchema,
       ruleChangeEnabled: z.boolean(),
@@ -330,6 +335,9 @@ export const sortRoundSchema = z.strictObject({
 export const classifyAndSortGameSchema = z
   .strictObject({
     schemaVersion: z.literal("game-v1"),
+    difficultyVersion: z
+      .literal(GAME_DIFFICULTY_SCHEMA_VERSION)
+      .default(GAME_DIFFICULTY_SCHEMA_VERSION),
     id: z.string().trim().min(1).max(100),
     version: z.number().int().positive(),
     status: contentStatusSchema,
@@ -353,7 +361,7 @@ export const classifyAndSortGameSchema = z
       transition: z.string().trim().min(1).max(120),
     }),
     difficulty: z.strictObject({
-      level: z.enum(["starter", "growing", "advanced"]),
+      level: gameDifficultyLevelSchema,
       secondTryEnabled: z.boolean(),
       responseWindowMs: z.number().int().min(4_000).max(30_000),
     }),
@@ -408,13 +416,67 @@ export const routineItemSchema = z.strictObject({
 export const routineRoundSchema = z.strictObject({
   id: z.string().trim().min(1).max(100),
   instruction: z.string().trim().min(1).max(180),
-  items: z.array(routineItemSchema).min(2).max(3),
-  correctOrder: z.array(z.string().trim().min(1).max(100)).min(2).max(3),
+  items: z.array(routineItemSchema).min(2).max(5),
+  correctOrder: z.array(z.string().trim().min(1).max(100)).min(2).max(5),
 });
+
+const probabilitySchema = z.number().min(0).max(1);
+
+export const bktLevelingSchema = z
+  .strictObject({
+    strategy: z.literal("bkt"),
+    modelVersion: z.literal("bkt-v1"),
+    skillId: z.string().trim().min(1).max(100),
+    parameters: z.strictObject({
+      initialMastery: probabilitySchema,
+      learningRate: probabilitySchema,
+      guessRate: probabilitySchema,
+      slipRate: probabilitySchema,
+    }),
+    thresholds: z.strictObject({
+      growing: z.strictObject({
+        minimumMastery: probabilitySchema,
+        minimumObservations: z.number().int().min(2).max(50),
+      }),
+      advanced: z.strictObject({
+        minimumMastery: probabilitySchema,
+        minimumObservations: z.number().int().min(3).max(100),
+      }),
+    }),
+  })
+  .superRefine((leveling, context) => {
+    if (leveling.parameters.guessRate + leveling.parameters.slipRate >= 1) {
+      context.addIssue({
+        code: "custom",
+        path: ["parameters"],
+        message: "BKT guess and slip rates must add up to less than one.",
+      });
+    }
+    if (leveling.thresholds.growing.minimumMastery >= leveling.thresholds.advanced.minimumMastery) {
+      context.addIssue({
+        code: "custom",
+        path: ["thresholds", "advanced", "minimumMastery"],
+        message: "Advanced BKT mastery must be greater than growing mastery.",
+      });
+    }
+    if (
+      leveling.thresholds.growing.minimumObservations >=
+      leveling.thresholds.advanced.minimumObservations
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["thresholds", "advanced", "minimumObservations"],
+        message: "Advanced BKT evidence must exceed growing evidence.",
+      });
+    }
+  });
 
 export const sequenceAndPlaceGameSchema = z
   .strictObject({
     schemaVersion: z.literal("game-v1"),
+    difficultyVersion: z
+      .literal(GAME_DIFFICULTY_SCHEMA_VERSION)
+      .default(GAME_DIFFICULTY_SCHEMA_VERSION),
     id: z.string().trim().min(1).max(100),
     version: z.number().int().positive(),
     status: contentStatusSchema,
@@ -430,20 +492,43 @@ export const sequenceAndPlaceGameSchema = z
       closingNarration: z.string().trim().min(1).max(200),
       playAudioInstructions: z.boolean(),
     }),
-    rounds: z.array(routineRoundSchema).min(3).max(6),
+    rounds: z.array(routineRoundSchema).min(5).max(12),
     feedback: z.strictObject({
       matched: z.string().trim().min(1).max(120),
       retry: z.string().trim().min(1).max(160),
       hint: z.string().trim().min(1).max(160),
     }),
     difficulty: z.strictObject({
-      level: z.enum(["starter", "growing", "advanced"]),
+      level: gameDifficultyLevelSchema,
       secondTryEnabled: z.boolean(),
       hintDelayMs: z.number().int().min(5_000).max(30_000),
     }),
+    leveling: bktLevelingSchema.optional(),
   })
   .superRefine((game, context) => {
+    const requiredRoundCount = {
+      starter: 5,
+      growing: 8,
+      advanced: 12,
+    }[game.difficulty.level];
+
+    if (game.rounds.length !== requiredRoundCount) {
+      context.addIssue({
+        code: "custom",
+        path: ["rounds"],
+        message: `${game.difficulty.level} routine games must contain ${requiredRoundCount} rounds.`,
+      });
+    }
+
     game.rounds.forEach((round, roundIndex) => {
+      const requiredItemCount = Math.min(roundIndex + 2, 5);
+      if (round.items.length !== requiredItemCount) {
+        context.addIssue({
+          code: "custom",
+          path: ["rounds", roundIndex, "items"],
+          message: `Routine round ${roundIndex + 1} must contain ${requiredItemCount} items.`,
+        });
+      }
       const itemIds = round.items.map((item) => item.id);
       if (new Set(itemIds).size !== itemIds.length) {
         context.addIssue({
@@ -463,13 +548,6 @@ export const sequenceAndPlaceGameSchema = z
           message: "Correct order must contain every routine item exactly once.",
         });
       }
-      if (game.ageBand === "2-4" && round.items.length !== 2) {
-        context.addIssue({
-          code: "custom",
-          path: ["rounds", roundIndex, "items"],
-          message: "Games for ages 2-4 must use two-step routines.",
-        });
-      }
     });
   });
 
@@ -485,6 +563,9 @@ export const emotionClueRoundSchema = z.strictObject({
 
 export const emotionCluesGameSchema = z.strictObject({
   schemaVersion: z.literal("game-v1"),
+  difficultyVersion: z
+    .literal(GAME_DIFFICULTY_SCHEMA_VERSION)
+    .default(GAME_DIFFICULTY_SCHEMA_VERSION),
   id: z.string().trim().min(1).max(100),
   version: z.number().int().positive(),
   status: contentStatusSchema,
@@ -507,7 +588,7 @@ export const emotionCluesGameSchema = z.strictObject({
     retry: z.string().trim().min(1).max(160),
   }),
   difficulty: z.strictObject({
-    level: z.enum(["starter", "growing", "advanced"]),
+    level: gameDifficultyLevelSchema,
     secondTryEnabled: z.boolean(),
     askClueQuestion: z.boolean(),
   }),
@@ -545,6 +626,9 @@ const fishMemoryRoundSchema = z.strictObject({
 export const fishPatternsGameSchema = z
   .strictObject({
     schemaVersion: z.literal("game-v1"),
+    difficultyVersion: z
+      .literal(GAME_DIFFICULTY_SCHEMA_VERSION)
+      .default(GAME_DIFFICULTY_SCHEMA_VERSION),
     id: z.string().trim().min(1).max(100),
     version: z.number().int().positive(),
     status: contentStatusSchema,
@@ -568,7 +652,7 @@ export const fishPatternsGameSchema = z
       retry: z.string().trim().min(1).max(160),
     }),
     difficulty: z.strictObject({
-      level: z.enum(["starter", "growing", "advanced"]),
+      level: gameDifficultyLevelSchema,
       secondTryEnabled: z.boolean(),
     }),
   })
@@ -622,6 +706,9 @@ const balloonRoundSchema = z.strictObject({
 export const balloonCountingGameSchema = z
   .strictObject({
     schemaVersion: z.literal("game-v1"),
+    difficultyVersion: z
+      .literal(GAME_DIFFICULTY_SCHEMA_VERSION)
+      .default(GAME_DIFFICULTY_SCHEMA_VERSION),
     id: z.string().trim().min(1).max(100),
     version: z.number().int().positive(),
     status: contentStatusSchema,
@@ -629,7 +716,7 @@ export const balloonCountingGameSchema = z
     mechanic: z.literal("balloon_counting"),
     title: z.string().trim().min(1).max(100),
     description: z.string().trim().min(1).max(240),
-    ageBand: z.literal("2-4"),
+    ageBand: ageBandSchema,
     skillTags: z.array(z.string().trim().min(1).max(60)).min(1).max(5),
     presentation: z.strictObject({
       introNarration: z.string().trim().min(1).max(240),
@@ -642,7 +729,7 @@ export const balloonCountingGameSchema = z
       retry: z.string().trim().min(1).max(160),
     }),
     difficulty: z.strictObject({
-      level: z.enum(["starter", "growing"]),
+      level: gameDifficultyLevelSchema,
       secondTryEnabled: z.boolean(),
       inactivityHintMs: z.literal(10000),
     }),
@@ -678,40 +765,62 @@ export const balloonCountingGameSchema = z
     }),
   );
 
+const miniIconSchema = z.enum([
+  "clap",
+  "bell",
+  "drum",
+  "toothbrush",
+  "shirt",
+  "breakfast",
+  "box",
+  "ball",
+  "chair",
+  "circle",
+  "square",
+  "triangle",
+  "star",
+  "small-bear",
+  "large-bear",
+  "maya-brush",
+  "maya-shirt",
+  "maya-breakfast",
+  "riko-inside",
+  "riko-under",
+  "riko-on",
+  "zuzu-circle",
+  "zuzu-square",
+  "zuzu-triangle",
+  "zuzu-star",
+  "kiki-small-apple",
+  "kiki-large-apple",
+  "kiki-small-acorn",
+  "kiki-large-acorn",
+  "piko-red-circle",
+  "piko-blue-square",
+  "piko-yellow-triangle",
+  "mavi-cat",
+  "mavi-car",
+  "mavi-tree",
+  "mavi-boat",
+  "lumi-cat",
+  "lumi-dog",
+  "lumi-car",
+  "lumi-rain",
+  "lumi-bird",
+  "direction-left",
+  "direction-right",
+  "direction-up",
+  "direction-down",
+]);
+
 const miniChoiceSchema = z.strictObject({
   id: z.string().trim().min(1).max(50),
   label: z.string().trim().min(1).max(60),
-  icon: z.enum([
-    "clap",
-    "bell",
-    "drum",
-    "toothbrush",
-    "shirt",
-    "breakfast",
-    "box",
-    "ball",
-    "chair",
-    "circle",
-    "square",
-    "triangle",
-    "star",
-    "small-bear",
-    "large-bear",
-    "maya-brush",
-    "maya-shirt",
-    "maya-breakfast",
-    "riko-inside",
-    "riko-under",
-    "riko-on",
-    "zuzu-circle",
-    "zuzu-square",
-    "zuzu-triangle",
-    "zuzu-star",
-    "kiki-small-apple",
-    "kiki-large-apple",
-    "kiki-small-acorn",
-    "kiki-large-acorn",
-  ]),
+  icon: miniIconSchema,
+  rotationDegrees: z
+    .union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)])
+    .optional(),
+  silhouette: z.boolean().optional(),
 });
 const miniRoundSchema = z.strictObject({
   id: z.string().trim().min(1).max(80),
@@ -720,9 +829,15 @@ const miniRoundSchema = z.strictObject({
   choices: z.array(miniChoiceSchema).min(2).max(4),
   correctSequence: z.array(z.string().trim().min(1)).min(1).max(3),
   demoSequence: z.array(z.string().trim().min(1)).max(3).optional(),
+  displaySequence: z.array(miniIconSchema).min(2).max(6).optional(),
+  previewIcon: miniIconSchema.optional(),
+  soundCue: z.string().trim().min(1).max(80).optional(),
 });
 export const miniChallengeGameSchema = z.strictObject({
   schemaVersion: z.literal("game-v1"),
+  difficultyVersion: z
+    .literal(GAME_DIFFICULTY_SCHEMA_VERSION)
+    .default(GAME_DIFFICULTY_SCHEMA_VERSION),
   id: z.string().trim().min(1).max(100),
   version: z.number().int().positive(),
   status: contentStatusSchema,
@@ -730,7 +845,7 @@ export const miniChallengeGameSchema = z.strictObject({
   mechanic: z.literal("mini_challenge"),
   title: z.string().trim().min(1).max(100),
   description: z.string().trim().min(1).max(240),
-  ageBand: z.literal("2-4"),
+  ageBand: ageBandSchema,
   skillTags: z.array(z.string().trim().min(1).max(60)).min(1).max(5),
   presentation: z.strictObject({
     introNarration: z.string().trim().min(1).max(240),
@@ -743,6 +858,7 @@ export const miniChallengeGameSchema = z.strictObject({
     retry: z.string().trim().min(1).max(160),
   }),
   difficulty: z.strictObject({
+    level: gameDifficultyLevelSchema.default("starter"),
     secondTryEnabled: z.boolean(),
     inactivityHintMs: z.number().int().min(7000).max(15000),
   }),

@@ -37,8 +37,8 @@ export function ChildProfileForm({
       return;
     }
 
-    if (ageBand !== "2-4") {
-      setError("Bu geliştirme sürümü yalnızca 24–47 aylık çocuk profillerini destekliyor.");
+    if (ageBand !== "2-4" && ageBand !== "4-7") {
+      setError("Bu sürüm 24–83 aylık çocuk profillerini destekliyor.");
       return;
     }
 

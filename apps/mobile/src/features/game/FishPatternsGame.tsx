@@ -12,6 +12,7 @@ import {
   Vibration,
   View,
 } from "react-native";
+import { useGameObservation } from "./GameObservationContext";
 
 const aquarium = require("../../../assets/game/fish/aquarium-background-v1.png");
 const fishAssets: Record<string, ImageSourcePropType> = {
@@ -36,6 +37,7 @@ const colorNames: Record<string, string> = {
 };
 
 export function FishPatternsGame({ game, onExit }: { game: FishGameContent; onExit: () => void }) {
+  const report = useGameObservation();
   const [roundIndex, setRoundIndex] = useState(0);
   const [locked, setLocked] = useState(true);
   const [feedback, setFeedback] = useState("");
@@ -82,6 +84,7 @@ export function FishPatternsGame({ game, onExit }: { game: FishGameContent; onEx
     Vibration.vibrate(35);
     speak(game.feedback.matched, () => {
       if (roundIndex === game.rounds.length - 1) {
+        report({ type: "completed", stepId: round.id });
         setCompleted(true);
         speak(game.presentation.closingNarration);
       } else setRoundIndex((value) => value + 1);
@@ -89,6 +92,7 @@ export function FishPatternsGame({ game, onExit }: { game: FishGameContent; onEx
   };
 
   const retry = () => {
+    report({ type: "retry", stepId: round.id });
     if (wrongAttempts >= 1) {
       setLocked(true);
       const answer =

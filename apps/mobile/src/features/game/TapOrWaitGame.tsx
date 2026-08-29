@@ -12,6 +12,7 @@ import {
   Vibration,
   View,
 } from "react-native";
+import { useGameObservation } from "./GameObservationContext";
 import {
   feedbackForOutcome,
   outcomeForTap,
@@ -40,6 +41,7 @@ export function TapOrWaitGame({
   game: TapOrWaitGameContent;
   onExit: () => void;
 }) {
+  const report = useGameObservation();
   const [phase, setPhase] = useState<Phase>("intro");
   const [roundIndex, setRoundIndex] = useState(0);
   const [tapCount, setTapCount] = useState(0);
@@ -151,7 +153,10 @@ export function TapOrWaitGame({
       expectedAction.type === "wait_without_tap"
         ? expectedAction.durationMs
         : expectedAction.responseWindowMs;
-    const timer = setTimeout(() => resolveRound(outcomeForTimeout(currentRule)), duration);
+    const timer = setTimeout(() => {
+      report({ type: "wait", stepId: currentRule.id, waitMs: duration });
+      resolveRound(outcomeForTimeout(currentRule));
+    }, duration);
     return () => {
       clearTimeout(timer);
       pulse.stop();
@@ -163,6 +168,7 @@ export function TapOrWaitGame({
     if (phase !== "feedback") return;
     speak(feedback, () => {
       if (lastOutcome !== "matched_expected_action" && retryCount === 0) {
+        report({ type: "retry", stepId: currentRule.id });
         setRetryCount(1);
         setPhase("instruction");
         return;
@@ -170,6 +176,7 @@ export function TapOrWaitGame({
       const nextRound = roundIndex + 1;
       setRetryCount(0);
       if (nextRound >= game.roundPlan.rounds.length) {
+        report({ type: "completed", stepId: currentRule.id });
         setPhase("completed");
       } else {
         setRoundIndex(nextRound);

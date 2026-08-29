@@ -59,7 +59,7 @@ export function ParentHomeScreen({
   if (showForm) {
     return (
       <AccountShell
-        subtitle="Şimdilik yalnızca 2–4 yaş deneyimini geliştiriyoruz. Tam doğum günü istemiyoruz."
+        subtitle="2–4 ve 5–7 yaş deneyimleri açık. Tam doğum günü istemiyoruz."
         title="Çocuk profili"
       >
         <ChildProfileForm
@@ -84,7 +84,7 @@ export function ParentHomeScreen({
       {children.map((child) => {
         const ageBand = resolveAgeBand(child.birthMonth, child.birthYear);
         const ageInMonths = calculateAgeInMonths(child.birthMonth, child.birthYear);
-        const canStart = ageBand === "2-4";
+        const canStart = ageBand === "2-4" || ageBand === "4-7";
 
         return (
           <View key={child.id} style={styles.childCard}>

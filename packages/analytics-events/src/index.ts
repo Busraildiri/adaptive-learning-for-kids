@@ -8,6 +8,8 @@ export const interactionEventTypeSchema = z.enum([
   "step_presented",
   "choice_selected",
   "hint_requested",
+  "retry_requested",
+  "inactivity_help_shown",
   "activity_completed",
   "activity_abandoned",
 ]);

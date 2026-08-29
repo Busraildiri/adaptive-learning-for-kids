@@ -5,6 +5,7 @@ import { contentVersionSchema, tapOrWaitGameSchema } from "./schemas";
 
 const validTapOrWaitGame = {
   schemaVersion: "game-v1",
+  difficultyVersion: "game-difficulty-v1",
   id: "color-lights-001",
   version: 1,
   status: "draft",

@@ -19,6 +19,7 @@ import {
   View,
 } from "react-native";
 import { objectMatchesRound } from "./classifyAndSortEngine";
+import { useGameObservation } from "./GameObservationContext";
 
 const minoHappy = require("../../../assets/characters/mino-happy.png");
 const happyDog = require("../../../assets/game/sort/happy-dog-v1.png");
@@ -54,6 +55,7 @@ function ObjectArt({
   imageSource?: ImageSourcePropType;
   compareSize: boolean;
 }) {
+  const report = useGameObservation();
   const color = colors[object.color];
   if (imageSource) {
     const size = compareSize ? (object.size === "large" ? 108 : 52) : 78;
@@ -147,6 +149,7 @@ export function ClassifyAndSortGame({
   game: ClassifyAndSortGameContent;
   onExit: () => void;
 }) {
+  const report = useGameObservation();
   const [roundIndex, setRoundIndex] = useState(0);
   const [attempt, setAttempt] = useState(0);
   const [feedback, setFeedback] = useState("");
@@ -217,6 +220,7 @@ export function ClassifyAndSortGame({
     if (!correct) {
       Vibration.vibrate(18);
       if (game.difficulty.secondTryEnabled && attempt === 0) {
+        report({ type: "retry", stepId: currentRound.id });
         setAttempt(1);
         setFeedback(game.feedback.retry);
         speak(game.feedback.retry);
@@ -243,6 +247,7 @@ export function ClassifyAndSortGame({
     void (Date.now() - roundStartedAt.current); // Tur süresi, ileride kişiselleştirme olayına bağlanacak.
     speak(game.feedback.matched, () => {
       if (roundIndex === game.rounds.length - 1) {
+        report({ type: "completed", stepId: currentRound.id });
         setCompleted(true);
         speak(game.presentation.closingNarration);
       } else {
@@ -255,6 +260,7 @@ export function ClassifyAndSortGame({
   useEffect(() => {
     if (locked || completed) return;
     const timeout = setTimeout(() => {
+      report({ type: "wait", stepId: currentRound.id, waitMs: game.difficulty.responseWindowMs });
       const matchingObject = currentRound.objects.find((object) =>
         objectMatchesRound(object, currentRound),
       );
@@ -264,6 +270,7 @@ export function ClassifyAndSortGame({
       speak("Sorun değil. Doğru nesneyi birlikte bulduk.", () => {
         const advance = setTimeout(() => {
           if (roundIndex === game.rounds.length - 1) {
+            report({ type: "completed", stepId: currentRound.id });
             setCompleted(true);
             speak(game.presentation.closingNarration);
           } else {

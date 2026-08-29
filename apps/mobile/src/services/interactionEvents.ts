@@ -23,25 +23,43 @@ const supabaseTransport: InteractionEventTransport = {
 
 const synchronizer = new InteractionEventSynchronizer(store, supabaseTransport);
 let initialized: Promise<void> | null = null;
+let synchronizationInFlight: Promise<number> | null = null;
+let synchronizationRevision = 0;
+
+export function synchronizePendingInteractionEvents(): Promise<number> {
+  synchronizationRevision += 1;
+  if (synchronizationInFlight) return synchronizationInFlight;
+
+  synchronizationInFlight = (async () => {
+    initialized ??= store.initialize();
+    await initialized;
+    let synchronized = 0;
+    let handledRevision = 0;
+    do {
+      handledRevision = synchronizationRevision;
+      synchronized += await synchronizer.drain();
+    } while (handledRevision < synchronizationRevision);
+    return synchronized;
+  })().finally(() => {
+    synchronizationInFlight = null;
+  });
+
+  return synchronizationInFlight;
+}
 
 export function initializeInteractionEventSync(): () => void {
   initialized ??= store.initialize();
 
-  const synchronize = async () => {
-    await initialized;
-    await synchronizer.drain();
-  };
-
   const unsubscribeNetwork = NetInfo.addEventListener((state) => {
     if (state.isConnected && state.isInternetReachable !== false) {
-      void synchronize().catch(() => undefined);
+      void synchronizePendingInteractionEvents().catch(() => undefined);
     }
   });
   const appStateSubscription = AppState.addEventListener("change", (state) => {
-    if (state === "active") void synchronize().catch(() => undefined);
+    if (state === "active") void synchronizePendingInteractionEvents().catch(() => undefined);
   });
 
-  void synchronize().catch(() => undefined);
+  void synchronizePendingInteractionEvents().catch(() => undefined);
 
   return () => {
     unsubscribeNetwork();
@@ -60,6 +78,8 @@ export interface ActivityEventRecorder {
     eventType: InteractionEventType,
     payload?: Record<string, string | number | boolean | null>,
   ): Promise<void>;
+  ensurePersisted(): Promise<void>;
+  flush(): Promise<void>;
   clearPending(): Promise<void>;
 }
 
@@ -70,25 +90,38 @@ export function createActivityEventRecorder(input: {
 }): ActivityEventRecorder {
   const sessionId = randomUUID();
   let sequenceNumber = 0;
+  let pendingWrite = Promise.resolve();
 
   return {
     async record(eventType, payload = {}) {
       if (!input.enabled) return;
-      initialized ??= store.initialize();
-      await initialized;
-      sequenceNumber += 1;
-      await store.enqueue(
-        createInteractionEvent({
-          eventId: randomUUID(),
-          sessionId,
-          sequenceNumber,
-          childId: input.childId,
-          activityId: input.activityId,
-          eventType,
-          payload,
-        }),
-      );
-      void synchronizer.drain().catch(() => undefined);
+      pendingWrite = pendingWrite.then(async () => {
+        initialized ??= store.initialize();
+        await initialized;
+        sequenceNumber += 1;
+        await store.enqueue(
+          createInteractionEvent({
+            eventId: randomUUID(),
+            sessionId,
+            sequenceNumber,
+            childId: input.childId,
+            activityId: input.activityId,
+            eventType,
+            payload,
+          }),
+        );
+      });
+      await pendingWrite;
+      void synchronizePendingInteractionEvents().catch(() => undefined);
+    },
+    async ensurePersisted() {
+      if (!input.enabled) return;
+      await pendingWrite;
+    },
+    async flush() {
+      if (!input.enabled) return;
+      await pendingWrite;
+      await synchronizePendingInteractionEvents();
     },
     async clearPending() {
       await store.clearForChild(input.childId);

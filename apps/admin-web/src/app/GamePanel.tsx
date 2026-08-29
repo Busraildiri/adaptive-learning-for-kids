@@ -1,12 +1,15 @@
 "use client";
 
 import {
+  type AgeBand,
   type BalloonCountingGame,
   type ClassifyAndSortGame,
   contentVersionSchema,
   type EmotionCluesGame,
   type FishPatternsGame,
   type Game,
+  type GameDifficultyLevel,
+  type GameMechanic,
   type GameRule,
   gameSchema,
   type MiniChallengeGame,
@@ -16,6 +19,10 @@ import {
 import contentJson from "@adaptive/content-schema/content/tr-TR/v1";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  getApprovedAutomationTemplatesForAge,
+  getApprovedDifficultyOptions,
+} from "../lib/gameAutomation";
 
 const content = contentVersionSchema.parse(contentJson);
 
@@ -79,8 +86,25 @@ const initialBalloonGame = getInitialBalloonGame();
 const initialMiniGames = (content.games ?? []).filter(
   (candidate): candidate is MiniChallengeGame => candidate.mechanic === "mini_challenge",
 );
+const approvedAutomationTemplates = (content.games ?? []).filter(
+  (candidate) => candidate.status === "published",
+);
 
 const DRAFT_STORAGE_KEY = "adaptive-admin-tap-or-wait-draft-v1";
+const difficultyLabels: Record<GameDifficultyLevel, string> = {
+  starter: "Başlangıç",
+  growing: "Gelişen",
+  advanced: "İleri",
+};
+const mechanicLabels: Record<GameMechanic, string> = {
+  tap_or_wait: "Dokun veya bekle",
+  classify_and_sort: "Sınıflandır",
+  sequence_and_place: "Sırala",
+  emotion_clues: "Duygu ipuçları",
+  fish_patterns: "Balık desenleri",
+  balloon_counting: "Balon sayma",
+  mini_challenge: "Mini görev",
+};
 
 interface GameCatalogItem {
   game: Game;
@@ -89,111 +113,283 @@ interface GameCatalogItem {
   bundled?: boolean;
 }
 
+interface GameCatalogFilters {
+  age: AgeBand | "all";
+  mechanic: GameMechanic | "all";
+  difficulty: GameDifficultyLevel | "all";
+}
+
+const defaultGameCatalogFilters: GameCatalogFilters = {
+  age: "all",
+  mechanic: "all",
+  difficulty: "all",
+};
+
+const catalogGroups = [
+  { status: "draft" as const, title: "Onay Bekleyenler" },
+  { status: "published" as const, title: "Yayındakiler" },
+  { status: "archived" as const, title: "Arşivlenenler" },
+];
+
+function isBktGame(game: Game): game is SequenceAndPlaceGame {
+  return game.mechanic === "sequence_and_place" && game.leveling?.strategy === "bkt";
+}
+
+function GameCatalogFilterBar({
+  value,
+  onChange,
+  onApply,
+}: {
+  value: GameCatalogFilters;
+  onChange: (filters: GameCatalogFilters) => void;
+  onApply: () => void;
+}) {
+  return (
+    <section className="game-catalog-filter-bar" aria-label="Oyun kataloğu filtreleri">
+      <div>
+        <p className="eyebrow">OYUN KATALOĞU</p>
+        <h2>İçerikleri filtrele</h2>
+      </div>
+      <div className="game-catalog-filters">
+        <label>
+          Yaş grubu
+          <select
+            value={value.age}
+            onChange={(event) => onChange({ ...value, age: event.target.value as AgeBand | "all" })}
+          >
+            <option value="all">Tümü</option>
+            <option value="2-4">2–4 yaş</option>
+            <option value="4-7">4–7 yaş</option>
+          </select>
+        </label>
+        <label>
+          Mekanik
+          <select
+            value={value.mechanic}
+            onChange={(event) =>
+              onChange({ ...value, mechanic: event.target.value as GameMechanic | "all" })
+            }
+          >
+            <option value="all">Tümü</option>
+            {Object.entries(mechanicLabels).map(([optionValue, label]) => (
+              <option key={optionValue} value={optionValue}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Zorluk
+          <select
+            value={value.difficulty}
+            onChange={(event) =>
+              onChange({
+                ...value,
+                difficulty: event.target.value as GameDifficultyLevel | "all",
+              })
+            }
+          >
+            <option value="all">Tümü</option>
+            {Object.entries(difficultyLabels).map(([optionValue, label]) => (
+              <option key={optionValue} value={optionValue}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button className="primary game-filter-apply" onClick={onApply} type="button">
+          Uygula
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function GameCatalog({
   items,
+  filters,
   loading,
+  onOpen,
+  showFilteredItems,
+}: {
+  items: GameCatalogItem[];
+  filters: GameCatalogFilters;
+  loading: boolean;
+  onOpen: (status: GameCatalogItem["status"]) => void;
+  showFilteredItems: boolean;
+}) {
+  const filteredItems = items.filter(
+    (item) =>
+      (filters.age === "all" || item.game.ageBand === filters.age) &&
+      (filters.mechanic === "all" || item.game.mechanic === filters.mechanic) &&
+      (filters.difficulty === "all" || item.game.difficulty.level === filters.difficulty),
+  );
+  return (
+    <section className="game-catalog" aria-label="Oyun kataloğu">
+      <div className="game-catalog-groups">
+        {catalogGroups.map((group) => {
+          const groupItems = filteredItems.filter((item) => item.status === group.status);
+          return (
+            <button
+              className="game-catalog-group game-catalog-summary-card"
+              disabled={loading}
+              key={group.status}
+              onClick={() => onOpen(group.status)}
+              type="button"
+            >
+              <span>
+                <strong>{group.title}</strong>
+                <small>{loading ? "Yükleniyor…" : `${groupItems.length} içerik`}</small>
+              </span>
+              <span className="game-catalog-count">{groupItems.length}</span>
+              <span aria-hidden="true" className="game-catalog-open-icon">
+                →
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {showFilteredItems ? (
+        <div aria-live="polite" className="game-filter-results">
+          <div className="game-filter-results-heading">
+            <div>
+              <p className="eyebrow">FİLTRE SONUÇLARI</p>
+              <h3>
+                {loading ? "İçerikler yükleniyor…" : `${filteredItems.length} içerik bulundu`}
+              </h3>
+            </div>
+            <small>Bir içeriğe dokunarak bulunduğu katalog sayfasını açabilirsin.</small>
+          </div>
+          {!loading && filteredItems.length === 0 ? (
+            <p className="game-catalog-empty">Seçilen filtrelerle eşleşen oyun bulunamadı.</p>
+          ) : null}
+          {!loading && filteredItems.length > 0 ? (
+            <div className="game-filter-results-grid">
+              {filteredItems.map((item) => (
+                <button
+                  className="game-filter-result"
+                  key={`${item.status}-${item.game.id}`}
+                  onClick={() => onOpen(item.status)}
+                  type="button"
+                >
+                  <strong>{item.game.title}</strong>
+                  <span>{catalogGroups.find((group) => group.status === item.status)?.title}</span>
+                  <small>
+                    {item.game.ageBand === "2-4" ? "2–4 yaş" : "4–7 yaş"} ·{" "}
+                    {mechanicLabels[item.game.mechanic]} ·{" "}
+                    {difficultyLabels[item.game.difficulty.level]}
+                  </small>
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function GameCatalogPage({
+  status,
+  items,
+  filters,
+  loading,
+  onBack,
   onEdit,
   onApprove,
   onArchive,
+  onDeleteDraft,
   recentlyPublishedId,
 }: {
+  status: GameCatalogItem["status"];
   items: GameCatalogItem[];
+  filters: GameCatalogFilters;
   loading: boolean;
+  onBack: () => void;
   onEdit: (game: Game) => void;
   onApprove: (game: Game) => void;
   onArchive: (gameId: string) => void;
+  onDeleteDraft: (gameId: string) => void;
   recentlyPublishedId: string | null;
 }) {
-  const [expandedStatus, setExpandedStatus] = useState<GameCatalogItem["status"] | null>(null);
-  const groups = [
-    { status: "draft" as const, title: "Onay Bekleyenler" },
-    { status: "published" as const, title: "Yayındakiler" },
-    { status: "archived" as const, title: "Arşivlenenler" },
-  ];
-  useEffect(() => {
-    if (recentlyPublishedId) setExpandedStatus("published");
-  }, [recentlyPublishedId]);
+  const group = catalogGroups.find((candidate) => candidate.status === status);
+  const visibleItems = items.filter(
+    (item) =>
+      item.status === status &&
+      (filters.age === "all" || item.game.ageBand === filters.age) &&
+      (filters.mechanic === "all" || item.game.mechanic === filters.mechanic) &&
+      (filters.difficulty === "all" || item.game.difficulty.level === filters.difficulty),
+  );
+
   return (
-    <section className="game-catalog" aria-label="Oyun kataloğu">
-      {groups.map((group) => {
-        const groupItems = items.filter((item) => item.status === group.status);
-        return (
-          <div
-            className={`game-catalog-group ${expandedStatus === group.status ? "expanded" : ""}`}
-            key={group.status}
-          >
-            <button
-              aria-expanded={expandedStatus === group.status}
-              className="game-catalog-heading"
-              onClick={() =>
-                setExpandedStatus((current) => (current === group.status ? null : group.status))
-              }
-              type="button"
-            >
-              <h3>{group.title}</h3>
-              <span className="game-catalog-count">{groupItems.length}</span>
-              <span aria-hidden="true" className="game-catalog-chevron">
-                {expandedStatus === group.status ? "−" : "+"}
-              </span>
-            </button>
-            {expandedStatus === group.status ? (
-              <div className="game-catalog-content">
-                {loading ? (
-                  <p className="generation-help">Yükleniyor…</p>
-                ) : groupItems.length === 0 ? (
-                  <p className="game-catalog-empty">
-                    {group.status === "draft" ? "Onay bekleyen oyun yok." : "Henüz oyun yok."}
-                  </p>
-                ) : (
-                  groupItems.map((item) => (
-                    <article className="game-catalog-item" key={`${group.status}-${item.game.id}`}>
-                      <div>
-                        <strong>{item.game.title}</strong>
-                        {group.status === "published" && item.game.id === recentlyPublishedId ? (
-                          <span className="game-sent-status">Gönderildi</span>
-                        ) : null}
-                        {item.bundled ? (
-                          <span className="game-bundled-status">Uygulamayla gelir</span>
-                        ) : null}
-                        {item.game.productionSource === "automation" ? (
-                          <span className="game-automation-status">Otomasyon</span>
-                        ) : null}
-                        <small>
-                          v{item.game.version} ·{" "}
-                          {item.game.ageBand === "2-4" ? "2–4 yaş" : "4–7 yaş"}
-                        </small>
-                      </div>
-                      <div className="game-catalog-actions">
-                        <button className="quiet" onClick={() => onEdit(item.game)} type="button">
-                          Şemayı düzenle
-                        </button>
-                        {group.status === "draft" ? (
-                          <button
-                            className="primary"
-                            onClick={() => onApprove(item.game)}
-                            type="button"
-                          >
-                            Onayla ve yayınla
-                          </button>
-                        ) : null}
-                        {group.status === "published" && !item.bundled ? (
-                          <button
-                            className="danger"
-                            onClick={() => onArchive(item.game.id)}
-                            type="button"
-                          >
-                            Arşivle
-                          </button>
-                        ) : null}
-                      </div>
-                    </article>
-                  ))
-                )}
+    <section className="game-catalog-page" aria-label={group?.title ?? "Oyun kataloğu"}>
+      <header className="game-catalog-page-heading">
+        <button className="quiet" onClick={onBack} type="button">
+          ← Oyun üretimine dön
+        </button>
+        <div>
+          <p className="eyebrow">OYUN KATALOĞU</p>
+          <h2>{group?.title}</h2>
+          <p>{visibleItems.length} içerik gösteriliyor.</p>
+        </div>
+      </header>
+      {loading ? (
+        <p className="generation-help">Yükleniyor…</p>
+      ) : visibleItems.length === 0 ? (
+        <p className="game-catalog-empty">
+          {status === "draft" ? "Onay bekleyen oyun yok." : "Bu filtrelerde oyun yok."}
+        </p>
+      ) : (
+        <div className="game-catalog-page-grid">
+          {visibleItems.map((item) => (
+            <article className="game-catalog-item" key={`${status}-${item.game.id}`}>
+              <div>
+                <strong>
+                  {item.game.title}
+                  {isBktGame(item.game) ? " (BKT)" : ""}
+                </strong>
+                {status === "published" && item.game.id === recentlyPublishedId ? (
+                  <span className="game-sent-status">Gönderildi</span>
+                ) : null}
+                {item.bundled ? (
+                  <span className="game-bundled-status">Uygulamayla gelir</span>
+                ) : null}
+                {item.game.productionSource === "automation" ? (
+                  <span className="game-automation-status">Otomasyon</span>
+                ) : null}
+                <small>
+                  v{item.game.version} · {item.game.ageBand === "2-4" ? "2–4 yaş" : "4–7 yaş"} ·{" "}
+                  {difficultyLabels[item.game.difficulty.level]}
+                </small>
               </div>
-            ) : null}
-          </div>
-        );
-      })}
+              <div className="game-catalog-actions">
+                <button className="quiet" onClick={() => onEdit(item.game)} type="button">
+                  Şemayı düzenle
+                </button>
+                {status === "draft" ? (
+                  <>
+                    <button className="primary" onClick={() => onApprove(item.game)} type="button">
+                      Onayla ve yayınla
+                    </button>
+                    <button
+                      className="danger"
+                      onClick={() => onDeleteDraft(item.game.id)}
+                      type="button"
+                    >
+                      Taslağı sil
+                    </button>
+                  </>
+                ) : null}
+                {status === "published" && !item.bundled ? (
+                  <button className="danger" onClick={() => onArchive(item.game.id)} type="button">
+                    Arşivle
+                  </button>
+                ) : null}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -208,11 +404,35 @@ function updateRule(game: TapOrWaitGame, ruleIndex: number, rule: GameRule): Tap
 export function GamePanel({ supabase }: { supabase: SupabaseClient | null }) {
   const [game, setGame] = useState<Game>(initialGame);
   const [message, setMessage] = useState<string | null>(null);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [editorExpanded, setEditorExpanded] = useState(false);
+  const [newGameSchemaExpanded, setNewGameSchemaExpanded] = useState(true);
   const [catalog, setCatalog] = useState<GameCatalogItem[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [recentlyPublishedId, setRecentlyPublishedId] = useState<string | null>(null);
+  const [pendingCatalogFilters, setPendingCatalogFilters] =
+    useState<GameCatalogFilters>(defaultGameCatalogFilters);
+  const [appliedCatalogFilters, setAppliedCatalogFilters] =
+    useState<GameCatalogFilters>(defaultGameCatalogFilters);
+  const [catalogFiltersApplied, setCatalogFiltersApplied] = useState(false);
+  const [catalogPageStatus, setCatalogPageStatus] = useState<GameCatalogItem["status"] | null>(
+    null,
+  );
+  const [automationAge, setAutomationAge] = useState<AgeBand>("2-4");
+  const [automationTemplateId, setAutomationTemplateId] = useState(initialFishGame.id);
+  const [automationDifficulty, setAutomationDifficulty] = useState<GameDifficultyLevel>("starter");
+  const availableAutomationTemplates = getApprovedAutomationTemplatesForAge(
+    approvedAutomationTemplates,
+    automationAge,
+  );
+  const selectedAutomationTemplate =
+    availableAutomationTemplates.find((template) => template.id === automationTemplateId) ??
+    availableAutomationTemplates[0];
+  const automationMechanic = selectedAutomationTemplate?.mechanic ?? "fish_patterns";
+  const availableAutomationDifficulties = selectedAutomationTemplate
+    ? getApprovedDifficultyOptions(selectedAutomationTemplate)
+    : [];
   const validation = useMemo(() => gameSchema.safeParse(game), [game]);
 
   const authenticatedRequest = useCallback(
@@ -233,7 +453,10 @@ export function GamePanel({ supabase }: { supabase: SupabaseClient | null }) {
     setCatalogLoading(true);
     try {
       const response = await authenticatedRequest("/api/games");
-      const body = (await response.json()) as { error?: string; items?: GameCatalogItem[] };
+      const body = (await response.json()) as {
+        error?: string;
+        items?: GameCatalogItem[];
+      };
       if (!response.ok || body.error) throw new Error(body.error ?? "Oyun kataloğu yüklenemedi.");
       const remoteItems = body.items ?? [];
       const knownIds = new Set(remoteItems.map((item) => item.game.id));
@@ -248,8 +471,9 @@ export function GamePanel({ supabase }: { supabase: SupabaseClient | null }) {
           bundled: true,
         }));
       setCatalog([...remoteItems, ...bundledItems]);
+      setCatalogError(null);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Oyun kataloğu yüklenemedi.");
+      setCatalogError(error instanceof Error ? error.message : "Oyun kataloğu yüklenemedi.");
     } finally {
       setCatalogLoading(false);
     }
@@ -275,6 +499,26 @@ export function GamePanel({ supabase }: { supabase: SupabaseClient | null }) {
       await loadCatalog();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Oyun arşivlenemedi.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteDraft = async (gameId: string) => {
+    if (!window.confirm("Bu taslak kalıcı olarak silinsin mi? Bu işlem geri alınamaz.")) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const response = await authenticatedRequest(
+        `/api/games?gameId=${encodeURIComponent(gameId)}&catalogStatus=draft`,
+        { method: "DELETE" },
+      );
+      const body = (await response.json()) as { error?: string };
+      if (!response.ok || body.error) throw new Error(body.error ?? "Taslak silinemedi.");
+      setMessage("Taslak kalıcı olarak silindi.");
+      await loadCatalog();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Taslak silinemedi.");
     } finally {
       setBusy(false);
     }
@@ -344,6 +588,70 @@ export function GamePanel({ supabase }: { supabase: SupabaseClient | null }) {
     }
   };
 
+  const generateAutomationDraft = async () => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const response = await authenticatedRequest("/api/games", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "generate",
+          ageBand: automationAge,
+          mechanic: automationMechanic,
+          difficulty: automationDifficulty,
+          templateId: selectedAutomationTemplate?.id,
+        }),
+      });
+      const body = (await response.json()) as { error?: string; game?: unknown };
+      if (!response.ok || body.error) throw new Error(body.error ?? "Otomatik taslak üretilemedi.");
+      const generated = gameSchema.parse(body.game);
+      setGame(generated);
+      setEditorExpanded(true);
+      setMessage("Taslak güvenli parametrelerle üretildi ve onay kuyruğuna eklendi.");
+      await loadCatalog();
+      window.setTimeout(() => {
+        document
+          .getElementById("game-editor")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 0);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Otomatik taslak üretilemedi.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const generateBktLevelSet = async () => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const response = await authenticatedRequest("/api/games", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "generate_bkt_set",
+          ageBand: automationAge,
+        }),
+      });
+      const body = (await response.json()) as { error?: string; games?: unknown[] };
+      if (!response.ok || body.error) {
+        throw new Error(body.error ?? "BKT seviye seti üretilemedi.");
+      }
+      const generated = (body.games ?? []).map((candidate) => gameSchema.parse(candidate));
+      if (generated.length !== 3) throw new Error("BKT seviye seti eksik üretildi.");
+      const starter = generated.find((candidate) => candidate.difficulty.level === "starter");
+      if (starter) setGame(starter);
+      setEditorExpanded(false);
+      setMessage("Tomo için 5, 8 ve 12 turluk üç BKT seviyesi onay bekleyenlere eklendi.");
+      await loadCatalog();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "BKT seviye seti üretilemedi.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const setRoundCount = (roundCount: number) => {
     if (game.mechanic !== "tap_or_wait") return;
     const ruleIds = game.rules.map((rule) => rule.id);
@@ -387,122 +695,278 @@ export function GamePanel({ supabase }: { supabase: SupabaseClient | null }) {
     setGame({ ...game, ageBand });
   };
 
+  if (catalogPageStatus) {
+    return (
+      <div className="game-panel-stack game-catalog-route">
+        <GameCatalogFilterBar
+          onApply={() => {
+            setAppliedCatalogFilters({ ...pendingCatalogFilters });
+            setCatalogFiltersApplied(true);
+          }}
+          onChange={(filters) => {
+            setPendingCatalogFilters(filters);
+            setCatalogFiltersApplied(false);
+          }}
+          value={pendingCatalogFilters}
+        />
+        {message ? (
+          <p className="alert game-panel-message" role="status">
+            {message}
+          </p>
+        ) : null}
+        {catalogError ? (
+          <p className="alert game-panel-message" role="alert">
+            {catalogError}
+          </p>
+        ) : null}
+        <GameCatalogPage
+          filters={appliedCatalogFilters}
+          items={catalog}
+          loading={catalogLoading}
+          onApprove={(candidate) => void approveGame(candidate)}
+          onArchive={(gameId) => void archiveGame(gameId)}
+          onBack={() => setCatalogPageStatus(null)}
+          onEdit={(selected) => {
+            setCatalogPageStatus(null);
+            setGame(selected);
+            setEditorExpanded(true);
+            setMessage(`${selected.title} v${selected.version} düzenleyiciye yüklendi.`);
+          }}
+          onDeleteDraft={(gameId) => void deleteDraft(gameId)}
+          recentlyPublishedId={recentlyPublishedId}
+          status={catalogPageStatus}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="game-panel-stack">
+      <GameCatalogFilterBar
+        onApply={() => {
+          setAppliedCatalogFilters({ ...pendingCatalogFilters });
+          setCatalogFiltersApplied(true);
+        }}
+        onChange={(filters) => {
+          setPendingCatalogFilters(filters);
+          setCatalogFiltersApplied(false);
+        }}
+        value={pendingCatalogFilters}
+      />
+      {message ? (
+        <p className="alert game-panel-message" role="status">
+          {message}
+        </p>
+      ) : null}
+      {catalogError ? (
+        <p className="alert game-panel-message" role="alert">
+          {catalogError}
+        </p>
+      ) : null}
       {!editorExpanded ? (
-        <section className="game-create-card">
-          <div>
-            <p className="eyebrow">YENİ OYUN</p>
-            <h2>Yeni bir oyun şeması oluştur</h2>
-            <p className="generation-help">
-              Mekaniği seçtiğinde hazır alanlar düzenleyicide açılır.
-            </p>
+        <section className={`game-create-card ${newGameSchemaExpanded ? "" : "collapsed"}`}>
+          <div className="game-create-heading">
+            <div>
+              <p className="eyebrow">YENİ OYUN</p>
+              <h2>Yeni bir oyun şeması oluştur</h2>
+              {newGameSchemaExpanded ? (
+                <p className="generation-help">
+                  Mekaniği seçtiğinde hazır alanlar düzenleyicide açılır.
+                </p>
+              ) : null}
+            </div>
+            <button
+              aria-expanded={newGameSchemaExpanded}
+              className="quiet"
+              onClick={() => setNewGameSchemaExpanded((current) => !current)}
+              type="button"
+            >
+              {newGameSchemaExpanded ? "Küçült" : "Genişlet"}
+            </button>
           </div>
-          <div className="game-template-actions">
-            {initialMiniGames.map((miniGame) => (
+          {newGameSchemaExpanded ? (
+            <div className="game-template-actions">
+              {initialMiniGames.map((miniGame) => (
+                <button
+                  className="game-template-button primary"
+                  key={miniGame.id}
+                  onClick={() => {
+                    setGame({ ...miniGame, status: "draft" });
+                    setEditorExpanded(true);
+                    setMessage(`${miniGame.title} şablonu düzenleyiciye yüklendi.`);
+                  }}
+                  type="button"
+                >
+                  <strong>{miniGame.title}</strong>
+                  <span>{miniGame.description}</span>
+                </button>
+              ))}
               <button
                 className="game-template-button primary"
-                key={miniGame.id}
                 onClick={() => {
-                  setGame({ ...miniGame, status: "draft" });
+                  setGame({ ...initialBalloonGame, status: "draft" });
                   setEditorExpanded(true);
-                  setMessage(`${miniGame.title} şablonu düzenleyiciye yüklendi.`);
+                  setMessage("Pofi’nin Balon Saymacası şablonu düzenleyiciye yüklendi.");
                 }}
                 type="button"
               >
-                <strong>{miniGame.title}</strong>
-                <span>{miniGame.description}</span>
+                <strong>Pofi’nin Balon Saymacası</strong>
+                <span>Say, rengi bul ve sırayla dokun</span>
               </button>
-            ))}
-            <button
-              className="game-template-button primary"
-              onClick={() => {
-                setGame({ ...initialBalloonGame, status: "draft" });
-                setEditorExpanded(true);
-                setMessage("Pofi’nin Balon Saymacası şablonu düzenleyiciye yüklendi.");
-              }}
-              type="button"
-            >
-              <strong>Pofi’nin Balon Saymacası</strong>
-              <span>Say, rengi bul ve sırayla dokun</span>
-            </button>
-            <button
-              className="game-template-button primary"
-              onClick={() => {
-                setGame({ ...initialFishGame, status: "draft" });
-                setEditorExpanded(true);
-                setMessage("Bobi'nin Balık Desenleri şablonu düzenleyiciye yüklendi.");
-              }}
-              type="button"
-            >
-              <strong>Bobi'nin Balık Desenleri</strong>
-              <span>Renk tahmini ve sıra hatırlama</span>
-            </button>
-            <button
-              className="game-template-button primary"
-              onClick={() => {
-                setGame({ ...initialEmotionGame, status: "draft" });
-                setEditorExpanded(true);
-                setMessage("Duru Duygu Dedektifi şablonu düzenleyiciye yüklendi.");
-              }}
-              type="button"
-            >
-              <strong>Duru Duygu Dedektifi</strong>
-              <span>Duyguyu ve görsel ipucunu bul</span>
-            </button>
-            <button
-              className="game-template-button primary"
-              onClick={() => {
-                setGame({ ...initialRoutineGame, status: "draft" });
-                setEditorExpanded(true);
-                setMessage("Tomo’nun Rutin Yolu şablonu düzenleyiciye yüklendi.");
-              }}
-              type="button"
-            >
-              <strong>Tomo’nun Rutin Yolu</strong>
-              <span>Sırala ve yerleştir</span>
-            </button>
-            <button
-              className="game-template-button primary"
-              onClick={() => {
-                setGame({ ...initialSortGame, status: "draft" });
-                setEditorExpanded(true);
-                setMessage("Pati’nin Kural Sepeti şablonu düzenleyiciye yüklendi.");
-              }}
-              type="button"
-            >
-              <strong>Pati’nin Kural Sepeti</strong>
-              <span>Sınıflandır ve sepete taşı</span>
-            </button>
-            <button
-              className="game-template-button quiet"
-              onClick={() => {
-                setGame({ ...initialGame, status: "draft" });
-                setEditorExpanded(true);
-                setMessage("Lila’nın Işık Bahçesi şablonu düzenleyiciye yüklendi.");
-              }}
-              type="button"
-            >
-              <strong>Lila’nın Işık Bahçesi</strong>
-              <span>Işık ve hareket kuralları</span>
-            </button>
-          </div>
+              <button
+                className="game-template-button primary"
+                onClick={() => {
+                  setGame({ ...initialFishGame, status: "draft" });
+                  setEditorExpanded(true);
+                  setMessage("Bobi'nin Balık Desenleri şablonu düzenleyiciye yüklendi.");
+                }}
+                type="button"
+              >
+                <strong>Bobi'nin Balık Desenleri</strong>
+                <span>Renk tahmini ve sıra hatırlama</span>
+              </button>
+              <button
+                className="game-template-button primary"
+                onClick={() => {
+                  setGame({ ...initialEmotionGame, status: "draft" });
+                  setEditorExpanded(true);
+                  setMessage("Duru Duygu Dedektifi şablonu düzenleyiciye yüklendi.");
+                }}
+                type="button"
+              >
+                <strong>Duru Duygu Dedektifi</strong>
+                <span>Duyguyu ve görsel ipucunu bul</span>
+              </button>
+              <button
+                className="game-template-button primary"
+                onClick={() => {
+                  setGame({ ...initialRoutineGame, status: "draft" });
+                  setEditorExpanded(true);
+                  setMessage("Tomo’nun Rutin Yolu şablonu düzenleyiciye yüklendi.");
+                }}
+                type="button"
+              >
+                <strong>Tomo’nun Rutin Yolu (BKT)</strong>
+                <span>Sırala ve yerleştir</span>
+              </button>
+              <button
+                className="game-template-button primary"
+                onClick={() => {
+                  setGame({ ...initialSortGame, status: "draft" });
+                  setEditorExpanded(true);
+                  setMessage("Pati’nin Kural Sepeti şablonu düzenleyiciye yüklendi.");
+                }}
+                type="button"
+              >
+                <strong>Pati’nin Kural Sepeti</strong>
+                <span>Sınıflandır ve sepete taşı</span>
+              </button>
+              <button
+                className="game-template-button quiet"
+                onClick={() => {
+                  setGame({ ...initialGame, status: "draft" });
+                  setEditorExpanded(true);
+                  setMessage("Lila’nın Işık Bahçesi şablonu düzenleyiciye yüklendi.");
+                }}
+                type="button"
+              >
+                <strong>Lila’nın Işık Bahçesi</strong>
+                <span>Işık ve hareket kuralları</span>
+              </button>
+            </div>
+          ) : null}
         </section>
       ) : null}
+      <section className="game-automation-card">
+        <div>
+          <p className="eyebrow">GÜVENLİ OTOMASYON</p>
+          <h2>Onaylı şablondan taslak üret</h2>
+          <p className="generation-help">
+            Yalnızca uygulamadaki mekanikler, asset’ler ve doğrulanmış parametreler kullanılır.
+            Üretilen oyun doğrudan yayınlanmaz.
+          </p>
+        </div>
+        <div className="game-automation-controls">
+          <label>
+            Yaş
+            <select
+              value={automationAge}
+              onChange={(event) => {
+                const ageBand = event.target.value as AgeBand;
+                setAutomationAge(ageBand);
+              }}
+            >
+              <option value="2-4">2–4</option>
+              <option value="4-7">4–7</option>
+            </select>
+          </label>
+          <label>
+            Oyun şablonu
+            <select
+              value={selectedAutomationTemplate?.id ?? ""}
+              onChange={(event) => {
+                const template = availableAutomationTemplates.find(
+                  (candidate) => candidate.id === event.target.value,
+                );
+                if (!template) return;
+                setAutomationTemplateId(template.id);
+                const difficultyOptions = getApprovedDifficultyOptions(template);
+                setAutomationDifficulty((current) =>
+                  difficultyOptions.includes(current) ? current : difficultyOptions[0],
+                );
+              }}
+            >
+              {availableAutomationTemplates.map((template) => (
+                <option key={template.id} value={template.id}>
+                  {template.title}
+                  {template.mechanic === "sequence_and_place" ? " (BKT)" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Zorluk
+            <select
+              key={selectedAutomationTemplate?.id ?? "no-template"}
+              value={automationDifficulty}
+              onChange={(event) =>
+                setAutomationDifficulty(event.target.value as GameDifficultyLevel)
+              }
+            >
+              {availableAutomationDifficulties.map((value) => (
+                <option key={value} value={value}>
+                  {difficultyLabels[value]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            className="primary"
+            disabled={busy}
+            onClick={() =>
+              void (automationMechanic === "sequence_and_place"
+                ? generateBktLevelSet()
+                : generateAutomationDraft())
+            }
+            type="button"
+          >
+            {busy
+              ? "Taslak oluşturuluyor…"
+              : automationMechanic === "sequence_and_place"
+                ? "3 seviyeyi oluştur"
+                : "Taslak oluştur"}
+          </button>
+        </div>
+      </section>
       <GameCatalog
+        filters={appliedCatalogFilters}
         items={catalog}
         loading={catalogLoading}
-        onApprove={(candidate) => void approveGame(candidate)}
-        onArchive={(gameId) => void archiveGame(gameId)}
-        recentlyPublishedId={recentlyPublishedId}
-        onEdit={(selected) => {
-          setGame(selected);
-          setEditorExpanded(true);
-          setMessage(`${selected.title} v${selected.version} düzenleyiciye yüklendi.`);
-        }}
+        onOpen={setCatalogPageStatus}
+        showFilteredItems={catalogFiltersApplied}
       />
       {editorExpanded ? (
-        <section className="generation-card game-editor">
+        <section className="generation-card game-editor" id="game-editor">
           <div className="section-heading">
             <div>
               <p className="eyebrow">OYUN ÜRETİMİ</p>
@@ -1209,7 +1673,6 @@ export function GamePanel({ supabase }: { supabase: SupabaseClient | null }) {
                 ))}
               </div>
             ) : null}
-            {message ? <p className="alert">{message}</p> : null}
             <div className="game-actions">
               <button disabled={busy || !validation.success} type="submit">
                 {busy ? "Onaya gönderiliyor…" : "Onay bekleyenlere gönder"}

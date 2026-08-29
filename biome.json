@@ -8,7 +8,10 @@
       "!!**/.temp",
       "!!**/dist-ci",
       "!!**/node_modules",
-      "!!supabase/.branches"
+      "!!supabase/.branches",
+      "!!services/media-worker/.venv",
+      "!!services/media-worker/renders",
+      "!!services/openmontage"
     ]
   },
   "formatter": { "enabled": true, "indentStyle": "space", "lineWidth": 100 },

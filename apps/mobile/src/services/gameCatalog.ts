@@ -19,9 +19,15 @@ export async function loadPublishedGames(ageBand: AgeBand, fallbackGames: Game[]
     latestById.set(row.game_id, parsed.data);
   }
 
-  const remoteGames = [...latestById.values()].filter((game) => game.ageBand === ageBand);
-  const fallbackOnly = fallbackGames.filter(
-    (game) => game.ageBand === ageBand && !latestById.has(game.id),
+  const bundledGames = fallbackGames.filter((game) => game.ageBand === ageBand);
+  const bundledIds = new Set(bundledGames.map((game) => game.id));
+  const mergedBundledGames = bundledGames.map((bundledGame) => {
+    const remoteGame = latestById.get(bundledGame.id);
+    return remoteGame && remoteGame.version >= bundledGame.version ? remoteGame : bundledGame;
+  });
+  const remoteOnlyGames = [...latestById.values()].filter(
+    (game) => game.ageBand === ageBand && !bundledIds.has(game.id),
   );
-  return [...remoteGames, ...fallbackOnly];
+
+  return [...mergedBundledGames, ...remoteOnlyGames];
 }

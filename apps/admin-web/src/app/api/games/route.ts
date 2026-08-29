@@ -1,8 +1,20 @@
-import { gameSchema } from "@adaptive/content-schema";
+import { randomUUID } from "node:crypto";
+import {
+  ageBandSchema,
+  contentVersionSchema,
+  type Game,
+  gameDifficultyLevelSchema,
+  gameMechanicSchema,
+  gameSchema,
+} from "@adaptive/content-schema";
+import contentJson from "@adaptive/content-schema/content/tr-TR/v1";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { createApprovedGameDraft, createBktGameDraftSet } from "../../../lib/gameAutomation";
+import { parseGameCatalogRows } from "../../../lib/gameCatalog";
 
 export const runtime = "nodejs";
+const bundledGames = contentVersionSchema.parse(contentJson).games ?? [];
 
 function requiredEnvironment(name: string): string {
   const value = process.env[name]?.trim();
@@ -46,18 +58,8 @@ export async function GET(request: Request) {
     const { adminId, serviceClient } = await authorizedGameClients(request);
     const result = await serviceClient.rpc("list_game_catalog", { actor_id: adminId });
     if (result.error) throw result.error;
-    const items = (result.data as Array<Record<string, unknown>>).map((item) => {
-      const status = item.catalog_status;
-      if (status !== "draft" && status !== "published" && status !== "archived") {
-        throw new Error("Geçersiz oyun katalog durumu.");
-      }
-      const game = gameSchema.parse({
-        ...(item.game as Record<string, unknown>),
-        status,
-      });
-      return { game, status, updatedAt: item.updated_at };
-    });
-    return NextResponse.json({ items });
+    const catalog = parseGameCatalogRows(result.data as Array<Record<string, unknown>>);
+    return NextResponse.json(catalog);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Oyun kataloğu yüklenemedi.";
     return NextResponse.json({ error: message }, { status: 400 });
@@ -67,7 +69,56 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const { adminId, serviceClient } = await authorizedGameClients(request);
-    const body = (await request.json()) as { action?: unknown; game?: unknown };
+    const body = (await request.json()) as {
+      action?: unknown;
+      game?: unknown;
+      ageBand?: unknown;
+      mechanic?: unknown;
+      difficulty?: unknown;
+      templateId?: unknown;
+    };
+    if (body.action === "generate_bkt_set") {
+      const ageBand = ageBandSchema.parse(body.ageBand);
+      const drafts = createBktGameDraftSet(bundledGames, {
+        ageBand,
+        ids: {
+          starter: `auto-bkt-starter-${randomUUID()}`,
+          growing: `auto-bkt-growing-${randomUUID()}`,
+          advanced: `auto-bkt-advanced-${randomUUID()}`,
+        },
+      });
+      const savedGames: Game[] = [];
+      for (const draft of drafts) {
+        const saved = await serviceClient.rpc("save_game_draft", {
+          candidate_game: draft,
+          actor_id: adminId,
+        });
+        if (saved.error) throw saved.error;
+        savedGames.push(gameSchema.parse(saved.data));
+      }
+      return NextResponse.json({ status: "draft", games: savedGames });
+    }
+    if (body.action === "generate") {
+      const draft = createApprovedGameDraft(bundledGames, {
+        id: `auto-${randomUUID()}`,
+        ageBand: ageBandSchema.parse(body.ageBand),
+        mechanic: gameMechanicSchema.parse(body.mechanic),
+        difficulty: gameDifficultyLevelSchema.parse(body.difficulty),
+        templateId:
+          typeof body.templateId === "string" && body.templateId.trim()
+            ? body.templateId.trim()
+            : undefined,
+      });
+      const saved = await serviceClient.rpc("save_game_draft", {
+        candidate_game: draft,
+        actor_id: adminId,
+      });
+      if (saved.error) throw saved.error;
+      return NextResponse.json({
+        status: "draft",
+        game: gameSchema.parse(saved.data),
+      });
+    }
     if (body.action !== "save" && body.action !== "publish") {
       throw new Error("Geçersiz oyun işlemi.");
     }
@@ -99,8 +150,17 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const { adminId, serviceClient } = await authorizedGameClients(request);
-    const gameId = new URL(request.url).searchParams.get("gameId")?.trim();
-    if (!gameId) throw new Error("Arşivlenecek oyun kimliği eksik.");
+    const searchParams = new URL(request.url).searchParams;
+    const gameId = searchParams.get("gameId")?.trim();
+    if (!gameId) throw new Error("Oyun kimliği eksik.");
+    if (searchParams.get("catalogStatus") === "draft") {
+      const result = await serviceClient.rpc("delete_game_draft", {
+        target_game_id: gameId,
+        actor_id: adminId,
+      });
+      if (result.error) throw result.error;
+      return NextResponse.json({ status: "deleted", deletedDrafts: result.data });
+    }
     const result = await serviceClient.rpc("archive_published_game", {
       target_game_id: gameId,
       actor_id: adminId,

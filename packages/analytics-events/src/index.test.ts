@@ -41,4 +41,26 @@ describe("interaction event contract", () => {
     expect(() => interactionEventBatchSchema.parse([event(2), event(1)])).toThrow();
     expect(interactionEventBatchSchema.parse([event(1), event(2)])).toHaveLength(2);
   });
+
+  it("accepts only minimal game support signals", () => {
+    const retry = createInteractionEvent({
+      ...identifiers,
+      eventId: "44444444-4444-4444-8444-444444444444",
+      sequenceNumber: 2,
+      activityId: "fish-patterns-001",
+      eventType: "retry_requested",
+      payload: { stepId: "round2" },
+    });
+    const wait = createInteractionEvent({
+      ...identifiers,
+      eventId: "55555555-5555-4555-8555-555555555555",
+      sequenceNumber: 3,
+      activityId: "fish-patterns-001",
+      eventType: "inactivity_help_shown",
+      payload: { stepId: "round2", waitMs: 7000 },
+    });
+
+    expect([retry.eventType, wait.eventType]).toEqual(["retry_requested", "inactivity_help_shown"]);
+    expect(JSON.stringify([retry, wait])).not.toMatch(/answer|correct|score|diagnosis/iu);
+  });
 });

@@ -159,8 +159,28 @@ export interface Database {
         Args: { child_profile_id: string };
         Returns: Json;
       };
+      get_parent_insight_evidence: {
+        Args: { child_profile_id: string };
+        Returns: Json;
+      };
       get_parent_personalization_status: {
         Args: { child_profile_id: string };
+        Returns: Json;
+      };
+      select_game_variant_preference: {
+        Args: {
+          child_profile_id: string;
+          requested_age_band: "2-4" | "4-7";
+          current_difficulty: "starter" | "growing" | "advanced";
+        };
+        Returns: Json;
+      };
+      select_bkt_routine_variant: {
+        Args: {
+          child_profile_id: string;
+          requested_age_band: "2-4" | "4-7";
+          current_difficulty: "starter" | "growing" | "advanced";
+        };
         Returns: Json;
       };
     };
