@@ -104,6 +104,35 @@ export async function changeParentPassword(
   if (error) throw error;
 }
 
+export async function changeParentPin(currentPin: string, newPin: string): Promise<void> {
+  const currentPinIsValid = await verifyParentPin(currentPin);
+  if (!currentPinIsValid) {
+    throw new Error("Mevcut ebeveyn PIN’i doğru değil.");
+  }
+
+  const { error } = await requireSupabase().rpc("set_parent_pin", { pin: newPin });
+  if (error) throw error;
+}
+
+export async function updateParentAccountInfo({
+  displayName,
+  email,
+  currentEmail,
+}: {
+  displayName: string;
+  email: string;
+  currentEmail: string;
+}): Promise<{ emailConfirmationRequired: boolean }> {
+  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedCurrentEmail = currentEmail.trim().toLowerCase();
+  const { error } = await requireSupabase().auth.updateUser({
+    ...(normalizedEmail !== normalizedCurrentEmail ? { email: normalizedEmail } : {}),
+    data: { display_name: displayName.trim() },
+  });
+  if (error) throw error;
+  return { emailConfirmationRequired: normalizedEmail !== normalizedCurrentEmail };
+}
+
 export async function signOutParent(): Promise<void> {
   const { error } = await requireSupabase().auth.signOut();
   if (error) throw error;

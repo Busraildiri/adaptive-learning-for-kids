@@ -1,4 +1,5 @@
 import { type ChildProfile, calculateAgeInMonths, resolveAgeBand } from "@adaptive/shared-types";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { signOutParent } from "../../services/account";
@@ -6,35 +7,60 @@ import { AccountShell } from "./AccountShell";
 import { ChildConsentSettingsScreen } from "./ChildConsentSettingsScreen";
 import { ChildProfileForm } from "./ChildProfileForm";
 import { formStyles } from "./formStyles";
+import { ParentAccountInfoScreen } from "./ParentAccountInfoScreen";
+import { ParentPinUpdateScreen } from "./ParentPinUpdateScreen";
 import { ParentSessionSummaryScreen } from "./ParentSessionSummaryScreen";
+import { ParentSettingsScreen } from "./ParentSettingsScreen";
 import { PasswordUpdateScreen } from "./PasswordUpdateScreen";
+import { PermissionProfileSelectionScreen } from "./PermissionProfileSelectionScreen";
+
+type ParentPanel = "home" | "settings" | "pin" | "account" | "password" | "permissions";
 
 export function ParentHomeScreen({
   parentId,
+  parentDisplayName,
+  parentEmail,
   children,
   onChildCreated,
   onChildUpdated,
   onStartChildMode,
 }: {
   parentId: string;
+  parentDisplayName: string;
+  parentEmail: string;
   children: ChildProfile[];
   onChildCreated: (profile: ChildProfile) => void;
   onChildUpdated: (profile: ChildProfile) => void;
   onStartChildMode: (profile: ChildProfile) => Promise<void>;
 }) {
   const [showForm, setShowForm] = useState(children.length === 0);
-  const [showPasswordSettings, setShowPasswordSettings] = useState(false);
+  const [panel, setPanel] = useState<ParentPanel>("home");
   const [settingsChild, setSettingsChild] = useState<ChildProfile | null>(null);
   const [summaryChild, setSummaryChild] = useState<ChildProfile | null>(null);
   const [startingChildId, setStartingChildId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  if (showPasswordSettings) {
+  if (panel === "password") {
     return (
       <PasswordUpdateScreen
         mode="authenticated"
-        onCancel={() => setShowPasswordSettings(false)}
-        onCompleted={() => setShowPasswordSettings(false)}
+        onCancel={() => setPanel("settings")}
+        onCompleted={() => setPanel("settings")}
+      />
+    );
+  }
+
+  if (panel === "pin") {
+    return <ParentPinUpdateScreen onBack={() => setPanel("settings")} />;
+  }
+
+  if (panel === "account") {
+    return (
+      <ParentAccountInfoScreen
+        childCount={children.length}
+        initialDisplayName={parentDisplayName}
+        initialEmail={parentEmail}
+        onBack={() => setPanel("settings")}
       />
     );
   }
@@ -54,6 +80,28 @@ export function ParentHomeScreen({
 
   if (summaryChild) {
     return <ParentSessionSummaryScreen child={summaryChild} onBack={() => setSummaryChild(null)} />;
+  }
+
+  if (panel === "permissions") {
+    return (
+      <PermissionProfileSelectionScreen
+        children={children}
+        onBack={() => setPanel("settings")}
+        onSelectChild={setSettingsChild}
+      />
+    );
+  }
+
+  if (panel === "settings") {
+    return (
+      <ParentSettingsScreen
+        onBack={() => setPanel("home")}
+        onOpenAccount={() => setPanel("account")}
+        onOpenPassword={() => setPanel("password")}
+        onOpenPermissions={() => setPanel("permissions")}
+        onOpenPin={() => setPanel("pin")}
+      />
+    );
   }
 
   if (showForm) {
@@ -101,9 +149,6 @@ export function ParentHomeScreen({
               <Pressable onPress={() => setSummaryChild(child)} style={styles.summaryButton}>
                 <Text style={styles.summaryButtonText}>Özet</Text>
               </Pressable>
-              <Pressable onPress={() => setSettingsChild(child)} style={styles.settingsButton}>
-                <Text style={styles.settingsButtonText}>İzinler</Text>
-              </Pressable>
               <Pressable
                 disabled={!canStart || startingChildId !== null}
                 onPress={() => {
@@ -134,8 +179,9 @@ export function ParentHomeScreen({
       <Pressable onPress={() => setShowForm(true)} style={formStyles.secondaryButton}>
         <Text style={formStyles.secondaryButtonText}>Yeni çocuk profili</Text>
       </Pressable>
-      <Pressable onPress={() => setShowPasswordSettings(true)} style={styles.passwordButton}>
-        <Text style={styles.passwordButtonText}>Parolayı değiştir</Text>
+      <Pressable onPress={() => setPanel("settings")} style={styles.settingsMenuButton}>
+        <MaterialCommunityIcons color="#216D61" name="cog-outline" size={23} />
+        <Text style={styles.settingsMenuButtonText}>Ayarlar</Text>
       </Pressable>
       <Pressable
         onPress={() => {
@@ -177,13 +223,6 @@ const styles = StyleSheet.create({
   childName: { color: "#3F352E", fontSize: 19, fontWeight: "900" },
   childAge: { marginTop: 3, color: "#75685E", fontSize: 13 },
   childActions: { gap: 7 },
-  settingsButton: {
-    alignItems: "center",
-    paddingHorizontal: 13,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: "#EAF5F2",
-  },
   summaryButton: {
     alignItems: "center",
     paddingHorizontal: 13,
@@ -192,7 +231,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F7EEF9",
   },
   summaryButtonText: { color: "#75547E", fontSize: 12, fontWeight: "900" },
-  settingsButtonText: { color: "#216D61", fontSize: 12, fontWeight: "900" },
   startButton: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -200,8 +238,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#2D8C7C",
   },
   startButtonText: { color: "#FFFFFF", fontWeight: "900" },
-  passwordButton: { alignItems: "center", marginTop: 12, padding: 10 },
-  passwordButtonText: { color: "#216D61", fontSize: 14, fontWeight: "800" },
+  settingsMenuButton: {
+    minHeight: 52,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 12,
+    borderRadius: 16,
+    backgroundColor: "#F1F8F6",
+  },
+  settingsMenuButtonText: { color: "#216D61", fontSize: 15, fontWeight: "900" },
   signOutButton: { alignItems: "center", marginTop: 19, padding: 10 },
   signOutText: { color: "#795D51", fontSize: 14, fontWeight: "700" },
 });

@@ -14,7 +14,14 @@ export function AccountShell({
   title,
   subtitle,
   children,
-}: PropsWithChildren<{ title: string; subtitle?: string }>) {
+  alignFromTop = false,
+  cardMaxWidth = 560,
+}: PropsWithChildren<{
+  title: string;
+  subtitle?: string;
+  alignFromTop?: boolean;
+  cardMaxWidth?: number;
+}>) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
@@ -22,7 +29,10 @@ export function AccountShell({
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.flex}
       >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={[styles.content, alignFromTop && styles.contentTop]}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.brandMark}>
             <View style={styles.brandEarLeft} />
             <View style={styles.brandEarRight} />
@@ -30,7 +40,7 @@ export function AccountShell({
           </View>
           <Text style={styles.title}>{title}</Text>
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-          <View style={styles.card}>{children}</View>
+          <View style={[styles.card, { maxWidth: cardMaxWidth }]}>{children}</View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -47,6 +57,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     paddingVertical: 36,
   },
+  contentTop: { justifyContent: "flex-start" },
   brandMark: { width: 70, height: 58, alignItems: "center", justifyContent: "flex-end" },
   brandEarLeft: {
     position: "absolute",

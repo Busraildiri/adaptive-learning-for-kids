@@ -8,6 +8,7 @@ import { EmotionCluesGame } from "./EmotionCluesGame";
 import { FishPatternsGame } from "./FishPatternsGame";
 import { type GameObservation, GameObservationProvider } from "./GameObservationContext";
 import { MiniChallengeGame } from "./MiniChallengeGame";
+import { MomoWorkshopGame } from "./MomoWorkshopGame";
 import { SequenceAndPlaceGame } from "./SequenceAndPlaceGame";
 import { TapOrWaitGame } from "./TapOrWaitGame";
 
@@ -102,6 +103,8 @@ export function TrackedGame({
       <BalloonCountingGame game={game} onExit={exit} />
     ) : game.mechanic === "mini_challenge" ? (
       <MiniChallengeGame game={game} onExit={exit} />
+    ) : game.mechanic === "momo_workshop" ? (
+      <MomoWorkshopGame childId={child.id} childName={child.nickname} game={game} onExit={exit} />
     ) : (
       <TapOrWaitGame game={game} onExit={exit} />
     );
