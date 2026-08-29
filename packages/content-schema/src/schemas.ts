@@ -181,6 +181,7 @@ export const gameMechanicSchema = z.enum([
   "fish_patterns",
   "balloon_counting",
   "mini_challenge",
+  "momo_workshop",
 ]);
 export const gameReminderModeSchema = z.enum(["every_round", "when_needed"]);
 
@@ -864,6 +865,148 @@ export const miniChallengeGameSchema = z.strictObject({
   }),
 });
 
+export const momoCableColorSchema = z.enum(["coral", "blue", "yellow"]);
+export const momoShapeSchema = z.enum(["circle", "square", "triangle"]);
+export const momoPartVisualSchema = z.enum(["star-antenna", "spring-antenna"]);
+
+export const momoCableEndpointSchema = z.strictObject({
+  id: z.string().trim().min(1).max(80),
+  label: z.string().trim().min(1).max(80),
+  color: momoCableColorSchema,
+  matchKey: z.string().trim().min(1).max(40),
+  side: z.enum(["left", "right"]),
+});
+
+export const momoCableRoundSchema = z.strictObject({
+  id: z.string().trim().min(1).max(80),
+  kind: z.literal("cable_match"),
+  prompt: z.string().trim().min(1).max(160),
+  endpoints: z.array(momoCableEndpointSchema).min(4).max(6),
+});
+
+export const momoCrystalRoundSchema = z.strictObject({
+  id: z.string().trim().min(1).max(80),
+  kind: z.literal("crystal_count"),
+  prompt: z.string().trim().min(1).max(160),
+  crystalCount: z.number().int().min(2).max(5),
+  targetCount: z.number().int().min(1).max(5),
+});
+
+export const momoPatternRoundSchema = z.strictObject({
+  id: z.string().trim().min(1).max(80),
+  kind: z.literal("pattern_shape"),
+  prompt: z.string().trim().min(1).max(160),
+  sequence: z.array(momoShapeSchema).min(3).max(6),
+  choices: z.array(momoShapeSchema).min(2).max(3),
+  correctShape: momoShapeSchema,
+});
+
+export const momoWorkshopRoundSchema = z.discriminatedUnion("kind", [
+  momoCableRoundSchema,
+  momoCrystalRoundSchema,
+  momoPatternRoundSchema,
+]);
+
+export const momoRewardChoiceSchema = z.strictObject({
+  id: z.string().trim().min(1).max(80),
+  label: z.string().trim().min(1).max(80),
+  visual: momoPartVisualSchema,
+});
+
+export const momoWorkshopGameSchema = z
+  .strictObject({
+    schemaVersion: z.literal("game-v1"),
+    difficultyVersion: z
+      .literal(GAME_DIFFICULTY_SCHEMA_VERSION)
+      .default(GAME_DIFFICULTY_SCHEMA_VERSION),
+    id: z.string().trim().min(1).max(100),
+    version: z.number().int().positive(),
+    status: contentStatusSchema,
+    productionSource: gameProductionSourceSchema,
+    mechanic: z.literal("momo_workshop"),
+    title: z.string().trim().min(1).max(100),
+    description: z.string().trim().min(1).max(240),
+    ageBand: ageBandSchema,
+    skillTags: z.array(z.string().trim().min(1).max(60)).min(1).max(5),
+    presentation: z.strictObject({
+      introNarration: z.string().trim().min(1).max(240),
+      rewardNarration: z.string().trim().min(1).max(180),
+      closingNarration: z.string().trim().min(1).max(200),
+      playAudioInstructions: z.boolean(),
+    }),
+    rounds: z.tuple([momoCableRoundSchema, momoCrystalRoundSchema, momoPatternRoundSchema]),
+    rewardChoices: z.tuple([momoRewardChoiceSchema, momoRewardChoiceSchema]),
+    feedback: z.strictObject({
+      matched: z.string().trim().min(1).max(120),
+      retry: z.string().trim().min(1).max(160),
+      reveal: z.string().trim().min(1).max(160),
+    }),
+    difficulty: z.strictObject({
+      level: gameDifficultyLevelSchema,
+      secondTryEnabled: z.boolean(),
+      inactivityHintMs: z.number().int().min(7_000).max(15_000),
+    }),
+  })
+  .superRefine((game, context) => {
+    if (game.ageBand !== "4-7") {
+      context.addIssue({
+        code: "custom",
+        path: ["ageBand"],
+        message: "The Momo workshop prototype belongs to the 4-7 age band.",
+      });
+    }
+    if (game.difficulty.level !== "starter") {
+      context.addIssue({
+        code: "custom",
+        path: ["difficulty", "level"],
+        message: "The first Momo workshop prototype must use starter difficulty.",
+      });
+    }
+
+    const endpointIds = new Set(game.rounds[0].endpoints.map((endpoint) => endpoint.id));
+    if (endpointIds.size !== game.rounds[0].endpoints.length) {
+      context.addIssue({
+        code: "custom",
+        path: ["rounds", 0, "endpoints"],
+        message: "Cable endpoint ids must be unique.",
+      });
+    }
+    const endpointsByMatch = new Map<string, { left: number; right: number }>();
+    for (const endpoint of game.rounds[0].endpoints) {
+      const counts = endpointsByMatch.get(endpoint.matchKey) ?? { left: 0, right: 0 };
+      counts[endpoint.side] += 1;
+      endpointsByMatch.set(endpoint.matchKey, counts);
+    }
+    if ([...endpointsByMatch.values()].some(({ left, right }) => left !== 1 || right !== 1)) {
+      context.addIssue({
+        code: "custom",
+        path: ["rounds", 0, "endpoints"],
+        message: "Every cable match must contain one left and one right endpoint.",
+      });
+    }
+    if (game.rounds[1].targetCount > game.rounds[1].crystalCount) {
+      context.addIssue({
+        code: "custom",
+        path: ["rounds", 1, "targetCount"],
+        message: "Crystal target count cannot exceed the visible crystal count.",
+      });
+    }
+    if (!game.rounds[2].choices.includes(game.rounds[2].correctShape)) {
+      context.addIssue({
+        code: "custom",
+        path: ["rounds", 2, "choices"],
+        message: "Pattern choices must include the correct shape.",
+      });
+    }
+    if (new Set(game.rewardChoices.map((choice) => choice.id)).size !== 2) {
+      context.addIssue({
+        code: "custom",
+        path: ["rewardChoices"],
+        message: "Momo reward choices must be different.",
+      });
+    }
+  });
+
 export const gameSchema = z.discriminatedUnion("mechanic", [
   tapOrWaitGameSchema,
   classifyAndSortGameSchema,
@@ -872,6 +1015,7 @@ export const gameSchema = z.discriminatedUnion("mechanic", [
   fishPatternsGameSchema,
   balloonCountingGameSchema,
   miniChallengeGameSchema,
+  momoWorkshopGameSchema,
 ]);
 
 export const activitySchema = z.strictObject({

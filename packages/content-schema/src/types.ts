@@ -26,6 +26,15 @@ import type {
   gameSchema,
   helpActionSchema,
   miniChallengeGameSchema,
+  momoCableEndpointSchema,
+  momoCableRoundSchema,
+  momoCrystalRoundSchema,
+  momoPartVisualSchema,
+  momoPatternRoundSchema,
+  momoRewardChoiceSchema,
+  momoShapeSchema,
+  momoWorkshopGameSchema,
+  momoWorkshopRoundSchema,
   routineItemSchema,
   routineRoundSchema,
   sequenceAndPlaceGameSchema,
@@ -77,6 +86,15 @@ export type FishPatternsGame = z.infer<typeof fishPatternsGameSchema>;
 export type BalloonCountingGame = z.infer<typeof balloonCountingGameSchema>;
 export type BktLeveling = z.infer<typeof bktLevelingSchema>;
 export type MiniChallengeGame = z.infer<typeof miniChallengeGameSchema>;
+export type MomoCableEndpoint = z.infer<typeof momoCableEndpointSchema>;
+export type MomoCableRound = z.infer<typeof momoCableRoundSchema>;
+export type MomoCrystalRound = z.infer<typeof momoCrystalRoundSchema>;
+export type MomoShape = z.infer<typeof momoShapeSchema>;
+export type MomoPatternRound = z.infer<typeof momoPatternRoundSchema>;
+export type MomoPartVisual = z.infer<typeof momoPartVisualSchema>;
+export type MomoRewardChoice = z.infer<typeof momoRewardChoiceSchema>;
+export type MomoWorkshopRound = z.infer<typeof momoWorkshopRoundSchema>;
+export type MomoWorkshopGame = z.infer<typeof momoWorkshopGameSchema>;
 export type Activity = z.infer<typeof activitySchema>;
 export type ContentStatus = z.infer<typeof contentStatusSchema>;
 export type ContentVersion = z.infer<typeof contentVersionSchema>;

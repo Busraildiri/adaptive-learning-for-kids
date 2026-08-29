@@ -2864,6 +2864,338 @@
               "difficulty"
             ],
             "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "schemaVersion": {
+                "type": "string",
+                "const": "game-v1"
+              },
+              "difficultyVersion": {
+                "default": "game-difficulty-v1",
+                "type": "string",
+                "const": "game-difficulty-v1"
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "version": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "status": {
+                "type": "string",
+                "enum": ["draft", "in_review", "published", "archived"]
+              },
+              "productionSource": {
+                "type": "string",
+                "enum": ["manual", "ai", "automation"]
+              },
+              "mechanic": {
+                "type": "string",
+                "const": "momo_workshop"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "ageBand": {
+                "type": "string",
+                "enum": ["2-4", "4-7"]
+              },
+              "skillTags": {
+                "minItems": 1,
+                "maxItems": 5,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                }
+              },
+              "presentation": {
+                "type": "object",
+                "properties": {
+                  "introNarration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240
+                  },
+                  "rewardNarration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 180
+                  },
+                  "closingNarration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "playAudioInstructions": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "introNarration",
+                  "rewardNarration",
+                  "closingNarration",
+                  "playAudioInstructions"
+                ],
+                "additionalProperties": false
+              },
+              "rounds": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "kind": {
+                        "type": "string",
+                        "const": "cable_match"
+                      },
+                      "prompt": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 160
+                      },
+                      "endpoints": {
+                        "minItems": 4,
+                        "maxItems": 6,
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 80
+                            },
+                            "label": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 80
+                            },
+                            "color": {
+                              "type": "string",
+                              "enum": ["coral", "blue", "yellow"]
+                            },
+                            "matchKey": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 40
+                            },
+                            "side": {
+                              "type": "string",
+                              "enum": ["left", "right"]
+                            }
+                          },
+                          "required": ["id", "label", "color", "matchKey", "side"],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": ["id", "kind", "prompt", "endpoints"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "kind": {
+                        "type": "string",
+                        "const": "crystal_count"
+                      },
+                      "prompt": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 160
+                      },
+                      "crystalCount": {
+                        "type": "integer",
+                        "minimum": 2,
+                        "maximum": 5
+                      },
+                      "targetCount": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 5
+                      }
+                    },
+                    "required": ["id", "kind", "prompt", "crystalCount", "targetCount"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "kind": {
+                        "type": "string",
+                        "const": "pattern_shape"
+                      },
+                      "prompt": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 160
+                      },
+                      "sequence": {
+                        "minItems": 3,
+                        "maxItems": 6,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": ["circle", "square", "triangle"]
+                        }
+                      },
+                      "choices": {
+                        "minItems": 2,
+                        "maxItems": 3,
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": ["circle", "square", "triangle"]
+                        }
+                      },
+                      "correctShape": {
+                        "type": "string",
+                        "enum": ["circle", "square", "triangle"]
+                      }
+                    },
+                    "required": ["id", "kind", "prompt", "sequence", "choices", "correctShape"],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "rewardChoices": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "label": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "visual": {
+                        "type": "string",
+                        "enum": ["star-antenna", "spring-antenna"]
+                      }
+                    },
+                    "required": ["id", "label", "visual"],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "label": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 80
+                      },
+                      "visual": {
+                        "type": "string",
+                        "enum": ["star-antenna", "spring-antenna"]
+                      }
+                    },
+                    "required": ["id", "label", "visual"],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "feedback": {
+                "type": "object",
+                "properties": {
+                  "matched": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "retry": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  },
+                  "reveal": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 160
+                  }
+                },
+                "required": ["matched", "retry", "reveal"],
+                "additionalProperties": false
+              },
+              "difficulty": {
+                "type": "object",
+                "properties": {
+                  "level": {
+                    "type": "string",
+                    "enum": ["starter", "growing", "advanced"]
+                  },
+                  "secondTryEnabled": {
+                    "type": "boolean"
+                  },
+                  "inactivityHintMs": {
+                    "type": "integer",
+                    "minimum": 7000,
+                    "maximum": 15000
+                  }
+                },
+                "required": ["level", "secondTryEnabled", "inactivityHintMs"],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "schemaVersion",
+              "difficultyVersion",
+              "id",
+              "version",
+              "status",
+              "productionSource",
+              "mechanic",
+              "title",
+              "description",
+              "ageBand",
+              "skillTags",
+              "presentation",
+              "rounds",
+              "rewardChoices",
+              "feedback",
+              "difficulty"
+            ],
+            "additionalProperties": false
           }
         ]
       }

@@ -50,12 +50,21 @@ const gameEvidence: ParentInsightEvidenceBundle["gameEvidence"] = [
   },
 ];
 const base: ParentInsightEvidenceBundle = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   childId,
   consentEnabled: true,
   source: "consented_session_event_projection",
   storyEvidence: [],
   gameEvidence: [],
+  profileContext: {
+    nickname: "Ece",
+    ageBand: "4-7",
+    personalizationEnabled: true,
+    favoriteAnimals: ["tavşan"],
+    favoriteToys: ["bloklar"],
+    interests: ["uzay"],
+    profileUpdatedAt: "2026-08-28T13:00:00.000Z",
+  },
   retrievedAt: "2026-08-28T14:00:00.000Z",
   retrievalPolicyVersion: PARENT_INSIGHT_RETRIEVAL_POLICY_VERSION,
 };
@@ -76,6 +85,12 @@ describe("RAG-grounded parent session insights", () => {
       observation: null,
       gameStatus: "consent_required",
       gameInsights: [],
+      activityDetails: {
+        totalSessionCount: 0,
+        activeDayCount: 0,
+        distinctStoryCount: 0,
+        distinctGameCount: 0,
+      },
       retrieval: { storyEvidenceCount: 0, gameEvidenceCount: 0 },
     });
   });
@@ -126,6 +141,52 @@ describe("RAG-grounded parent session insights", () => {
       gameEvidence[1]?.sessionId,
       gameEvidence[2]?.sessionId,
     ]);
+  });
+
+  it("builds detailed activity counts from the complete evidence window", () => {
+    const summary = buildParentSessionSummary({ ...base, storyEvidence, gameEvidence });
+
+    expect(summary.activityDetails).toEqual({
+      totalSessionCount: 6,
+      activeDayCount: 2,
+      distinctStoryCount: 2,
+      distinctGameCount: 1,
+      completedGameSessionCount: 2,
+      pausedGameSessionCount: 1,
+      inProgressGameSessionCount: 0,
+      mostRepeatedStory: { activityId: "story-a", sessionCount: 2 },
+      mostRepeatedGame: { activityId: "fish-patterns-001", sessionCount: 3 },
+    });
+  });
+
+  it("personalizes parent guidance with only the retrieved child profile context", () => {
+    const summary = buildParentSessionSummary({ ...base, storyEvidence, gameEvidence });
+
+    expect(summary.parentGuidance).toMatchObject({
+      personalized: true,
+      grounding: "profile_and_session_evidence",
+      contextLabels: ["uzay", "tavşan", "bloklar"],
+    });
+    expect(summary.parentGuidance.ideas.join(" ")).toContain("uzay");
+    expect(summary.profileContext.nickname).toBe("Ece");
+  });
+
+  it("does not leak profile preferences when personalization context is disabled", () => {
+    const summary = buildParentSessionSummary({
+      ...base,
+      storyEvidence,
+      profileContext: {
+        ...base.profileContext,
+        personalizationEnabled: false,
+        favoriteAnimals: [],
+        favoriteToys: [],
+        interests: [],
+      },
+    });
+
+    expect(summary.parentGuidance.personalized).toBe(false);
+    expect(summary.parentGuidance.contextLabels).toEqual([]);
+    expect(JSON.stringify(summary.parentGuidance)).not.toContain("uzay");
   });
 
   it("never emits percentages, comparisons, scores, or diagnoses", () => {

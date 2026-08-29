@@ -821,6 +821,91 @@
   "games": [
     {
       "schemaVersion": "game-v1",
+      "difficultyVersion": "game-difficulty-v1",
+      "id": "momo-wake-up-001",
+      "version": 1,
+      "status": "published",
+      "productionSource": "manual",
+      "mechanic": "momo_workshop",
+      "title": "Minik Mucit ve Momo",
+      "description": "Kabloları bağla, enerjiyi topla ve Momo’yu uyandır.",
+      "ageBand": "4-7",
+      "skillTags": ["renk eşleme", "sayma", "örüntü"],
+      "presentation": {
+        "introNarration": "Atölyenin elektrikleri kesildi; Momo’yu birlikte uyandıralım.",
+        "rewardNarration": "Harika, şimdi Momo için sevdiğin parçayı seç.",
+        "closingNarration": "Teşekkürler {childName}, sayende uyandım ve yeni maceralara hazırım!",
+        "playAudioInstructions": true
+      },
+      "rounds": [
+        {
+          "id": "momo-cables",
+          "kind": "cable_match",
+          "prompt": "Aynı renkteki kablo uçlarını birbirine sürükle.",
+          "endpoints": [
+            {
+              "id": "coral-left",
+              "label": "Sol mercan kablo ucu",
+              "color": "coral",
+              "matchKey": "coral",
+              "side": "left"
+            },
+            {
+              "id": "blue-left",
+              "label": "Sol mavi kablo ucu",
+              "color": "blue",
+              "matchKey": "blue",
+              "side": "left"
+            },
+            {
+              "id": "blue-right",
+              "label": "Sağ mavi kablo ucu",
+              "color": "blue",
+              "matchKey": "blue",
+              "side": "right"
+            },
+            {
+              "id": "coral-right",
+              "label": "Sağ mercan kablo ucu",
+              "color": "coral",
+              "matchKey": "coral",
+              "side": "right"
+            }
+          ]
+        },
+        {
+          "id": "momo-crystals",
+          "kind": "crystal_count",
+          "prompt": "Üç enerji kristalini Momo’nun piline koy.",
+          "crystalCount": 5,
+          "targetCount": 3
+        },
+        {
+          "id": "momo-pattern",
+          "kind": "pattern_shape",
+          "prompt": "Daire, kare, daire; sıradaki şekli seç.",
+          "sequence": ["circle", "square", "circle"],
+          "choices": ["triangle", "square", "circle"],
+          "correctShape": "square"
+        }
+      ],
+      "rewardChoices": [
+        { "id": "momo-star-antenna", "label": "Yıldız anten", "visual": "star-antenna" },
+        { "id": "momo-spring-antenna", "label": "Kalp anten", "visual": "spring-antenna" }
+      ],
+      "feedback": {
+        "matched": "Harika, Momo’nun enerjisi yükseliyor!",
+        "retry": "Çok yaklaştın; bir kez daha deneyelim.",
+        "reveal": "Birlikte bulduk; doğru yer şimdi parlıyor."
+      },
+      "difficulty": {
+        "level": "starter",
+        "secondTryEnabled": true,
+        "inactivityHintMs": 10000
+      }
+    },
+    {
+      "schemaVersion": "game-v1",
       "id": "color-lights-001",
       "version": 2,
       "status": "published",

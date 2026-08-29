@@ -99,6 +99,33 @@ export interface Database {
           },
         ];
       };
+      child_momo_customizations: {
+        Row: {
+          child_id: string;
+          selected_part_id: "star-antenna" | "spring-antenna";
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          child_id: string;
+          selected_part_id: "star-antenna" | "spring-antenna";
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          selected_part_id?: "star-antenna" | "spring-antenna";
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "child_momo_customizations_child_id_fkey";
+            columns: ["child_id"];
+            isOneToOne: true;
+            referencedRelation: "child_profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       published_game_versions: {
         Row: {
           game_id: string;
@@ -173,6 +200,10 @@ export interface Database {
         Returns: Json;
       };
       get_parent_insight_evidence: {
+        Args: { child_profile_id: string };
+        Returns: Json;
+      };
+      get_personalized_parent_insight_evidence: {
         Args: { child_profile_id: string };
         Returns: Json;
       };

@@ -48,6 +48,16 @@ function withTimeout<T>(operation: Promise<T>, timeoutMs = 8000): Promise<T> {
 
 const content = contentVersionSchema.parse(contentV1);
 
+function createCatalogSessionSeed(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function getParentDisplayName(session: Session): string {
+  const metadata = session.user.user_metadata;
+  const candidate = metadata.display_name ?? metadata.full_name ?? metadata.name;
+  return typeof candidate === "string" ? candidate : "";
+}
+
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loadingSession, setLoadingSession] = useState(isSupabaseConfigured);
@@ -56,6 +66,7 @@ export default function App() {
   const [parentOnboarded, setParentOnboarded] = useState(false);
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [activeChild, setActiveChild] = useState<ChildSessionProfile | null>(null);
+  const [catalogSessionSeed, setCatalogSessionSeed] = useState(createCatalogSessionSeed);
   const [showParentPinGate, setShowParentPinGate] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
@@ -88,6 +99,7 @@ export default function App() {
       const persistedChild = childProfiles.find((child) => child.id === activeChildId);
       if (persistedChild && resolveAgeBand(persistedChild.birthMonth, persistedChild.birthYear)) {
         const consentSettings = await withTimeout(loadChildConsentSettings(persistedChild.id));
+        setCatalogSessionSeed(createCatalogSessionSeed());
         setActiveChild(
           createChildSessionProfile(persistedChild, {
             personalizationEnabled: consentSettings.personalization,
@@ -409,6 +421,7 @@ export default function App() {
         <StorySelectionScreen
           assets={content.assets}
           ageBand={activeChild.ageBand}
+          catalogSessionSeed={catalogSessionSeed}
           childName={activeChild.nickname}
           gameRecommendationExplanation={gameRecommendationExplanation}
           games={eligibleGames}
@@ -452,6 +465,7 @@ export default function App() {
         await persistActiveChildId(profile.id);
         setSelectedStoryId(null);
         setSelectedGameId(null);
+        setCatalogSessionSeed(createCatalogSessionSeed());
         setActiveChild(
           createChildSessionProfile(profile, {
             personalizationEnabled: consentSettings.personalization,
@@ -459,6 +473,8 @@ export default function App() {
           }),
         );
       }}
+      parentDisplayName={getParentDisplayName(session)}
+      parentEmail={session.user.email ?? ""}
       parentId={session.user.id}
     />
   );

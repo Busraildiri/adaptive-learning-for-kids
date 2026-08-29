@@ -22,6 +22,7 @@ export interface BktLevelSetRequest {
 }
 
 export function getApprovedDifficultyOptions(game: Game): GameDifficultyLevel[] {
+  if (game.mechanic === "momo_workshop") return ["starter"];
   return ["starter", "growing", "advanced"];
 }
 
@@ -39,6 +40,12 @@ export function getApprovedAutomationTemplatesForAge(templates: Game[], ageBand:
 }
 
 export function createApprovedGameDraft(templates: Game[], request: GameAutomationRequest): Game {
+  if (
+    request.mechanic === "momo_workshop" &&
+    (request.ageBand !== "4-7" || request.difficulty !== "starter")
+  ) {
+    throw new Error("Momo atölyesi prototipi yalnızca 4–7 yaş ve başlangıç düzeyini destekler.");
+  }
   const selectedTemplate = request.templateId
     ? templates.find(
         (candidate) =>
@@ -156,6 +163,10 @@ export function createApprovedGameDraft(templates: Game[], request: GameAutomati
     draft.difficulty.inactivityHintMs = { starter: 12000, growing: 9500, advanced: 7000 }[
       request.difficulty
     ];
+  } else if (draft.mechanic === "momo_workshop") {
+    draft.difficulty.level = "starter";
+    draft.difficulty.secondTryEnabled = true;
+    draft.difficulty.inactivityHintMs = 10000;
   }
 
   return gameSchema.parse(draft);

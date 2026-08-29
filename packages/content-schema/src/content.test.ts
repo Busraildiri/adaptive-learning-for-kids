@@ -94,7 +94,8 @@ describe("Turkish content v1", () => {
     for (const game of content.games ?? []) {
       const roundCount =
         game.mechanic === "tap_or_wait" ? game.roundPlan.rounds.length : game.rounds.length;
-      expect(roundCount).toBeGreaterThanOrEqual(5);
+      if (game.mechanic === "momo_workshop") expect(roundCount).toBe(3);
+      else expect(roundCount).toBeGreaterThanOrEqual(5);
     }
 
     const routineGame = content.games?.find((game) => game.mechanic === "sequence_and_place");
@@ -164,6 +165,23 @@ describe("Turkish content v1", () => {
     }
     if (toko?.mechanic === "mini_challenge") {
       expect(toko.rounds.map((round) => round.correctSequence.length)).toEqual([1, 2, 2, 3, 3]);
+    }
+  });
+
+  it("includes the starter Momo workshop as one 4-7 experience", () => {
+    const content = contentVersionSchema.parse(contentV1);
+    const momo = content.games?.find((game) => game.id === "momo-wake-up-001");
+
+    expect(momo?.mechanic).toBe("momo_workshop");
+    if (momo?.mechanic === "momo_workshop") {
+      expect(momo.ageBand).toBe("4-7");
+      expect(momo.difficulty.level).toBe("starter");
+      expect(momo.rounds.map((round) => round.kind)).toEqual([
+        "cable_match",
+        "crystal_count",
+        "pattern_shape",
+      ]);
+      expect(momo.rewardChoices).toHaveLength(2);
     }
   });
 });

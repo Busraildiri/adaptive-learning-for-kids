@@ -104,6 +104,7 @@ const mechanicLabels: Record<GameMechanic, string> = {
   fish_patterns: "Balık desenleri",
   balloon_counting: "Balon sayma",
   mini_challenge: "Mini görev",
+  momo_workshop: "Momo atölyesi",
 };
 
 interface GameCatalogItem {
@@ -133,6 +134,27 @@ const catalogGroups = [
 
 function isBktGame(game: Game): game is SequenceAndPlaceGame {
   return game.mechanic === "sequence_and_place" && game.leveling?.strategy === "bkt";
+}
+
+function updateIntroNarration(game: Game, introNarration: string): Game {
+  switch (game.mechanic) {
+    case "tap_or_wait":
+      return { ...game, presentation: { ...game.presentation, introNarration } };
+    case "classify_and_sort":
+      return { ...game, presentation: { ...game.presentation, introNarration } };
+    case "sequence_and_place":
+      return { ...game, presentation: { ...game.presentation, introNarration } };
+    case "emotion_clues":
+      return { ...game, presentation: { ...game.presentation, introNarration } };
+    case "fish_patterns":
+      return { ...game, presentation: { ...game.presentation, introNarration } };
+    case "balloon_counting":
+      return { ...game, presentation: { ...game.presentation, introNarration } };
+    case "mini_challenge":
+      return { ...game, presentation: { ...game.presentation, introNarration } };
+    case "momo_workshop":
+      return { ...game, presentation: { ...game.presentation, introNarration } };
+  }
 }
 
 function GameCatalogFilterBar({
@@ -446,6 +468,17 @@ export function GamePanel({ supabase }: { supabase: SupabaseClient | null }) {
     : [];
   const validation = useMemo(() => gameSchema.safeParse(game), [game]);
 
+  useEffect(() => {
+    if (!selectedAutomationTemplate) return;
+    if (selectedAutomationTemplate.id !== automationTemplateId) {
+      setAutomationTemplateId(selectedAutomationTemplate.id);
+    }
+    const difficultyOptions = getApprovedDifficultyOptions(selectedAutomationTemplate);
+    setAutomationDifficulty((current) =>
+      difficultyOptions.includes(current) ? current : (difficultyOptions[0] ?? "starter"),
+    );
+  }, [automationTemplateId, selectedAutomationTemplate]);
+
   const authenticatedRequest = useCallback(
     async (url: string, init?: RequestInit) => {
       if (!supabase) throw new Error("Supabase bağlantısı gerekli.");
@@ -709,7 +742,12 @@ export function GamePanel({ supabase }: { supabase: SupabaseClient | null }) {
   };
 
   const selectAgeBand = (ageBand: Game["ageBand"]) => {
-    if (game.mechanic === "balloon_counting" || game.mechanic === "mini_challenge") return;
+    if (
+      game.mechanic === "balloon_counting" ||
+      game.mechanic === "mini_challenge" ||
+      game.mechanic === "momo_workshop"
+    )
+      return;
     if (game.mechanic === "fish_patterns") {
       const matching = content.games?.find(
         (candidate): candidate is FishPatternsGame =>
@@ -1125,22 +1163,7 @@ export function GamePanel({ supabase }: { supabase: SupabaseClient | null }) {
                   maxLength={240}
                   onChange={(event) => {
                     const introNarration = event.target.value;
-                    setGame((current) =>
-                      current.mechanic === "tap_or_wait"
-                        ? {
-                            ...current,
-                            presentation: { ...current.presentation, introNarration },
-                          }
-                        : current.mechanic === "classify_and_sort"
-                          ? {
-                              ...current,
-                              presentation: { ...current.presentation, introNarration },
-                            }
-                          : {
-                              ...current,
-                              presentation: { ...current.presentation, introNarration },
-                            },
-                    );
+                    setGame((current) => updateIntroNarration(current, introNarration));
                   }}
                   value={game.presentation.introNarration}
                 />
@@ -1666,7 +1689,7 @@ export function GamePanel({ supabase }: { supabase: SupabaseClient | null }) {
                   </div>
                 </fieldset>
               </>
-            ) : (
+            ) : game.mechanic === "mini_challenge" ? (
               <>
                 <fieldset>
                   <legend>2. Yaş ve destek</legend>
@@ -1702,6 +1725,28 @@ export function GamePanel({ supabase }: { supabase: SupabaseClient | null }) {
                         <small>
                           {round.choices.length} seçenek · {round.correctSequence.length} adım
                         </small>
+                      </article>
+                    ))}
+                  </div>
+                </fieldset>
+              </>
+            ) : (
+              <>
+                <fieldset>
+                  <legend>2. Momo atölyesi</legend>
+                  <p className="generation-help">
+                    Bu prototip 4–7 yaş ve başlangıç düzeyi için sabitlenmiştir.
+                  </p>
+                </fieldset>
+                <fieldset>
+                  <legend>3. Atölye turları</legend>
+                  <div className="game-rule-grid">
+                    {game.rounds.map((round, index) => (
+                      <article className="game-rule" key={round.id}>
+                        <strong>
+                          {index + 1}. tur · {round.kind}
+                        </strong>
+                        <p>{round.prompt}</p>
                       </article>
                     ))}
                   </div>

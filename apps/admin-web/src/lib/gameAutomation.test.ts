@@ -11,9 +11,11 @@ import {
 const games = contentVersionSchema.parse(contentJson).games ?? [];
 
 describe("game automation policy", () => {
-  it("keeps at least two difficulty options available for every approved template", () => {
+  it("keeps only schema-approved difficulty options available for every template", () => {
     for (const game of games.filter((candidate) => candidate.status === "published")) {
-      expect(getApprovedDifficultyOptions(game).length).toBeGreaterThanOrEqual(2);
+      expect(getApprovedDifficultyOptions(game)).toEqual(
+        game.mechanic === "momo_workshop" ? ["starter"] : ["starter", "growing", "advanced"],
+      );
     }
   });
 
@@ -69,20 +71,35 @@ describe("game automation policy", () => {
     });
   });
 
-  it("creates a growing 4-7 draft from every offered template", () => {
+  it("creates an approved 4-7 draft from every offered template", () => {
     const templates = getApprovedAutomationTemplatesForAge(games, "4-7");
 
     for (const template of templates) {
+      const difficulty = getApprovedDifficultyOptions(template).includes("growing")
+        ? "growing"
+        : "starter";
       const draft = createApprovedGameDraft(games, {
         id: `automation-4-7-${template.id}`,
         ageBand: "4-7",
         mechanic: template.mechanic,
-        difficulty: "growing",
+        difficulty,
         templateId: template.id,
       });
       expect(draft.ageBand).toBe("4-7");
-      expect(draft.difficulty.level).toBe("growing");
+      expect(draft.difficulty.level).toBe(difficulty);
     }
+  });
+
+  it("does not create unsupported Momo age or difficulty variants", () => {
+    expect(() =>
+      createApprovedGameDraft(games, {
+        id: "automation-momo-growing",
+        ageBand: "4-7",
+        mechanic: "momo_workshop",
+        difficulty: "growing",
+        templateId: "momo-wake-up-001",
+      }),
+    ).toThrow("yalnızca 4–7 yaş ve başlangıç");
   });
 
   it.each([
