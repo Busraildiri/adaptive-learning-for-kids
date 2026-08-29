@@ -11,7 +11,7 @@
  * a quick sanity check against node_modules/expo-audio's types once
  * installed, before relying on this in a device test.
  */
-import { createAudioPlayer, type AudioPlayer, type AudioStatus } from "expo-audio";
+import { type AudioPlayer, type AudioStatus, createAudioPlayer } from "expo-audio";
 
 export interface AudioOwner {
   play: (uri: string, onFinish?: () => void) => void;

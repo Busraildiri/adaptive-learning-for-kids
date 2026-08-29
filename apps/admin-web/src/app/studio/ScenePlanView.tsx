@@ -41,9 +41,7 @@ export function ScenePlanView({
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ storyId }),
       });
-      const body = (await response.json()) as
-        | ScenePlan
-        | { error: string };
+      const body = (await response.json()) as ScenePlan | { error: string };
       if (!response.ok || "error" in body) {
         throw new Error("error" in body ? body.error : "Sahne planı alınamadı.");
       }

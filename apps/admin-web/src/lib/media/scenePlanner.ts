@@ -129,7 +129,9 @@ function findAssetById(assets: Asset[] | undefined, id: string | undefined): Ass
 }
 
 function describeAsset(asset: Asset): string {
-  return asset.semantic?.character ?? asset.semantic?.object ?? asset.accessibilityLabel ?? asset.id;
+  return (
+    asset.semantic?.character ?? asset.semantic?.object ?? asset.accessibilityLabel ?? asset.id
+  );
 }
 
 /**
@@ -284,7 +286,9 @@ export function planStoryPlayback(
     .map((step) => ({ step, narration: narrationOf(step) }))
     .filter((entry): entry is { step: StoryStep; narration: string } => Boolean(entry.narration));
 
-  const decisionIndex = decisionStep ? spine.findIndex((entry) => entry.step.id === decisionStep.id) : -1;
+  const decisionIndex = decisionStep
+    ? spine.findIndex((entry) => entry.step.id === decisionStep.id)
+    : -1;
 
   const builder: PlanBuilder = { clips: [], scenes: [], planningMetadata: {} };
   let previousState: string | undefined;
@@ -292,13 +296,28 @@ export function planStoryPlayback(
 
   for (let index = 0; index < linearRunEnd; index += 1) {
     const { step, narration } = spine[index];
-    addScene(builder, story, step.id, narration, "neutral", duration, options.characterId, continuity, previousState);
+    addScene(
+      builder,
+      story,
+      step.id,
+      narration,
+      "neutral",
+      duration,
+      options.characterId,
+      continuity,
+      previousState,
+    );
     previousState = narration;
     const isLast = index === spine.length - 1;
     builder.clips.push(
       isLast
         ? { kind: "ending", id: step.id, sourceSceneId: step.id }
-        : { kind: "linear", id: step.id, sourceSceneId: step.id, nextClipId: spine[index + 1].step.id },
+        : {
+            kind: "linear",
+            id: step.id,
+            sourceSceneId: step.id,
+            nextClipId: spine[index + 1].step.id,
+          },
     );
   }
 
@@ -348,7 +367,12 @@ export function planStoryPlayback(
       );
       builder.clips.push(
         branchTargetId
-          ? { kind: "linear", id: optionClipId, sourceSceneId: decisionStep.id, nextClipId: branchTargetId }
+          ? {
+              kind: "linear",
+              id: optionClipId,
+              sourceSceneId: decisionStep.id,
+              nextClipId: branchTargetId,
+            }
           : { kind: "ending", id: optionClipId, sourceSceneId: decisionStep.id },
       );
       return { id: choice.id, label: choice.accessibilityLabel, nextClipId: optionClipId };
@@ -386,7 +410,12 @@ export function planStoryPlayback(
       );
       builder.clips.push(
         rejoinId
-          ? { kind: "linear", id: resolutionClipId, sourceSceneId: decisionStep.id, nextClipId: rejoinId }
+          ? {
+              kind: "linear",
+              id: resolutionClipId,
+              sourceSceneId: decisionStep.id,
+              nextClipId: rejoinId,
+            }
           : { kind: "ending", id: resolutionClipId, sourceSceneId: decisionStep.id },
       );
     }
@@ -408,7 +437,12 @@ export function planStoryPlayback(
       builder.clips.push(
         isLast
           ? { kind: "ending", id: step.id, sourceSceneId: step.id }
-          : { kind: "linear", id: step.id, sourceSceneId: step.id, nextClipId: spine[index + 1].step.id },
+          : {
+              kind: "linear",
+              id: step.id,
+              sourceSceneId: step.id,
+              nextClipId: spine[index + 1].step.id,
+            },
       );
     }
   }

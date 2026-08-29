@@ -13,18 +13,44 @@ function validExperience() {
     startClipId: "intro",
     publishedAt: "2026-08-28T00:00:00.000Z",
     clips: [
-      { kind: "linear" as const, id: "intro", nextClipId: "help_01", video: { mediaRef: "stories/story-1/fp/intro.mp4", durationMs: 4000 } },
+      {
+        kind: "linear" as const,
+        id: "intro",
+        nextClipId: "help_01",
+        video: { mediaRef: "stories/story-1/fp/intro.mp4", durationMs: 4000 },
+      },
       {
         kind: "decision" as const,
         id: "help_01",
-        question: { text: "Nasıl yardım edelim?", audio: { mediaRef: "stories/story-1/fp/help_01-question.m4a", durationMs: 1200 } },
+        question: {
+          text: "Nasıl yardım edelim?",
+          audio: { mediaRef: "stories/story-1/fp/help_01-question.m4a", durationMs: 1200 },
+        },
         options: [
-          { id: "a", label: "Sarıl", nextClipId: "help_01-a", audio: { mediaRef: "stories/story-1/fp/help_01-a.m4a", durationMs: 900 } },
-          { id: "b", label: "Nefes al", nextClipId: "help_01-b", audio: { mediaRef: "stories/story-1/fp/help_01-b.m4a", durationMs: 900 } },
+          {
+            id: "a",
+            label: "Sarıl",
+            nextClipId: "help_01-a",
+            audio: { mediaRef: "stories/story-1/fp/help_01-a.m4a", durationMs: 900 },
+          },
+          {
+            id: "b",
+            label: "Nefes al",
+            nextClipId: "help_01-b",
+            audio: { mediaRef: "stories/story-1/fp/help_01-b.m4a", durationMs: 900 },
+          },
         ],
       },
-      { kind: "ending" as const, id: "help_01-a", video: { mediaRef: "stories/story-1/fp/help_01-a.mp4", durationMs: 4200 } },
-      { kind: "ending" as const, id: "help_01-b", video: { mediaRef: "stories/story-1/fp/help_01-b.mp4", durationMs: 4200 } },
+      {
+        kind: "ending" as const,
+        id: "help_01-a",
+        video: { mediaRef: "stories/story-1/fp/help_01-a.mp4", durationMs: 4200 },
+      },
+      {
+        kind: "ending" as const,
+        id: "help_01-b",
+        video: { mediaRef: "stories/story-1/fp/help_01-b.mp4", durationMs: 4200 },
+      },
     ],
   };
 }
@@ -43,7 +69,10 @@ describe("publishedStoryExperienceSchema", () => {
   });
 
   it("rejects an unknown top-level field (e.g. an accidental storage_path leak)", () => {
-    const experience: Record<string, unknown> = { ...validExperience(), storage_path: "media-renders/story-1/x.mp4" };
+    const experience: Record<string, unknown> = {
+      ...validExperience(),
+      storage_path: "media-renders/story-1/x.mp4",
+    };
     expect(publishedStoryExperienceSchema.safeParse(experience).success).toBe(false);
   });
 
@@ -55,7 +84,10 @@ describe("publishedStoryExperienceSchema", () => {
   });
 
   it("rejects experienceType values other than video_branching", () => {
-    const experience: Record<string, unknown> = { ...validExperience(), experienceType: "interactive_ui" };
+    const experience: Record<string, unknown> = {
+      ...validExperience(),
+      experienceType: "interactive_ui",
+    };
     expect(publishedStoryExperienceSchema.safeParse(experience).success).toBe(false);
   });
 });

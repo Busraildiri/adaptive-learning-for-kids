@@ -275,7 +275,9 @@ export async function finalizeStoryPublication(
   const result = data as FinalizePublicationResult;
   const parsed = publishedStoryExperienceSchema.safeParse(result.experience);
   if (!parsed.success) {
-    throw new Error(`Yayınlanan içerik beklenen şemaya uymuyor: ${parsed.error.issues[0]?.message ?? "bilinmeyen hata"}`);
+    throw new Error(
+      `Yayınlanan içerik beklenen şemaya uymuyor: ${parsed.error.issues[0]?.message ?? "bilinmeyen hata"}`,
+    );
   }
   return { ...result, experience: parsed.data };
 }

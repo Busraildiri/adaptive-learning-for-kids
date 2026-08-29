@@ -8,7 +8,11 @@ function job(overrides: Partial<MediaJob>): MediaJob {
     storyId: "story-1",
     provider: "openmontage",
     mode: "local_animation",
-    renderManifest: { scene: {}, mode: "local_animation", aspectRatio: "4:5" } as unknown as MediaJob["renderManifest"],
+    renderManifest: {
+      scene: {},
+      mode: "local_animation",
+      aspectRatio: "4:5",
+    } as unknown as MediaJob["renderManifest"],
     mediaKind: "video",
     status: "queued",
     progress: 0,
@@ -51,7 +55,13 @@ function validExperience() {
     ageBands: ["2-4"],
     startClipId: "intro",
     publishedAt: "2026-08-28T00:00:00.000Z",
-    clips: [{ kind: "ending", id: "intro", video: { mediaRef: "stories/story-1/fp/intro.mp4", durationMs: 4000 } }],
+    clips: [
+      {
+        kind: "ending",
+        id: "intro",
+        video: { mediaRef: "stories/story-1/fp/intro.mp4", durationMs: 4000 },
+      },
+    ],
   };
 }
 
@@ -70,7 +80,9 @@ describe("finalizeStoryPublication", () => {
       publishedAt: "2026-08-28T00:00:00.000Z",
       experience: validExperience(),
     });
-    const result = await finalizeStoryPublication(client, "pub-1", "admin-1", ["stories/story-1/fp/intro.mp4"]);
+    const result = await finalizeStoryPublication(client, "pub-1", "admin-1", [
+      "stories/story-1/fp/intro.mp4",
+    ]);
     expect(result.experience.storyId).toBe("story-1");
   });
 

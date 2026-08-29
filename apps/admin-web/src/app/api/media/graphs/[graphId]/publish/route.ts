@@ -4,8 +4,8 @@ import { requireContentAdminSession, requiredEnvironment } from "../../../../../
 import {
   failStoryPublication,
   finalizeStoryPublication,
-  prepareStoryPublication,
   type PublicationManifestEntry,
+  prepareStoryPublication,
 } from "../../../../../../lib/media/jobStore";
 
 export const runtime = "nodejs";
@@ -58,7 +58,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ gra
           .from(SOURCE_BUCKET)
           .download(entry.sourcePath);
         if (downloadError || !file) {
-          throw new Error(downloadError?.message ?? `kaynak dosya indirilemedi: ${entry.sourcePath}`);
+          throw new Error(
+            downloadError?.message ?? `kaynak dosya indirilemedi: ${entry.sourcePath}`,
+          );
         }
         const { error: uploadError } = await serviceClient.storage
           .from(PUBLISHED_BUCKET)

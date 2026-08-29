@@ -6,7 +6,12 @@
  * rendering StoryPlayer.
  */
 import type { PublishedPlaybackClip, PublishedStoryExperience } from "@adaptive/media-schema";
-import { replayStage, stageAfterChoice, stageAfterVideo, type StoryPlayerStage } from "./storyPlayerGraph";
+import {
+  replayStage,
+  type StoryPlayerStage,
+  stageAfterChoice,
+  stageAfterVideo,
+} from "./storyPlayerGraph";
 
 export interface StoryPlayerRuntimeState {
   stage: StoryPlayerStage;

@@ -698,10 +698,7 @@ export function DiscoveryScreen({
       ),
     [bundledStoryIds, handleSelectStory, publishedStories],
   );
-  const cards = useMemo(
-    () => [...bundledCards, ...publishedCards],
-    [bundledCards, publishedCards],
-  );
+  const cards = useMemo(() => [...bundledCards, ...publishedCards], [bundledCards, publishedCards]);
   const orderedCards = useMemo(
     () =>
       createSessionOrder(

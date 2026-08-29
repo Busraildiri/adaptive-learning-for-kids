@@ -56,7 +56,7 @@ describe("planStoryPlayback: purely linear story (no decision-capable step)", ()
     expect(storyPlaybackGraphSchema.safeParse(plan.graph).success).toBe(true);
   });
 
-  it("never leaks the literal string \"undefined\" into a composed visualPrompt", () => {
+  it('never leaks the literal string "undefined" into a composed visualPrompt', () => {
     // Regression guard: visualStyle/initialEmotionalState are undefined by
     // default (no asset catalog supplied), so a naive template-literal
     // interpolation would stringify them as the text "undefined".
@@ -74,7 +74,12 @@ describe("planStoryPlayback: single help_choice decision, no trailing steps", ()
       type: "help_choice",
       prompt: "Mırmır'a nasıl yardım etmek istersin?",
       choices: [
-        { id: "hug", action: "hug", accessibilityLabel: "Sarıl", resultNarration: "Mırmır sarılınca rahatladı." },
+        {
+          id: "hug",
+          action: "hug",
+          accessibilityLabel: "Sarıl",
+          resultNarration: "Mırmır sarılınca rahatladı.",
+        },
         {
           id: "balloon",
           action: "new_balloon",
@@ -150,8 +155,18 @@ describe("planStoryPlayback: emotion_choice decision preserves the shared storyR
       type: "emotion_choice",
       prompt: "Nasıl hissediyorsun?",
       choices: [
-        { id: "happy", emotion: "happy", accessibilityLabel: "Mutlu", supportiveFeedback: { narration: "Mutlu olmak güzel." } },
-        { id: "sad", emotion: "sad", accessibilityLabel: "Üzgün", supportiveFeedback: { narration: "Üzgün olmak da normal." } },
+        {
+          id: "happy",
+          emotion: "happy",
+          accessibilityLabel: "Mutlu",
+          supportiveFeedback: { narration: "Mutlu olmak güzel." },
+        },
+        {
+          id: "sad",
+          emotion: "sad",
+          accessibilityLabel: "Üzgün",
+          supportiveFeedback: { narration: "Üzgün olmak da normal." },
+        },
       ],
       storyResolution: { narration: "Her duygu kabul edilir." },
     },
@@ -167,8 +182,14 @@ describe("planStoryPlayback: emotion_choice decision preserves the shared storyR
   });
 
   it("both emotion options route into the resolution clip, carrying the choice's own emotion", () => {
-    expect(findClip(plan, "feel_01-happy")).toMatchObject({ kind: "linear", nextClipId: "feel_01-resolution" });
-    expect(findClip(plan, "feel_01-sad")).toMatchObject({ kind: "linear", nextClipId: "feel_01-resolution" });
+    expect(findClip(plan, "feel_01-happy")).toMatchObject({
+      kind: "linear",
+      nextClipId: "feel_01-resolution",
+    });
+    expect(findClip(plan, "feel_01-sad")).toMatchObject({
+      kind: "linear",
+      nextClipId: "feel_01-resolution",
+    });
     expect(plan.scenes.find((s) => s.sceneId === "feel_01-happy")?.emotion).toBe("happy");
     expect(plan.scenes.find((s) => s.sceneId === "feel_01-sad")?.emotion).toBe("sad");
   });
@@ -283,7 +304,10 @@ const twoHelpChoices: Story["steps"][number] = {
 
 describe("validateVideoBranchingCompatibility", () => {
   it("is incompatible when experienceType is not video_branching", () => {
-    const story = { ...baseStory([{ id: "intro", type: "event", narration: "..." }, twoHelpChoices]), experienceType: "interactive_ui" as const };
+    const story = {
+      ...baseStory([{ id: "intro", type: "event", narration: "..." }, twoHelpChoices]),
+      experienceType: "interactive_ui" as const,
+    };
     const result = validateVideoBranchingCompatibility(story);
     expect(result.compatible).toBe(false);
     if (result.compatible) throw new Error("expected incompatible");
@@ -291,7 +315,10 @@ describe("validateVideoBranchingCompatibility", () => {
   });
 
   it("is compatible for a single decision point with exactly two choices", () => {
-    const story = baseStory([{ id: "intro", type: "event", narration: "Bir olay oldu." }, twoHelpChoices]);
+    const story = baseStory([
+      { id: "intro", type: "event", narration: "Bir olay oldu." },
+      twoHelpChoices,
+    ]);
     const result = validateVideoBranchingCompatibility(story);
     expect(result.compatible).toBe(true);
     if (!result.compatible) throw new Error("expected compatible");
@@ -316,8 +343,18 @@ describe("validateVideoBranchingCompatibility", () => {
       type: "choice",
       prompt: "Bir tane seç.",
       choices: [
-        { id: "a", accessibilityLabel: "A", visual: { kind: "balloon", color: "#F46F5E" }, acknowledgement: "A." },
-        { id: "b", accessibilityLabel: "B", visual: { kind: "balloon", color: "#55A9D6" }, acknowledgement: "B." },
+        {
+          id: "a",
+          accessibilityLabel: "A",
+          visual: { kind: "balloon", color: "#F46F5E" },
+          acknowledgement: "A.",
+        },
+        {
+          id: "b",
+          accessibilityLabel: "B",
+          visual: { kind: "balloon", color: "#55A9D6" },
+          acknowledgement: "B.",
+        },
       ],
     };
     const story = baseStory([anotherChoiceStep, twoHelpChoices]);
@@ -347,7 +384,8 @@ describe("Phase 5.5 contract test: canonical video_branching template", () => {
   it("has exactly one decision-capable step with exactly two choices", () => {
     const { story } = loadCanonicalTemplate();
     const decisionSteps = story.steps.filter(
-      (step) => step.type === "choice" || step.type === "help_choice" || step.type === "emotion_choice",
+      (step) =>
+        step.type === "choice" || step.type === "help_choice" || step.type === "emotion_choice",
     );
     expect(decisionSteps).toHaveLength(1);
     const [decisionStep] = decisionSteps;

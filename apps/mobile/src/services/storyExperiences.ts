@@ -1,4 +1,7 @@
-import { publishedStoryExperienceSchema, type PublishedStoryExperience } from "@adaptive/media-schema";
+import {
+  type PublishedStoryExperience,
+  publishedStoryExperienceSchema,
+} from "@adaptive/media-schema";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../lib/database.types";
 

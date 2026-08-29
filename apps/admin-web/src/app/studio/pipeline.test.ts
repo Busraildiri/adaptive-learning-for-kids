@@ -19,7 +19,11 @@ function job(overrides: Partial<MediaJob>): MediaJob {
     graphId: "graph-1",
     provider: "openmontage",
     mode: "local_animation",
-    renderManifest: { scene: {}, mode: "local_animation", aspectRatio: "4:5" } as unknown as MediaJob["renderManifest"],
+    renderManifest: {
+      scene: {},
+      mode: "local_animation",
+      aspectRatio: "4:5",
+    } as unknown as MediaJob["renderManifest"],
     mediaKind: "video",
     status: "queued",
     progress: 0,
@@ -112,8 +116,20 @@ describe("groupJobsByRole", () => {
   const jobs: MediaJob[] = [
     job({ id: "v1", mediaKind: "video", sceneId: "scene-01", status: "ready" }),
     job({ id: "v2", mediaKind: "video", sceneId: "help_01-hug", status: "rendering" }),
-    job({ id: "v3", mediaKind: "video", sceneId: "help_01-balloon", status: "failed", error: "boom" }),
-    job({ id: "a1", mediaKind: "audio", audioRole: "question", sceneId: "help_01", status: "ready" }),
+    job({
+      id: "v3",
+      mediaKind: "video",
+      sceneId: "help_01-balloon",
+      status: "failed",
+      error: "boom",
+    }),
+    job({
+      id: "a1",
+      mediaKind: "audio",
+      audioRole: "question",
+      sceneId: "help_01",
+      status: "ready",
+    }),
     job({
       id: "a2",
       mediaKind: "audio",
@@ -134,7 +150,11 @@ describe("groupJobsByRole", () => {
 
   it("produces one video card per non-decision clip", () => {
     const { videoCards } = groupJobsByRole(graph.clips as PlaybackClip[], jobs);
-    expect(videoCards.map((card) => card.key)).toEqual(["scene-01", "help_01-hug", "help_01-balloon"]);
+    expect(videoCards.map((card) => card.key)).toEqual([
+      "scene-01",
+      "help_01-hug",
+      "help_01-balloon",
+    ]);
     expect(videoCards.find((card) => card.key === "help_01-balloon")?.job?.status).toBe("failed");
   });
 

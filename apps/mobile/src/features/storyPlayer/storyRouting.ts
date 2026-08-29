@@ -6,8 +6,9 @@
  * bundled interactive_ui story wins and the published one is ignored
  * (logged), rather than silently replacing existing content.
  */
-import type { PublishedStoryExperience } from "@adaptive/media-schema";
+
 import type { Story } from "@adaptive/content-schema";
+import type { PublishedStoryExperience } from "@adaptive/media-schema";
 
 export type StoryRoute =
   | { kind: "bundled"; story: Story }

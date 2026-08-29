@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
 import type { PublishedStoryExperience } from "@adaptive/media-schema";
+import { describe, expect, it, vi } from "vitest";
 import { createPublishedStorySelectionCards } from "./publishedStorySelection";
 
 function experience(storyId: string, title: string): PublishedStoryExperience {

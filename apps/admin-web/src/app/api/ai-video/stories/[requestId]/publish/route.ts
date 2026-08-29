@@ -53,7 +53,9 @@ export async function POST(
     stage = "publication_copy";
     const confirmedPaths: string[] = [];
     for (const entry of prepared.copyManifest ?? []) {
-      const downloaded = await serverClient.storage.from("media-renders").download(entry.sourcePath);
+      const downloaded = await serverClient.storage
+        .from("media-renders")
+        .download(entry.sourcePath);
       if (downloaded.error) throw downloaded.error;
       const uploaded = await serverClient.storage
         .from("published-story-media")

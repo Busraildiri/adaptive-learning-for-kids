@@ -1,7 +1,7 @@
 "use client";
 
-import type { MediaCardModel } from "./pipeline";
 import { MediaStatusBadge } from "./MediaStatusBadge";
+import type { MediaCardModel } from "./pipeline";
 
 /** Independent card for one decision question/choice audio asset. The ▶
  * control only ever appears once the asset is actually ready -- it is
@@ -31,7 +31,12 @@ export function DecisionAudioCard({
           </button>
         ) : null}
         {status === "failed" && job ? (
-          <button className="quiet" disabled={retrying} onClick={() => onRetry(job.id)} type="button">
+          <button
+            className="quiet"
+            disabled={retrying}
+            onClick={() => onRetry(job.id)}
+            type="button"
+          >
             {retrying ? "Tekrar deneniyor…" : "Tekrar Dene"}
           </button>
         ) : null}

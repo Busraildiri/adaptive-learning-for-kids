@@ -36,7 +36,9 @@ export function createPublishedMediaResolver(
       .createSignedUrl(mediaRef, SIGNED_URL_TTL_SECONDS);
 
     if (error || !data?.signedUrl) {
-      throw new Error(`Failed to sign published media reference "${mediaRef}": ${error?.message ?? "no URL returned"}`);
+      throw new Error(
+        `Failed to sign published media reference "${mediaRef}": ${error?.message ?? "no URL returned"}`,
+      );
     }
 
     cache.set(mediaRef, {

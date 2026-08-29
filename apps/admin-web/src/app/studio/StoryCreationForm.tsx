@@ -17,6 +17,7 @@ import { findStoryBlueprint, videoBranchingBlueprints } from "../../lib/storyBlu
 // interactive_ui blueprints remain reachable through /api/generate and the
 // legacy review workspace, just never through this form.
 const studioBlueprints = videoBranchingBlueprints();
+
 import { AdvancedAssetControls, type AdvancedAssetSelection } from "./AdvancedAssetControls";
 
 const content = contentVersionSchema.parse(contentJson);
@@ -33,7 +34,9 @@ export interface StoryGenerationResult {
 function defaultsForBlueprint(flowId: string): AdvancedAssetSelection & { ageBands: AgeBand[] } {
   const blueprint = findStoryBlueprint(flowId);
   const template = content.stories.find((story) => story.id === blueprint?.mechanicsSourceStoryId);
-  const sceneAssets = content.assets.filter((asset) => template && isAllowedSceneAsset(asset, template));
+  const sceneAssets = content.assets.filter(
+    (asset) => template && isAllowedSceneAsset(asset, template),
+  );
   return {
     sceneAssetId:
       sceneAssets.find((asset) => asset.id === blueprint?.defaultSceneAssetId)?.id ??
@@ -70,7 +73,9 @@ export function StoryCreationForm({
   const [flowId, setFlowId] = useState(studioBlueprints[0]?.id ?? "");
   const blueprint = findStoryBlueprint(flowId);
   const template = content.stories.find((story) => story.id === blueprint?.mechanicsSourceStoryId);
-  const sceneAssets = content.assets.filter((asset) => template && isAllowedSceneAsset(asset, template));
+  const sceneAssets = content.assets.filter(
+    (asset) => template && isAllowedSceneAsset(asset, template),
+  );
   const flowAssets = content.assets.filter(isUsableFlowAsset);
   const emotions = [
     ...new Set(
@@ -154,8 +159,8 @@ export function StoryCreationForm({
         <span className="server-only-badge">Anahtar yalnızca sunucuda</span>
       </div>
       <p className="generation-help">
-        Bir olay akışı ve tema seç. Karakter görselleri otomatik olarak dolduruldu; sahne
-        görselini görmek veya değiştirmek istersen aşağıdaki gelişmiş bölümü aç.
+        Bir olay akışı ve tema seç. Karakter görselleri otomatik olarak dolduruldu; sahne görselini
+        görmek veya değiştirmek istersen aşağıdaki gelişmiş bölümü aç.
       </p>
       <form className="generation-form" onSubmit={submit}>
         <label>

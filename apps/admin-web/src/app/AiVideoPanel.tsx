@@ -100,7 +100,9 @@ function progressStep(
   };
 }
 
-function progressItems(result: Pick<AiVideoGenerationResponse, "characterName" | "jobs">): ProgressItem[] {
+function progressItems(
+  result: Pick<AiVideoGenerationResponse, "characterName" | "jobs">,
+): ProgressItem[] {
   const jobs = result.jobs ?? [];
   return [
     {
@@ -294,7 +296,9 @@ export function AiVideoPanel({ supabase }: { supabase: SupabaseClient }) {
       const response = await fetch("/api/ai-video/stories", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const body = (await response.json()) as { stories?: AiVideoCatalogItem[] } & AiVideoErrorResponse;
+      const body = (await response.json()) as {
+        stories?: AiVideoCatalogItem[];
+      } & AiVideoErrorResponse;
       if (!response.ok) {
         setFailure(failureFromResponse(body, "Kayıtlı hikâyeler alınamadı."));
         return;
@@ -588,8 +592,8 @@ export function AiVideoPanel({ supabase }: { supabase: SupabaseClient }) {
                 >
                   <strong>{story.plan.title}</strong>
                   <span>
-                    {story.characterName} · {requestStatusLabels[story.status]} ·{" "}
-                    {doneCount}/{itemProgress.length} tamamlandı
+                    {story.characterName} · {requestStatusLabels[story.status]} · {doneCount}/
+                    {itemProgress.length} tamamlandı
                   </span>
                   <small>{publicationStatusLabels[story.publicationStatus]}</small>
                 </button>
@@ -602,7 +606,10 @@ export function AiVideoPanel({ supabase }: { supabase: SupabaseClient }) {
             <div className="empty large">
               <span>☰</span>
               <h2>İncelemek için bir hikâye seç</h2>
-              <p>AI ile üretilen hikâyeler burada listelenir; birini seçince ilerlemesini görebilirsin.</p>
+              <p>
+                AI ile üretilen hikâyeler burada listelenir; birini seçince ilerlemesini
+                görebilirsin.
+              </p>
             </div>
           ) : (
             <div className="ai-video-result">
@@ -668,8 +675,8 @@ export function AiVideoPanel({ supabase }: { supabase: SupabaseClient }) {
               </div>
               {progressCollapsed ? (
                 <p className="ai-video-progress-summary">
-                  {progress.filter((item) => item.status === "ready").length}/{progress.length}{" "}
-                  adım tamamlandı
+                  {progress.filter((item) => item.status === "ready").length}/{progress.length} adım
+                  tamamlandı
                 </p>
               ) : (
                 <ol className="ai-video-progress">
@@ -694,7 +701,9 @@ export function AiVideoPanel({ supabase }: { supabase: SupabaseClient }) {
                 <article>
                   <small>Duygu seçenekleri</small>
                   <strong>
-                    {selected.plan.emotionQuestion.options.map((option) => option.label).join(" · ")}
+                    {selected.plan.emotionQuestion.options
+                      .map((option) => option.label)
+                      .join(" · ")}
                   </strong>
                 </article>
                 <article>

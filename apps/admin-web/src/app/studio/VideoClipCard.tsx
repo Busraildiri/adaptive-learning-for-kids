@@ -1,7 +1,7 @@
 "use client";
 
-import type { MediaCardModel } from "./pipeline";
 import { MediaStatusBadge } from "./MediaStatusBadge";
+import type { MediaCardModel } from "./pipeline";
 
 /** One independent card per video clip -- Phase 5's "1 renderable asset = 1
  * card" model. A failed sibling never appears here; this card only ever
@@ -31,7 +31,12 @@ export function VideoClipCard({
           </button>
         ) : null}
         {status === "failed" && job ? (
-          <button className="quiet" disabled={retrying} onClick={() => onRetry(job.id)} type="button">
+          <button
+            className="quiet"
+            disabled={retrying}
+            onClick={() => onRetry(job.id)}
+            type="button"
+          >
             {retrying ? "Tekrar deneniyor…" : "Tekrar Dene"}
           </button>
         ) : null}

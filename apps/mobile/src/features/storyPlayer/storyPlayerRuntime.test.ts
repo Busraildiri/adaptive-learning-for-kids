@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import type { PublishedStoryExperience } from "@adaptive/media-schema";
+import { describe, expect, it } from "vitest";
 import { buildClipLookup, initialStage } from "./storyPlayerGraph";
 import { reduceStoryPlayerRuntime, type StoryPlayerRuntimeState } from "./storyPlayerRuntime";
 
@@ -26,7 +26,12 @@ function experience(): PublishedStoryExperience {
         question: { text: "Nasıl yardım edelim?", audio: media("help_01-question.m4a") },
         options: [
           { id: "hug", label: "Sarıl", nextClipId: "help_01-hug", audio: media("hug.m4a") },
-          { id: "balloon", label: "Balon bul", nextClipId: "help_01-balloon", audio: media("balloon.m4a") },
+          {
+            id: "balloon",
+            label: "Balon bul",
+            nextClipId: "help_01-balloon",
+            audio: media("balloon.m4a"),
+          },
         ],
       },
       { kind: "ending", id: "help_01-hug", video: media("help_01-hug.mp4") },
@@ -38,7 +43,10 @@ describe("reduceStoryPlayerRuntime", () => {
   it("a rapid duplicate choice selection cannot advance the graph twice", () => {
     const exp = experience();
     const clips = buildClipLookup(exp);
-    let state: StoryPlayerRuntimeState = { stage: { stage: "choice", clipId: "help_01" }, advancing: false };
+    let state: StoryPlayerRuntimeState = {
+      stage: { stage: "choice", clipId: "help_01" },
+      advancing: false,
+    };
 
     const first = reduceStoryPlayerRuntime(clips, exp, state, {
       type: "CHOICE_SELECT",
@@ -99,6 +107,9 @@ describe("reduceStoryPlayerRuntime", () => {
       { stage: { stage: "finished" }, advancing: true },
       { type: "REPLAY" },
     );
-    expect(result).toEqual({ ok: true, state: { stage: { stage: "video", clipId: "scene-01" }, advancing: false } });
+    expect(result).toEqual({
+      ok: true,
+      state: { stage: { stage: "video", clipId: "scene-01" }, advancing: false },
+    });
   });
 });

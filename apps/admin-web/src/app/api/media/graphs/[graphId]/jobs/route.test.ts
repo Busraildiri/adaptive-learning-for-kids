@@ -13,7 +13,11 @@ function job(id: string, graphId: string | undefined): MediaJob {
     graphId,
     provider: "openmontage",
     mode: "local_animation",
-    renderManifest: { scene: {}, mode: "local_animation", aspectRatio: "4:5" } as unknown as MediaJob["renderManifest"],
+    renderManifest: {
+      scene: {},
+      mode: "local_animation",
+      aspectRatio: "4:5",
+    } as unknown as MediaJob["renderManifest"],
     mediaKind: "video",
     status: "queued",
     progress: 0,

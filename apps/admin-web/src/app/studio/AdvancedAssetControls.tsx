@@ -42,7 +42,12 @@ export function FlowAssetField({
               {selected.uri.slice("emoji:".length)}
             </span>
           ) : selected.type === "video" ? (
-            <video className="asset-preview-image" controls muted src={resolveAssetUri(selected.uri)}>
+            <video
+              className="asset-preview-image"
+              controls
+              muted
+              src={resolveAssetUri(selected.uri)}
+            >
               <track kind="captions" />
             </video>
           ) : selected.type === "image" ? (
@@ -104,8 +109,8 @@ export function AdvancedAssetControls({
       {expanded ? (
         <div className="advanced-asset-body">
           <p className="generation-help">
-            Bu alanlar önceden dolduruldu ve genellikle değiştirilmesi gerekmez. Yalnızca
-            belirli bir sahne veya karakter görseli zorunluysa değiştir.
+            Bu alanlar önceden dolduruldu ve genellikle değiştirilmesi gerekmez. Yalnızca belirli
+            bir sahne veya karakter görseli zorunluysa değiştir.
           </p>
           <label>
             Onaylı sahne asset’i

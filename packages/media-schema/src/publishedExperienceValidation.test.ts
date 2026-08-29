@@ -25,7 +25,12 @@ function baseExperience(): PublishedStoryExperience {
         question: { text: "Nasıl yardım edelim?", audio: media("help_01-question.m4a") },
         options: [
           { id: "hug", label: "Sarıl", nextClipId: "ending-hug", audio: media("hug.m4a") },
-          { id: "balloon", label: "Balon", nextClipId: "ending-balloon", audio: media("balloon.m4a") },
+          {
+            id: "balloon",
+            label: "Balon",
+            nextClipId: "ending-balloon",
+            audio: media("balloon.m4a"),
+          },
         ],
       },
       { kind: "ending", id: "ending-hug", video: media("ending-hug.mp4") },
@@ -65,10 +70,7 @@ describe("validatePublishedExperienceGraph", () => {
     const experience = baseExperience();
     const decision = experience.clips[1];
     if (decision.kind !== "decision") throw new Error("fixture broken");
-    decision.options = [
-      decision.options[0],
-      { ...decision.options[1], nextClipId: "nowhere" },
-    ];
+    decision.options = [decision.options[0], { ...decision.options[1], nextClipId: "nowhere" }];
 
     const issues = validatePublishedExperienceGraph(experience);
     expect(issues.some((issue) => issue.message.includes("nowhere"))).toBe(true);

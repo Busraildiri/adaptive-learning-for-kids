@@ -93,9 +93,13 @@ describe("POST /api/media/jobs/story", () => {
 
     const content = contentVersionSchema.parse(contentJson);
     const expectedPlan = planStoryPlayback(fixtureStory, { assetCatalog: content.assets });
-    const expectedVideoJobs = expectedPlan.graph.clips.filter((clip) => clip.kind !== "decision").length;
+    const expectedVideoJobs = expectedPlan.graph.clips.filter(
+      (clip) => clip.kind !== "decision",
+    ).length;
     const expectedAudioJobs = expectedPlan.graph.clips
-      .filter((clip): clip is Extract<typeof clip, { kind: "decision" }> => clip.kind === "decision")
+      .filter(
+        (clip): clip is Extract<typeof clip, { kind: "decision" }> => clip.kind === "decision",
+      )
       .reduce((sum, clip) => sum + 1 + clip.choice.options.length, 0);
 
     const request = new Request("http://localhost/api/media/jobs/story", {

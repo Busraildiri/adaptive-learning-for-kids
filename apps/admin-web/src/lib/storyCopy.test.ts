@@ -39,11 +39,7 @@ describe("storyNarratives", () => {
         ],
       },
     ]);
-    expect(storyNarratives(story)).toEqual([
-      "Nasıl yardım edelim?",
-      "Sarıldı.",
-      "Balon buldu.",
-    ]);
+    expect(storyNarratives(story)).toEqual(["Nasıl yardım edelim?", "Sarıldı.", "Balon buldu."]);
   });
 
   it("flattens an emotion_choice step into prompt + feedback + resolution", () => {
@@ -80,8 +76,20 @@ describe("storyNarratives", () => {
 
 describe("findAssetById", () => {
   const assets: Asset[] = [
-    { id: "a1", type: "symbol", uri: "emoji:🙂", mimeType: "text/plain", accessibilityLabel: "Mutlu" },
-    { id: "a2", type: "symbol", uri: "emoji:😢", mimeType: "text/plain", accessibilityLabel: "Üzgün" },
+    {
+      id: "a1",
+      type: "symbol",
+      uri: "emoji:🙂",
+      mimeType: "text/plain",
+      accessibilityLabel: "Mutlu",
+    },
+    {
+      id: "a2",
+      type: "symbol",
+      uri: "emoji:😢",
+      mimeType: "text/plain",
+      accessibilityLabel: "Üzgün",
+    },
   ];
 
   it("finds an asset by id", () => {

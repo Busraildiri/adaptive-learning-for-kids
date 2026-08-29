@@ -22,12 +22,18 @@ export async function POST(request: Request) {
     const publishableKey = requiredEnvironment("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
     const { client } = await requireContentAdminSession(request, supabaseUrl, publishableKey);
 
-    const body = (await request.json()) as { storyId?: unknown; provider?: unknown; mode?: unknown };
+    const body = (await request.json()) as {
+      storyId?: unknown;
+      provider?: unknown;
+      mode?: unknown;
+    };
     if (typeof body.storyId !== "string" || !body.storyId.trim()) {
       throw new Error("Geçersiz storyId.");
     }
     const provider =
-      typeof body.provider === "string" && body.provider.trim() ? body.provider.trim() : "openmontage";
+      typeof body.provider === "string" && body.provider.trim()
+        ? body.provider.trim()
+        : "openmontage";
     const mode: MediaMode = body.mode === "static_image" ? "static_image" : "local_animation";
 
     const { story, assets } = await findStoryForMedia(client, body.storyId.trim());
@@ -77,8 +83,11 @@ export async function POST(request: Request) {
         audioRole: "question",
       });
       jobs.push({
-        jobId: questionJob.id, clipId: clip.id, mediaKind: "audio",
-        audioRole: "question", status: questionJob.status,
+        jobId: questionJob.id,
+        clipId: clip.id,
+        mediaKind: "audio",
+        audioRole: "question",
+        status: questionJob.status,
       });
 
       for (const option of clip.choice.options) {
@@ -101,8 +110,12 @@ export async function POST(request: Request) {
           choiceId: option.id,
         });
         jobs.push({
-          jobId: optionJob.id, clipId: clip.id, mediaKind: "audio",
-          audioRole: "choice", choiceId: option.id, status: optionJob.status,
+          jobId: optionJob.id,
+          clipId: clip.id,
+          mediaKind: "audio",
+          audioRole: "choice",
+          choiceId: option.id,
+          status: optionJob.status,
         });
       }
     }

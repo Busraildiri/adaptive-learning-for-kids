@@ -1,4 +1,9 @@
-import { type Asset, contentVersionSchema, type Story, storySchema } from "@adaptive/content-schema";
+import {
+  type Asset,
+  contentVersionSchema,
+  type Story,
+  storySchema,
+} from "@adaptive/content-schema";
 import contentJson from "@adaptive/content-schema/content/tr-TR/v1";
 import type { SupabaseClient } from "@supabase/supabase-js";
 

@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
 import type { Story } from "@adaptive/content-schema";
 import type { PublishedStoryExperience } from "@adaptive/media-schema";
+import { describe, expect, it, vi } from "vitest";
 import { resolveStoryRoute } from "./storyRouting";
 
 function bundledStory(id: string): Story {

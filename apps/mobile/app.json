@@ -10,12 +10,6 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.busraildiri.adaptivelearningforkids"
     },
-    "plugins": [
-      "expo-secure-store",
-      "expo-web-browser",
-      "expo-sqlite",
-      "expo-video",
-      "expo-audio"
-    ]
+    "plugins": ["expo-secure-store", "expo-web-browser", "expo-sqlite", "expo-video", "expo-audio"]
   }
 }

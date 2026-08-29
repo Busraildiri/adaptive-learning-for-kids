@@ -1,12 +1,6 @@
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
 
-export function FinishedStage({
-  onReplay,
-  onExit,
-}: {
-  onReplay: () => void;
-  onExit: () => void;
-}) {
+export function FinishedStage({ onReplay, onExit }: { onReplay: () => void; onExit: () => void }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.card}>
@@ -44,7 +38,13 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   symbol: { fontSize: 56, marginBottom: 6 },
-  title: { color: "#463A31", fontSize: 24, fontWeight: "900", textAlign: "center", marginBottom: 10 },
+  title: {
+    color: "#463A31",
+    fontSize: 24,
+    fontWeight: "900",
+    textAlign: "center",
+    marginBottom: 10,
+  },
   primaryButton: {
     width: "100%",
     paddingVertical: 16,

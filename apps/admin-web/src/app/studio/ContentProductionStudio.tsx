@@ -8,8 +8,8 @@ import { getLatestPublishedExperience, getStoryPlaybackGraph } from "../../lib/m
 import type { ReviewItem } from "../../lib/reviewQueue";
 import { useMediaJobsPolling } from "./hooks/useMediaJobsPolling";
 import { MediaProductionPanel } from "./MediaProductionPanel";
+import { ProductionReadiness, type PublicationState } from "./ProductionReadiness";
 import { deriveStudioStage } from "./pipeline";
-import { type PublicationState, ProductionReadiness } from "./ProductionReadiness";
 import { type ScenePlan, ScenePlanView } from "./ScenePlanView";
 import { StoryCreationForm, type StoryGenerationResult } from "./StoryCreationForm";
 import { StoryReviewCard } from "./StoryReviewCard";
@@ -37,8 +37,12 @@ function StudioInner({ supabase }: { supabase: SupabaseClient }) {
   // bodies) are never written to the query string, localStorage, or
   // sessionStorage. A refresh re-fetches everything below from the backend
   // using only these two ids (Phase 5 Decision 2).
-  const [storyId, setStoryId] = useState<string | undefined>(searchParams.get("storyId") ?? undefined);
-  const [graphId, setGraphId] = useState<string | undefined>(searchParams.get("graphId") ?? undefined);
+  const [storyId, setStoryId] = useState<string | undefined>(
+    searchParams.get("storyId") ?? undefined,
+  );
+  const [graphId, setGraphId] = useState<string | undefined>(
+    searchParams.get("graphId") ?? undefined,
+  );
 
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
@@ -105,7 +109,11 @@ function StudioInner({ supabase }: { supabase: SupabaseClient }) {
     let cancelled = false;
     void getLatestPublishedExperience(supabase, storyId).then((latest) => {
       if (cancelled || !latest) return;
-      setPublication({ status: "published", publishedVersion: latest.publishedVersion, publishedAt: latest.publishedAt });
+      setPublication({
+        status: "published",
+        publishedVersion: latest.publishedVersion,
+        publishedAt: latest.publishedAt,
+      });
     });
     return () => {
       cancelled = true;
@@ -169,7 +177,8 @@ function StudioInner({ supabase }: { supabase: SupabaseClient }) {
         body: JSON.stringify({ storyId }),
       });
       const body = (await response.json()) as { graphId?: string; error?: string };
-      if (!response.ok || !body.graphId) throw new Error(body.error ?? "Medya üretimi başlatılamadı.");
+      if (!response.ok || !body.graphId)
+        throw new Error(body.error ?? "Medya üretimi başlatılamadı.");
       setGraphId(body.graphId);
       syncUrl({ storyId, graphId: body.graphId });
     } catch (error) {
@@ -210,7 +219,10 @@ function StudioInner({ supabase }: { supabase: SupabaseClient }) {
         publishedAt: body.publishedAt ?? latest?.publishedAt,
       });
     } catch (error) {
-      setPublication({ status: "failed", error: error instanceof Error ? error.message : "Yayınlama başarısız." });
+      setPublication({
+        status: "failed",
+        error: error instanceof Error ? error.message : "Yayınlama başarısız.",
+      });
     }
   }
 
@@ -253,12 +265,20 @@ function StudioInner({ supabase }: { supabase: SupabaseClient }) {
         <p className="alert">Bu hikâye için inceleme kaydı bulunamadı.</p>
       ) : null}
       {storyId && reviewItem && reviewItem.status === "pending" ? (
-        <StoryReviewCard busy={approving} error={reviewError} item={reviewItem} onApprove={() => void approve()} />
+        <StoryReviewCard
+          busy={approving}
+          error={reviewError}
+          item={reviewItem}
+          onApprove={() => void approve()}
+        />
       ) : null}
-      {storyId && reviewItem && (reviewItem.status === "rejected" || reviewItem.status === "expired") ? (
+      {storyId &&
+      reviewItem &&
+      (reviewItem.status === "rejected" || reviewItem.status === "expired") ? (
         <p className="alert">
-          Bu hikâye taslağı artık kullanılamıyor ({reviewItem.status === "rejected" ? "reddedildi" : "süresi doldu"}).
-          Yeni bir hikâye üretmen gerekiyor.
+          Bu hikâye taslağı artık kullanılamıyor (
+          {reviewItem.status === "rejected" ? "reddedildi" : "süresi doldu"}). Yeni bir hikâye
+          üretmen gerekiyor.
         </p>
       ) : null}
 
@@ -267,7 +287,12 @@ function StudioInner({ supabase }: { supabase: SupabaseClient }) {
           <ScenePlanView onPlanLoaded={setScenePlan} storyId={storyId} supabase={supabase} />
           {scenePlan ? (
             <div className="decision-bar">
-              <button className="primary" disabled={startingMedia} onClick={() => void generateMedia()} type="button">
+              <button
+                className="primary"
+                disabled={startingMedia}
+                onClick={() => void generateMedia()}
+                type="button"
+              >
                 {startingMedia ? "Medya üretimi başlatılıyor…" : "Medya Üret"}
               </button>
             </div>

@@ -30,7 +30,9 @@ export function useSignedPreviewUrl(supabase: SupabaseClient) {
         }
         setUrl(body.signedUrl);
       } catch (fetchError) {
-        setError(fetchError instanceof Error ? fetchError.message : "Önizleme bağlantısı alınamadı.");
+        setError(
+          fetchError instanceof Error ? fetchError.message : "Önizleme bağlantısı alınamadı.",
+        );
       } finally {
         setLoading(false);
       }

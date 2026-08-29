@@ -1,8 +1,8 @@
 "use client";
 
 import { storySchema } from "@adaptive/content-schema";
-import { storyNarratives } from "../../lib/storyCopy";
 import type { ReviewItem } from "../../lib/reviewQueue";
+import { storyNarratives } from "../../lib/storyCopy";
 import { StoryCopyList } from "./StoryCopyList";
 
 /** The Studio's mandatory human-review gate (Phase 5 Decision 1). Reuses
@@ -65,8 +65,8 @@ export function StoryReviewCard({
         </button>
       </div>
       <p className="generation-help">
-        Bu ekranda yalnızca onay sunulur. Reddetme gerekiyorsa mevcut İnceleme Kuyruğu
-        ekranı üzerinden yapılabilir.
+        Bu ekranda yalnızca onay sunulur. Reddetme gerekiyorsa mevcut İnceleme Kuyruğu ekranı
+        üzerinden yapılabilir.
       </p>
     </section>
   );

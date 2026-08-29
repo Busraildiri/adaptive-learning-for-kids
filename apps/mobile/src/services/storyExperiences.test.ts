@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { describe, expect, it } from "vitest";
 import type { Database } from "../lib/database.types";
 import { loadPublishedStoryExperience, loadPublishedStoryExperiences } from "./storyExperiences";
 
@@ -37,7 +37,9 @@ describe("loadPublishedStoryExperiences", () => {
 
   it("accepts a valid published payload", async () => {
     const supabase = fakeSupabase({
-      data: [{ story_id: "story-1", published_version: 1, experience: validExperience("story-1", 1) }],
+      data: [
+        { story_id: "story-1", published_version: 1, experience: validExperience("story-1", 1) },
+      ],
       error: null,
     });
     const result = await loadPublishedStoryExperiences(supabase);
@@ -82,7 +84,9 @@ describe("loadPublishedStoryExperiences", () => {
 describe("loadPublishedStoryExperience", () => {
   it("finds a single experience by storyId", async () => {
     const supabase = fakeSupabase({
-      data: [{ story_id: "story-1", published_version: 1, experience: validExperience("story-1", 1) }],
+      data: [
+        { story_id: "story-1", published_version: 1, experience: validExperience("story-1", 1) },
+      ],
       error: null,
     });
     const experience = await loadPublishedStoryExperience(supabase, "story-1");
