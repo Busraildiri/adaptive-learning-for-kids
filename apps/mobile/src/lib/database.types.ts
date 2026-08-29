@@ -107,6 +107,19 @@ export interface Database {
           game: Json;
           published_by: string;
           published_at: string;
+          archived_by: string | null;
+          archived_at: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      game_catalog_tombstones: {
+        Row: {
+          game_id: string;
+          deleted_from_status: "published" | "archived";
+          deleted_by: string;
+          deleted_at: string;
         };
         Insert: never;
         Update: never;

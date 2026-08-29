@@ -299,6 +299,7 @@ function GameCatalogPage({
   onApprove,
   onArchive,
   onDeleteDraft,
+  onDeleteGame,
   recentlyPublishedId,
 }: {
   status: GameCatalogItem["status"];
@@ -310,6 +311,7 @@ function GameCatalogPage({
   onApprove: (game: Game) => void;
   onArchive: (gameId: string) => void;
   onDeleteDraft: (gameId: string) => void;
+  onDeleteGame: (gameId: string, status: "published" | "archived") => void;
   recentlyPublishedId: string | null;
 }) {
   const group = catalogGroups.find((candidate) => candidate.status === status);
@@ -385,6 +387,15 @@ function GameCatalogPage({
                     Arşivle
                   </button>
                 ) : null}
+                {status === "published" || status === "archived" ? (
+                  <button
+                    className="danger"
+                    onClick={() => onDeleteGame(item.game.id, status)}
+                    type="button"
+                  >
+                    Oyunu sil
+                  </button>
+                ) : null}
               </div>
             </article>
           ))}
@@ -407,7 +418,7 @@ export function GamePanel({ supabase }: { supabase: SupabaseClient | null }) {
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [editorExpanded, setEditorExpanded] = useState(false);
-  const [newGameSchemaExpanded, setNewGameSchemaExpanded] = useState(true);
+  const [newGameSchemaExpanded, setNewGameSchemaExpanded] = useState(false);
   const [catalog, setCatalog] = useState<GameCatalogItem[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [recentlyPublishedId, setRecentlyPublishedId] = useState<string | null>(null);
@@ -456,13 +467,18 @@ export function GamePanel({ supabase }: { supabase: SupabaseClient | null }) {
       const body = (await response.json()) as {
         error?: string;
         items?: GameCatalogItem[];
+        deletedGameIds?: string[];
       };
       if (!response.ok || body.error) throw new Error(body.error ?? "Oyun kataloğu yüklenemedi.");
-      const remoteItems = body.items ?? [];
+      const deletedGameIds = new Set(body.deletedGameIds ?? []);
+      const remoteItems = (body.items ?? []).filter((item) => !deletedGameIds.has(item.game.id));
       const knownIds = new Set(remoteItems.map((item) => item.game.id));
       const bundledItems: GameCatalogItem[] = (content.games ?? [])
         .filter(
-          (bundledGame) => bundledGame.status === "published" && !knownIds.has(bundledGame.id),
+          (bundledGame) =>
+            bundledGame.status === "published" &&
+            !knownIds.has(bundledGame.id) &&
+            !deletedGameIds.has(bundledGame.id),
         )
         .map((bundledGame) => ({
           game: bundledGame,
@@ -519,6 +535,32 @@ export function GamePanel({ supabase }: { supabase: SupabaseClient | null }) {
       await loadCatalog();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Taslak silinemedi.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteCatalogGame = async (gameId: string, catalogStatus: "published" | "archived") => {
+    const label = catalogStatus === "published" ? "yayındaki" : "arşivlenmiş";
+    if (
+      !window.confirm(
+        `Bu ${label} oyun ve bütün sürümleri kalıcı olarak silinsin mi? Bu işlem geri alınamaz.`,
+      )
+    )
+      return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const response = await authenticatedRequest(
+        `/api/games?gameId=${encodeURIComponent(gameId)}&catalogStatus=${catalogStatus}`,
+        { method: "DELETE" },
+      );
+      const body = (await response.json()) as { error?: string };
+      if (!response.ok || body.error) throw new Error(body.error ?? "Oyun silinemedi.");
+      setMessage(`${catalogStatus === "published" ? "Yayındaki" : "Arşivlenmiş"} oyun silindi.`);
+      await loadCatalog();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Oyun silinemedi.");
     } finally {
       setBusy(false);
     }
@@ -733,6 +775,7 @@ export function GamePanel({ supabase }: { supabase: SupabaseClient | null }) {
             setMessage(`${selected.title} v${selected.version} düzenleyiciye yüklendi.`);
           }}
           onDeleteDraft={(gameId) => void deleteDraft(gameId)}
+          onDeleteGame={(gameId, status) => void deleteCatalogGame(gameId, status)}
           recentlyPublishedId={recentlyPublishedId}
           status={catalogPageStatus}
         />
