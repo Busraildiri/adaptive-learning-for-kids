@@ -1,15 +1,10 @@
 "use client";
 
-import {
-  type Asset,
-  contentVersionSchema,
-  type Story,
-  storySchema,
-} from "@adaptive/content-schema";
+import { contentVersionSchema, storySchema } from "@adaptive/content-schema";
 import contentJson from "@adaptive/content-schema/content/tr-TR/v1";
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { resolveAssetUri } from "../lib/assetUri";
+import { findAssetById, storyNarratives } from "../lib/storyCopy";
 import {
   daysUntilExpiry,
   pendingReviewItems,
@@ -17,67 +12,14 @@ import {
   storyTitle,
 } from "../lib/reviewQueue";
 import { GamePanel } from "./GamePanel";
-import { GenerationPanel } from "./GenerationPanel";
+import { AssetFrame, StoryCopyList } from "./studio/StoryCopyList";
+import { ContentProductionStudio } from "./studio/ContentProductionStudio";
 
 type Screen = "stories" | "games";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 const content = contentVersionSchema.parse(contentJson);
-
-function storyNarratives(story: Story): string[] {
-  return story.steps.flatMap((step) => {
-    if (step.type === "emotion_choice") {
-      return [
-        step.prompt,
-        ...step.choices.map(
-          (choice) => `${choice.accessibilityLabel}: ${choice.supportiveFeedback.narration}`,
-        ),
-        step.storyResolution.narration,
-      ];
-    }
-    if (step.type === "choice") {
-      return [step.prompt, ...step.choices.map((choice) => choice.accessibilityLabel)];
-    }
-    if (step.type === "tap") {
-      return [step.prompt, step.completionNarration];
-    }
-    if (step.type === "help_choice") {
-      return [step.prompt, ...step.choices.map((choice) => choice.resultNarration)];
-    }
-    return [step.narration];
-  });
-}
-
-function findAssetById(assets: Asset[], id: string | undefined): Asset | undefined {
-  return assets.find((asset) => asset.id === id);
-}
-
-function AssetFrame({ label, asset }: { label: string; asset: Asset | undefined }) {
-  return (
-    <div className="story-flow-frame">
-      {!asset ? (
-        <p>Bu kare için asset bulunamadı.</p>
-      ) : asset.type === "video" ? (
-        <video controls preload="metadata" src={resolveAssetUri(asset.uri)}>
-          <track kind="captions" />
-        </video>
-      ) : asset.uri.startsWith("emoji:") ? (
-        <span aria-hidden="true" className="review-media-symbol">
-          {asset.uri.slice("emoji:".length)}
-        </span>
-      ) : asset.type === "image" ? (
-        <img alt={asset.accessibilityLabel} src={resolveAssetUri(asset.uri)} />
-      ) : (
-        <p>Bu taslak için görüntülenebilir bir medya asset’i yok.</p>
-      )}
-      <small>
-        {label}
-        {asset?.accessibilityLabel ? ` · ${asset.accessibilityLabel}` : ""}
-      </small>
-    </div>
-  );
-}
 
 function createBrowserClient(): SupabaseClient | null {
   if (!supabaseUrl || !supabaseKey) return null;
@@ -293,7 +235,7 @@ export default function HomePage() {
         <GamePanel supabase={supabase} />
       ) : (
         <>
-          <GenerationPanel onGenerated={loadQueue} supabase={supabase} />
+          <ContentProductionStudio supabase={supabase} />
           <section className="summary-grid">
             <article className="summary-card">
               <strong>{pending.length}</strong>
@@ -377,11 +319,7 @@ export default function HomePage() {
                       </div>
                       <div className="review-story-copy">
                         <p className="review-greeting">{selectedStory.greetingTemplate}</p>
-                        <ol>
-                          {storyNarratives(selectedStory).map((narrative, index) => (
-                            <li key={`${index}-${narrative}`}>{narrative}</li>
-                          ))}
-                        </ol>
+                        <StoryCopyList narratives={storyNarratives(selectedStory)} />
                       </div>
                     </div>
                   ) : null}

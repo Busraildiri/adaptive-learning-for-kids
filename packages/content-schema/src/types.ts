@@ -15,6 +15,7 @@ import type {
   emotionClueRoundSchema,
   emotionCluesGameSchema,
   emotionIdSchema,
+  experienceTypeSchema,
   fishPatternsGameSchema,
   gameExpectedActionSchema,
   gameMechanicSchema,
@@ -42,6 +43,7 @@ import type {
 export type AgeBand = z.infer<typeof ageBandSchema>;
 export type ActivityType = z.infer<typeof activityTypeSchema>;
 export type EmotionId = z.infer<typeof emotionIdSchema>;
+export type ExperienceType = z.infer<typeof experienceTypeSchema>;
 export type HelpAction = z.infer<typeof helpActionSchema>;
 export type AssetType = z.infer<typeof assetTypeSchema>;
 export type Asset = z.infer<typeof assetSchema>;

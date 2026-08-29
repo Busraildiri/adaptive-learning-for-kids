@@ -413,6 +413,11 @@
             "type": "string",
             "minLength": 1
           },
+          "experienceType": {
+            "default": "interactive_ui",
+            "type": "string",
+            "enum": ["interactive_ui", "video_branching"]
+          },
           "sceneAssetId": {
             "type": "string",
             "minLength": 1
@@ -939,6 +944,7 @@
           "ageBands",
           "targetSkills",
           "greetingTemplate",
+          "experienceType",
           "characterAssets",
           "steps"
         ],

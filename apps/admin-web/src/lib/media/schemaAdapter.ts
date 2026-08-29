@@ -8,7 +8,10 @@ export interface SceneAdapterOptions {
 
 const DEFAULT_DURATION_SECONDS = 5;
 
-function narrationOf(step: StoryStep): string | undefined {
+// Exported for reuse by scenePlanner.ts, which needs the same per-step
+// headline-narration logic while walking a Story's steps into a branching
+// StoryPlaybackGraph -- kept here rather than duplicated.
+export function narrationOf(step: StoryStep): string | undefined {
   switch (step.type) {
     case "event":
     case "closing":

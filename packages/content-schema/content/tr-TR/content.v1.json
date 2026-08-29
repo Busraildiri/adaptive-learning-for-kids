@@ -816,6 +816,51 @@
           "narration": "Mino oyuncak ayısını buldu. Birlikte aradığınız için sana teşekkür ediyor."
         }
       ]
+    },
+    {
+      "id": "video-branching-crayons-story",
+      "version": 1,
+      "title": "Mino ile Paylaşma Zamanı",
+      "ageBands": ["2-4"],
+      "targetSkills": ["patience", "sharing", "co_regulation"],
+      "greetingTemplate": "Merhaba {{childName}}! Mino resim yapmak istiyor. Birlikte bakalım mı?",
+      "experienceType": "video_branching",
+      "sceneAssetId": "scene-shared-crayons",
+      "characterAssets": {
+        "happyAssetId": "character-mino-happy",
+        "sadAssetId": "character-mino-sad"
+      },
+      "steps": [
+        {
+          "id": "crayon-in-use",
+          "type": "event",
+          "narration": "Mino resim yapmak için kırmızı kalemi almak istiyor ama kalem şu anda arkadaşında."
+        },
+        {
+          "id": "notice-waiting-problem",
+          "type": "event",
+          "narration": "Mino kalemin gelmesini beklerken sabırsızlanıyor ve ne yapacağını bilemiyor."
+        },
+        {
+          "id": "help-mino-wait",
+          "type": "help_choice",
+          "prompt": "Mino'ya beklerken nasıl eşlik etmek istersin?",
+          "choices": [
+            {
+              "id": "hug-while-waiting",
+              "action": "hug",
+              "accessibilityLabel": "Mino'ya sarıl",
+              "resultNarration": "Mino'ya sarıldın. Beklerken kendini daha rahat hissetti ve sırası geldiğinde resim yapmaya başladı."
+            },
+            {
+              "id": "breathe-while-waiting",
+              "action": "breathe",
+              "accessibilityLabel": "Mino ile birlikte nefes al",
+              "resultNarration": "Mino'yla birlikte yavaşça nefes aldın. Sakinleşince sırasını beklemesi kolaylaştı."
+            }
+          ]
+        }
+      ]
     }
   ],
   "games": [

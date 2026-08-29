@@ -20,13 +20,25 @@ from __future__ import annotations
 
 import sys
 import re
+import subprocess
 import wave
+import os
 from pathlib import Path
 
 _PROVIDERS_DIR = Path(__file__).resolve().parent
 _MEDIA_WORKER_ROOT = _PROVIDERS_DIR.parent.parent
 _OPENMONTAGE_ROOT = _MEDIA_WORKER_ROOT.parent / "openmontage"
 _OUTPUT_ROOT = _MEDIA_WORKER_ROOT / "renders"
+
+# admin-web does not currently populate render_manifest.voice_model, and
+# PiperTTS's own default ("en_US-lessac-medium") is English -- wrong for a
+# Turkish-language app. Fall back to the Turkish voice this repo's README
+# instructs installing (services/media-worker/voices/), rather than letting
+# an unset voice_model silently defer to OpenMontage's English default.
+_DEFAULT_VOICE_MODEL = os.environ.get(
+    "MEDIA_WORKER_DEFAULT_VOICE_MODEL",
+    str(_MEDIA_WORKER_ROOT / "voices" / "tr_TR-dfki-medium.onnx"),
+)
 
 if not _OPENMONTAGE_ROOT.is_dir():
     raise ImportError(
@@ -182,13 +194,68 @@ class OpenMontageProvider:
         output_path: Path,
         voice_model: str | None,
     ) -> Path:
-        tts_inputs = {"text": scene.narration, "output_path": str(output_path)}
-        if voice_model:
-            tts_inputs["model"] = voice_model
+        tts_inputs = {
+            "text": scene.narration,
+            "output_path": str(output_path),
+            "model": voice_model or _DEFAULT_VOICE_MODEL,
+        }
         tts_result = PiperTTS().execute(tts_inputs)
         if not tts_result.success:
             raise RuntimeError(f"Piper TTS başarısız: {tts_result.error}")
         return output_path
+
+    @staticmethod
+    def _convert_wav_to_m4a(wav_path: Path, output_path: Path) -> None:
+        ffmpeg = ensure_ffmpeg_on_path()
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        proc = subprocess.run(
+            [
+                str(ffmpeg), "-y", "-loglevel", "error",
+                "-i", str(wav_path),
+                "-c:a", "aac", "-b:a", "128k",
+                str(output_path),
+            ],
+            capture_output=True,
+            text=True,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(f"FFmpeg WAV->M4A dönüşümü başarısız: {proc.stderr}")
+        if not output_path.is_file():
+            raise RuntimeError(f"FFmpeg exit 0 ama çıktı dosyası yok: {output_path}")
+
+    def synthesize_narration_audio(
+        self, text: str, voice_model: str | None, output_path: Path
+    ) -> MediaGenerationResult:
+        """Standalone narration audio (decision question/option text), no
+        video. WAV is only ever a temporary intermediate: Piper renders to a
+        scratch .wav, FFmpeg converts it to the published .m4a (AAC), and the
+        scratch file is removed in `finally` regardless of whether the
+        conversion succeeded -- callers see a clean RuntimeError either way,
+        never a leftover temp file.
+        """
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        temp_wav = output_path.with_name(f".{output_path.stem}.tmp.wav")
+        tts_inputs: dict[str, object] = {
+            "text": text,
+            "output_path": str(temp_wav),
+            "model": voice_model or _DEFAULT_VOICE_MODEL,
+        }
+        tts_result = PiperTTS().execute(tts_inputs)
+        if not tts_result.success:
+            raise RuntimeError(f"Piper TTS başarısız: {tts_result.error}")
+        try:
+            duration_ms = int(self._wav_duration(temp_wav) * 1000)
+            self._convert_wav_to_m4a(temp_wav, output_path)
+        finally:
+            temp_wav.unlink(missing_ok=True)
+
+        return MediaGenerationResult(
+            kind="audio",
+            asset_uri=str(output_path),
+            mime_type="audio/mp4",
+            duration_ms=duration_ms,
+        )
 
     @staticmethod
     def _render_video(
@@ -265,7 +332,17 @@ class OpenMontageProvider:
         )
 
     def generate_story(self, input: StoryVideoInput) -> MediaGenerationResult:
-        """Generate every scene visual/narration and compose one story MP4."""
+        """Legacy/optional combined-preview path: renders every scene into
+        ONE combined MP4 timeline.
+
+        NOT the canonical Phase 3 rendering path. StoryPlaybackGraph clips
+        (including branch endings) are rendered independently, one MP4 per
+        clip, via `generate()` -- see render_orchestration.py. This method
+        exists only for scripts/render_story_template.py and
+        scripts/render_prompt_to_video.py's standalone combined-preview/export
+        use case; the graph-based render pipeline does not call it and does
+        not depend on it.
+        """
         ensure_ffmpeg_on_path()
         story_dir = _OUTPUT_ROOT / self._safe_id(input.story_id)
         story_dir.mkdir(parents=True, exist_ok=True)

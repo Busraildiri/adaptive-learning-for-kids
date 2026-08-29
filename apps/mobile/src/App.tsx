@@ -1,5 +1,6 @@
 import { contentVersionSchema } from "@adaptive/content-schema";
 import contentV1 from "@adaptive/content-schema/content/tr-TR/v1";
+import type { PublishedStoryExperience } from "@adaptive/media-schema";
 import {
   type ChildProfile,
   type ChildSessionProfile,
@@ -29,6 +30,8 @@ import { SequenceAndPlaceGame } from "./features/game/SequenceAndPlaceGame";
 import { TapOrWaitGame } from "./features/game/TapOrWaitGame";
 import { MinoStory } from "./features/story/MinoStory";
 import { StorySelectionScreen } from "./features/story/StorySelectionScreen";
+import { StoryPlayer } from "./features/storyPlayer/StoryPlayer";
+import { resolveStoryRoute } from "./features/storyPlayer/storyRouting";
 import { isSupabaseConfigured, supabase } from "./lib/supabase";
 import { loadChildProfiles, loadParentProfile } from "./services/account";
 import { selectNextStory } from "./services/activitySelection";
@@ -41,6 +44,7 @@ import {
 import { loadChildConsentSettings } from "./services/consents";
 import { loadPublishedGames } from "./services/gameCatalog";
 import { initializeInteractionEventSync } from "./services/interactionEvents";
+import { loadPublishedStoryExperiences } from "./services/storyExperiences";
 
 type PasswordRecoveryStatus = "checking" | "idle" | "processing" | "ready" | "error";
 
@@ -65,6 +69,7 @@ export default function App() {
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [availableGames, setAvailableGames] = useState(content.games ?? []);
+  const [publishedStories, setPublishedStories] = useState<PublishedStoryExperience[]>([]);
   const [recommendedStoryId, setRecommendedStoryId] = useState<string | null>(null);
   const [passwordRecoveryStatus, setPasswordRecoveryStatus] =
     useState<PasswordRecoveryStatus>("checking");
@@ -237,6 +242,20 @@ export default function App() {
   }, [activeChild]);
 
   useEffect(() => {
+    if (!activeChild) {
+      setPublishedStories([]);
+      return;
+    }
+    let cancelled = false;
+    void loadPublishedStoryExperiences(supabase).then((result) => {
+      if (!cancelled) setPublishedStories(result.experiences);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeChild]);
+
+  useEffect(() => {
     if (!sessionUserId) return;
     void refreshAccount(sessionUserId);
   }, [refreshAccount, sessionUserId]);
@@ -324,11 +343,14 @@ export default function App() {
   }
 
   if (activeChild) {
-    const selectedStory = content.stories.find((story) => story.id === selectedStoryId);
     const eligibleGames = availableGames.filter(
       (game) => game.status === "published" && game.ageBand === activeChild.ageBand,
     );
     const selectedGame = eligibleGames.find((game) => game.id === selectedGameId);
+    const eligiblePublishedStories = publishedStories.filter((experience) =>
+      experience.ageBands.includes(activeChild.ageBand),
+    );
+    const storyRoute = resolveStoryRoute(selectedStoryId, content.stories, eligiblePublishedStories);
 
     if (selectedGame) {
       return selectedGame.mechanic === "classify_and_sort" ? (
@@ -348,7 +370,7 @@ export default function App() {
       );
     }
 
-    if (!selectedStory) {
+    if (storyRoute.kind === "none") {
       return (
         <StorySelectionScreen
           assets={content.assets}
@@ -363,10 +385,15 @@ export default function App() {
             setSelectedGameId(null);
             setSelectedStoryId(storyId);
           }}
+          publishedStories={eligiblePublishedStories}
           recommendedStoryId={recommendedStoryId}
           stories={content.stories}
         />
       );
+    }
+
+    if (storyRoute.kind === "published") {
+      return <StoryPlayer experience={storyRoute.experience} onExit={() => setSelectedStoryId(null)} />;
     }
 
     return (
@@ -374,7 +401,7 @@ export default function App() {
         child={activeChild}
         onRequestParentArea={() => setShowParentPinGate(true)}
         onRequestStorySelection={() => setSelectedStoryId(null)}
-        story={selectedStory}
+        story={storyRoute.story}
       />
     );
   }

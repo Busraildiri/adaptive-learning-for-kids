@@ -1,4 +1,5 @@
 import type { Asset, Game, Story } from "@adaptive/content-schema";
+import type { PublishedStoryExperience } from "@adaptive/media-schema";
 import {
   Image,
   type ImageSourcePropType,
@@ -9,6 +10,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { createPublishedStorySelectionCards } from "./publishedStorySelection";
 import { createStorySelectionCards } from "./storySelection";
 
 const routineGameIcon = require("../../../assets/game/home/morning-routine.png");
@@ -42,6 +44,7 @@ export function StorySelectionScreen({
   recommendedStoryId,
   games,
   onSelectGame,
+  publishedStories = [],
 }: {
   stories: Story[];
   assets: Asset[];
@@ -51,8 +54,10 @@ export function StorySelectionScreen({
   recommendedStoryId: string | null;
   games: Game[];
   onSelectGame: (gameId: string) => void;
+  publishedStories?: PublishedStoryExperience[];
 }) {
   const cards = createStorySelectionCards(stories, assets, onSelectStory, recommendedStoryId);
+  const publishedCards = createPublishedStorySelectionCards(publishedStories, onSelectStory);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -104,6 +109,32 @@ export function StorySelectionScreen({
             </Pressable>
           ))}
         </View>
+        {publishedCards.length > 0 ? (
+          <View style={styles.gameSection}>
+            <Text style={styles.sectionTitle}>Video Hikâyeler</Text>
+            <View style={styles.storyList}>
+              {publishedCards.map((card, index) => (
+                <Pressable
+                  accessibilityLabel={card.accessibilityLabel}
+                  accessibilityRole="button"
+                  key={card.storyId}
+                  onPress={card.onPress}
+                  style={({ pressed }) => [
+                    styles.storyCard,
+                    index % 2 === 1 && styles.storyCardAlternate,
+                    pressed && styles.storyCardPressed,
+                  ]}
+                >
+                  <Text accessibilityLabel={card.accessibilityLabel} style={styles.storySymbol}>
+                    {card.symbol}
+                  </Text>
+                  <Text style={styles.storyTitle}>{card.title}</Text>
+                  <Text style={styles.playLabel}>Başla ›</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        ) : null}
         {games.length > 0 ? (
           <View style={styles.gameSection}>
             <Text style={styles.sectionTitle}>Oyunlar</Text>

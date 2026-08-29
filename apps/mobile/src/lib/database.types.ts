@@ -113,7 +113,17 @@ export interface Database {
         Relationships: [];
       };
     };
-    Views: Record<never, never>;
+    Views: {
+      published_story_experiences: {
+        Row: {
+          story_id: string;
+          published_version: number;
+          experience: Json;
+          published_at: string;
+        };
+        Relationships: [];
+      };
+    };
     Functions: {
       set_parent_pin: {
         Args: { pin: string };
