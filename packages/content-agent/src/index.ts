@@ -375,6 +375,7 @@ export function deterministicStoryReview(
   const candidateMechanics = candidate.steps.map(mechanicSignature);
   if (
     candidate.id !== skeleton.id ||
+    candidate.experienceType !== skeleton.experienceType ||
     JSON.stringify(candidate.ageBands) !== JSON.stringify(skeleton.ageBands) ||
     candidate.introVideoAssetId !== skeleton.introVideoAssetId ||
     JSON.stringify(candidate.characterAssets) !== JSON.stringify(skeleton.characterAssets) ||

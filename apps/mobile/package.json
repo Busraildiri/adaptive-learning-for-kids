@@ -17,6 +17,7 @@
     "@adaptive/analytics-events": "workspace:*",
     "@adaptive/content-schema": "workspace:*",
     "@adaptive/evidence-engine": "workspace:*",
+    "@adaptive/media-schema": "workspace:*",
     "@adaptive/parent-insights": "workspace:*",
     "@adaptive/personalization-engine": "workspace:*",
     "@adaptive/shared-types": "workspace:*",

@@ -184,6 +184,7 @@ const validContent = {
       ageBands: ["2-4"],
       targetSkills: ["emotion_recognition", "helping"],
       greetingTemplate: "Merhaba {{childName}}!",
+      experienceType: "interactive_ui",
       characterAssets: {
         happyAssetId: "scene-lost-toy",
         sadAssetId: "scene-lost-toy",

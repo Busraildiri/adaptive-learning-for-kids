@@ -1,4 +1,5 @@
 import type { AgeBand, Asset, Game, Story } from "@adaptive/content-schema";
+import type { PublishedStoryExperience } from "@adaptive/media-schema";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Speech from "expo-speech";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -21,6 +22,7 @@ import {
   groupOlderGames,
   type OlderGameWorldId,
 } from "./olderGameCategories";
+import { createPublishedStorySelectionCards } from "./publishedStorySelection";
 import { createStorySelectionCards } from "./storySelection";
 
 const minoHappy = require("../../../assets/characters/mino-happy.png");
@@ -639,6 +641,7 @@ export function DiscoveryScreen({
   onRequestParentArea,
   onSelectGame,
   onSelectStory,
+  publishedStories,
   recommendedGameId,
   recommendedStoryId,
   stories,
@@ -651,6 +654,7 @@ export function DiscoveryScreen({
   onRequestParentArea: () => void;
   onSelectGame: (gameId: string) => void;
   onSelectStory: (storyId: string) => void;
+  publishedStories: PublishedStoryExperience[];
   recommendedGameId: string | null;
   recommendedStoryId: string | null;
   stories: Story[];
@@ -682,9 +686,21 @@ export function DiscoveryScreen({
     [catalogSessionSeed, games, recommendedGameId],
   );
   const groups = useMemo(() => groupOlderGames(orderedGames), [orderedGames]);
-  const cards = useMemo(
+  const bundledStoryIds = useMemo(() => new Set(stories.map((story) => story.id)), [stories]);
+  const bundledCards = useMemo(
     () => createStorySelectionCards(stories, assets, handleSelectStory, recommendedStoryId),
     [assets, handleSelectStory, recommendedStoryId, stories],
+  );
+  const publishedCards = useMemo(
+    () =>
+      createPublishedStorySelectionCards(publishedStories, handleSelectStory).filter(
+        (card) => !bundledStoryIds.has(card.storyId),
+      ),
+    [bundledStoryIds, handleSelectStory, publishedStories],
+  );
+  const cards = useMemo(
+    () => [...bundledCards, ...publishedCards],
+    [bundledCards, publishedCards],
   );
   const orderedCards = useMemo(
     () =>

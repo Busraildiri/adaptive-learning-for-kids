@@ -19,6 +19,7 @@ import {
   parseManualGenerationInput,
   themeConflictsWithAsset,
 } from "../../../lib/generation";
+import { validateVideoBranchingCompatibility } from "../../../lib/media/scenePlanner";
 import { findStoryBlueprint } from "../../../lib/storyBlueprints";
 
 export const runtime = "nodejs";
@@ -76,7 +77,15 @@ export async function POST(request: Request) {
     const supportedEmotions = template.steps
       .filter((step) => step.type === "emotion_choice")
       .flatMap((step) => step.choices.map((choice) => choice.emotion));
-    if (!supportedEmotions.includes(input.targetEmotion as (typeof supportedEmotions)[number])) {
+    // "Target emotion" is a mechanic specific to templates with an
+    // emotion_choice step (the interactive_ui / MinoStory family). The new
+    // video_branching template contract has no emotion_choice step at all
+    // (Phase 5.5), so there is nothing to validate targetEmotion against --
+    // the field is simply unused for such templates rather than rejected.
+    if (
+      supportedEmotions.length > 0 &&
+      !supportedEmotions.includes(input.targetEmotion as (typeof supportedEmotions)[number])
+    ) {
       throw new Error("Hedef duygu seçilen şablonla uyumlu değil.");
     }
 
@@ -146,6 +155,26 @@ export async function POST(request: Request) {
       generated_at: audit.createdAt,
     });
     if (auditError) throw auditError;
+
+    // Phase 5.5 pre-review gate: a video_branching story that cannot pass
+    // Scene Planner's own contract (exactly one decision, exactly two
+    // options, valid branch targets) must never reach content_review_queue
+    // -- routeGenerationResult (which publishes/enqueues) is deliberately
+    // never called in that case. interactive_ui stories are unaffected.
+    if (auditedStory && auditedStory.experienceType === "video_branching") {
+      const compatibility = validateVideoBranchingCompatibility(auditedStory, {
+        assetCatalog: content.assets,
+      });
+      if (!compatibility.compatible) {
+        return NextResponse.json({
+          requestId,
+          storyId: skeleton.id,
+          status: "not_publishable",
+          rejectionReasons: ["video_branching_topology_incompatible"],
+          technicalError: compatibility.reason,
+        });
+      }
+    }
 
     const publication = await routeGenerationResult({
       result,

@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from typing import Literal, Mapping, Optional
 
 SceneEmotion = Literal["happy", "sad", "angry", "scared", "neutral"]
-MediaKind = Literal["image", "video"]
+MediaKind = Literal["image", "video", "audio"]
 MediaMode = Literal["local_animation", "static_image"]
 ImageQuality = Literal["low", "medium", "high", "auto"]
 
@@ -52,6 +52,8 @@ class MediaGenerationInput:
     # Piper voice model name (e.g. a tr_TR voice). None = Piper's own default,
     # which is English and will mispronounce Turkish narration.
     voice_model: Optional[str] = None
+    character_description: str = ""
+    visual_style: str = ""
 
 
 @dataclass(frozen=True)
@@ -83,6 +85,87 @@ class MediaGenerationResult:
     height: Optional[int] = None
 
 
+AudioRole = Literal["question", "choice"]
+
+
+@dataclass(frozen=True)
+class DecisionAudioInput:
+    """Immutable render input for one decision question/option audio job --
+    the audio counterpart of MediaGenerationInput. `text` is the frozen
+    approved narration/label at job-creation time; the worker never looks
+    the Story back up to re-derive it.
+    """
+
+    text: str
+    decision_clip_id: str
+    audio_role: AudioRole
+    choice_id: Optional[str] = None
+    voice_model: Optional[str] = None
+
+
+def decision_audio_input_from_dict(data: dict) -> DecisionAudioInput:
+    return DecisionAudioInput(
+        text=data["text"],
+        decision_clip_id=data["decisionClipId"],
+        audio_role=data["audioRole"],
+        choice_id=data.get("choiceId"),
+        voice_model=data.get("voiceModel"),
+    )
+
+
+def decision_audio_input_to_dict(input: DecisionAudioInput) -> dict:
+    return {
+        "kind": "decision_audio",
+        "text": input.text,
+        "decisionClipId": input.decision_clip_id,
+        "audioRole": input.audio_role,
+        "choiceId": input.choice_id,
+        "voiceModel": input.voice_model,
+    }
+
+
+ClipRenderStatus = Literal["ready", "failed"]
+
+
+@dataclass(frozen=True)
+class ClipRenderResult:
+    """Phase 3 output: one independently-rendered asset (a scene's video, or
+    a decision's question/option audio). Deliberately separate from Phase 1's
+    StoryPlaybackGraph/PlaybackClip (playback topology) -- this is render
+    state/result, not topology. `clip_id` matches a PlaybackClip.id (for
+    video) or `{decisionClipId}-question` / `{decisionClipId}-{choiceId}`
+    (for decision audio, which has no PlaybackClip of its own).
+    """
+
+    clip_id: str
+    source_scene_id: str
+    kind: MediaKind
+    status: ClipRenderStatus
+    asset_uri: Optional[str] = None
+    # Relative object path matching the storage convention in storage_paths.py
+    # (e.g. "stories/{storyId}/graphs/{graphId}/clips/{clipId}/{renderId}.mp4"),
+    # not yet uploaded anywhere in Phase 3 -- Phase 4 owns actual upload.
+    storage_path: Optional[str] = None
+    duration_ms: Optional[int] = None
+    error: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class StoryMediaRenderResult:
+    """Aggregate Phase 3 output for one graph. Always carries every attempted
+    result (ready or failed) -- one failure never removes another asset's
+    successful result. combined_preview_uri is optional and, when present,
+    comes only from the legacy generate_story() path, never required for a
+    successful render.
+    """
+
+    graph_id: str
+    story_id: str
+    clips: tuple[ClipRenderResult, ...]
+    decision_audio: tuple[ClipRenderResult, ...] = ()
+    combined_preview_uri: Optional[str] = None
+
+
 def scene_generation_spec_from_dict(
     data: dict, *, default_story_id: Optional[str] = None
 ) -> SceneGenerationSpec:
@@ -112,6 +195,8 @@ def media_generation_input_from_dict(data: dict) -> MediaGenerationInput:
         image_quality=data.get("imageQuality", "low"),
         image_size=data.get("imageSize", "1024x1536"),
         voice_model=data.get("voiceModel"),
+        character_description=data.get("characterDescription", ""),
+        visual_style=data.get("visualStyle", ""),
     )
 
 
