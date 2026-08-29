@@ -53,7 +53,10 @@ select set_config('request.jwt.claim.role', 'service_role', true);
 -- captured from claim_next_media_job()'s own return value into a temp
 -- table instead of querying private.media_jobs directly.
 create temporary table claimed_job as select * from public.claim_next_media_job();
-select is((select status from claimed_job), 'generating_audio', 'worker claims and advances the job');
+-- Phase 4 made claim_next_media_job()'s honest status set queued ->
+-- rendering -> uploading -> ready/failed (the old 'generating_audio' etc.
+-- intermediate values were never actually driven by real instrumentation).
+select is((select status from claimed_job), 'rendering', 'worker claims and advances the job');
 select is((select count(*) from public.claim_next_media_job()), 0::bigint, 'nothing left to claim once taken');
 select lives_ok(
   format(
