@@ -197,7 +197,11 @@ function DraggableObject({
       />
       <Text
         numberOfLines={2}
-        style={[styles.dragHint, itemCount >= 16 && styles.ultraCompactDragHint]}
+        style={[
+          styles.dragHint,
+          itemCount >= 8 && styles.compactDragHint,
+          itemCount >= 16 && styles.ultraCompactDragHint,
+        ]}
       >
         Tut ve sürükle
       </Text>
@@ -646,10 +650,10 @@ const styles = StyleSheet.create({
   },
   compactObjectCard: {
     width: 56,
-    height: 78,
+    height: 88,
     borderRadius: 15,
     borderWidth: 2,
-    paddingVertical: 2,
+    paddingVertical: 4,
   },
   ultraCompactObjectGrid: { maxWidth: 284, gap: 3, marginTop: 4 },
   ultraCompactObjectCard: { width: 52, height: 58, borderRadius: 13, paddingVertical: 0 },
@@ -671,7 +675,8 @@ const styles = StyleSheet.create({
   dogImage: { width: 82, height: 90, resizeMode: "contain" },
   compactDogImage: { width: 34, height: 36 },
   dragHint: { marginTop: 2, color: "#7A6D61", fontSize: 10, fontWeight: "800" },
-  ultraCompactDragHint: { marginTop: 0, fontSize: 8, lineHeight: 9, textAlign: "center" },
+  compactDragHint: { width: 52, minHeight: 22, fontSize: 9, lineHeight: 10, textAlign: "center" },
+  ultraCompactDragHint: { width: 48, minHeight: 18, marginTop: 0, fontSize: 8, lineHeight: 9 },
   basket: { width: 150, height: 112, alignItems: "center", marginTop: 5 },
   basketImage: { width: 150, height: 112, resizeMode: "contain" },
   compactBasket: { width: 112, height: 84, marginTop: 2 },
