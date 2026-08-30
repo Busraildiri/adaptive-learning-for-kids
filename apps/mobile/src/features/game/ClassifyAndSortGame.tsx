@@ -183,18 +183,24 @@ function DraggableObject({
       style={[
         styles.objectCard,
         itemCount >= 8 && styles.compactObjectCard,
+        itemCount >= 16 && styles.ultraCompactObjectCard,
         compareSize && object.size === "large" && itemCount <= 10 && styles.largeObjectCard,
         highlighted && styles.objectHighlighted,
         { transform: position.getTranslateTransform() },
       ]}
     >
       <ObjectArt
-        compact={itemCount > 10}
+        compact={itemCount >= 8}
         compareSize={compareSize}
         imageSource={imageSource}
         object={object}
       />
-      <Text style={styles.dragHint}>Tut ve sürükle</Text>
+      <Text
+        numberOfLines={2}
+        style={[styles.dragHint, itemCount >= 16 && styles.ultraCompactDragHint]}
+      >
+        Tut ve sürükle
+      </Text>
     </Animated.View>
   );
 }
@@ -233,6 +239,7 @@ export function ClassifyAndSortGame({
   const basketBounce = useRef(new Animated.Value(1)).current;
   const currentRound = game.rounds[roundIndex];
   const denseLayout = currentRound.objects.length >= 8;
+  const ultraDenseLayout = currentRound.objects.length >= 16;
   const shownInstruction = currentRound.instruction;
 
   const speak = useCallback(
@@ -431,20 +438,29 @@ export function ClassifyAndSortGame({
       >
         <Text style={styles.parentButtonText}>×</Text>
       </Pressable>
-      <View style={styles.gameArea}>
-        <View style={styles.progressRow}>
+      <View style={[styles.gameArea, denseLayout && styles.denseGameArea]}>
+        <View style={[styles.progressRow, denseLayout && styles.compactProgressRow]}>
           {game.rounds.map((round, index) => (
             <View
               key={round.id}
-              style={[styles.progressSeed, index < collected && styles.progressFlower]}
+              style={[
+                styles.progressSeed,
+                denseLayout && styles.compactProgressSeed,
+                index < collected && styles.progressFlower,
+              ]}
             >
               {index < collected ? (
                 <Image
                   source={gardenFlowers[index % gardenFlowers.length]}
-                  style={styles.progressFlowerImage}
+                  style={[
+                    styles.progressFlowerImage,
+                    denseLayout && styles.compactProgressFlowerImage,
+                  ]}
                 />
               ) : (
-                <Text style={styles.progressText}>•</Text>
+                <Text style={[styles.progressText, denseLayout && styles.compactProgressText]}>
+                  •
+                </Text>
               )}
             </View>
           ))}
@@ -465,7 +481,13 @@ export function ClassifyAndSortGame({
             {shownInstruction}
           </Text>
         </View>
-        <View style={[styles.objectGrid, denseLayout && styles.compactObjectGrid]}>
+        <View
+          style={[
+            styles.objectGrid,
+            denseLayout && styles.compactObjectGrid,
+            ultraDenseLayout && styles.ultraCompactObjectGrid,
+          ]}
+        >
           {currentRound.objects.map((object) => (
             <DraggableObject
               basketBounds={basketBounds}
@@ -550,7 +572,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingBottom: 8,
   },
+  denseGameArea: { justifyContent: "flex-start", paddingTop: 74 },
   progressRow: { height: 60, flexDirection: "row", gap: 8 },
+  compactProgressRow: { height: 34, gap: 5 },
   progressSeed: {
     width: 48,
     height: 58,
@@ -561,6 +585,9 @@ const styles = StyleSheet.create({
   },
   progressFlower: { backgroundColor: "#FFF1A8" },
   progressText: { color: "#DB8F42", fontSize: 20, fontWeight: "900" },
+  compactProgressSeed: { width: 30, height: 32, borderRadius: 15 },
+  compactProgressFlowerImage: { width: 22, height: 22 },
+  compactProgressText: { fontSize: 14 },
   mascot: { width: 76, height: 76, resizeMode: "contain" },
   compactMascot: { width: 50, height: 50 },
   mascotLarge: { width: 150, height: 150, resizeMode: "contain" },
@@ -600,7 +627,7 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 12,
   },
-  compactObjectGrid: { maxWidth: 304, minHeight: 0, gap: 4, marginTop: 6 },
+  compactObjectGrid: { maxWidth: 304, minHeight: 0, gap: 5, marginTop: 6 },
   objectCard: {
     width: 98,
     height: 124,
@@ -617,7 +644,15 @@ const styles = StyleSheet.create({
     zIndex: 4,
     overflow: "hidden",
   },
-  compactObjectCard: { width: 56, height: 62, borderRadius: 15, borderWidth: 2 },
+  compactObjectCard: {
+    width: 56,
+    height: 78,
+    borderRadius: 15,
+    borderWidth: 2,
+    paddingVertical: 2,
+  },
+  ultraCompactObjectGrid: { maxWidth: 284, gap: 3, marginTop: 4 },
+  ultraCompactObjectCard: { width: 52, height: 58, borderRadius: 13, paddingVertical: 0 },
   largeObjectCard: { width: 130, height: 154, borderColor: "#F3B51B", borderWidth: 5 },
   objectPressed: { transform: [{ scale: 0.92 }], backgroundColor: "#FFF1C9" },
   objectHighlighted: {
@@ -636,6 +671,7 @@ const styles = StyleSheet.create({
   dogImage: { width: 82, height: 90, resizeMode: "contain" },
   compactDogImage: { width: 34, height: 36 },
   dragHint: { marginTop: 2, color: "#7A6D61", fontSize: 10, fontWeight: "800" },
+  ultraCompactDragHint: { marginTop: 0, fontSize: 8, lineHeight: 9, textAlign: "center" },
   basket: { width: 150, height: 112, alignItems: "center", marginTop: 5 },
   basketImage: { width: 150, height: 112, resizeMode: "contain" },
   compactBasket: { width: 112, height: 84, marginTop: 2 },
