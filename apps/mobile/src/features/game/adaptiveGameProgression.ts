@@ -140,13 +140,20 @@ export function requiredRunsToAdvance(ageBand: AgeBand): number {
   return ageBand === "2-4" ? 2 : 1;
 }
 
+export function requiredRunsForGame(game: Game, ageBand: AgeBand): number {
+  // Riko has five fixed, distinct spatial concepts. Repeating each one just
+  // to satisfy the slower 2–4 cadence would make a completed curriculum loop.
+  return game.id === "riko-where-001" ? 1 : requiredRunsToAdvance(ageBand);
+}
+
 export function nextDifficultyAfterCompletion(
   state: AdaptiveProgressionState,
   ageBand: AgeBand,
   maximumLevel = MAX_ADAPTIVE_LEVEL,
+  requiredRuns = requiredRunsToAdvance(ageBand),
 ): AdaptiveProgressionState {
   const completedRunsAtLevel = state.completedRunsAtLevel + 1;
-  if (completedRunsAtLevel < requiredRunsToAdvance(ageBand)) {
+  if (completedRunsAtLevel < requiredRuns) {
     return { ...state, completedRunsAtLevel, challengeIndex: state.challengeIndex + 1 };
   }
   const adaptiveLevel = Math.min(maximumLevel, state.adaptiveLevel + 1);

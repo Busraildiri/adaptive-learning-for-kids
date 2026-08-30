@@ -13,6 +13,7 @@ import {
   maxAdaptiveLevelForGame,
   nextDifficultyAfterCompletion,
   previousProgression,
+  requiredRunsForGame,
   requiredRunsToAdvance,
   shouldAnnounceGameIntro,
 } from "./adaptiveGameProgression";
@@ -100,6 +101,26 @@ describe("adaptive game progression", () => {
       challengeIndex: 1,
       adaptiveLevel: 2,
     });
+  });
+
+  it("finishes Riko's five distinct spatial prompts without repeating each one", () => {
+    const riko = publishedGames.find((game) => game.id === "riko-where-001");
+    if (!riko) throw new Error("Expected Riko game");
+
+    expect(maxAdaptiveLevelForGame(riko)).toBe(5);
+    const requiredRuns = requiredRunsForGame(riko, "2-4");
+    expect(requiredRuns).toBe(1);
+
+    let progress = createInitialAdaptiveState(riko);
+    for (let step = 0; step < 5; step += 1) {
+      progress = nextDifficultyAfterCompletion(
+        progress,
+        "2-4",
+        maxAdaptiveLevelForGame(riko),
+        requiredRuns,
+      );
+    }
+    expect(progress).toMatchObject({ adaptiveLevel: 5, completedRunsAtLevel: 0 });
   });
 
   it("drops exactly one adaptive level after difficulty", () => {

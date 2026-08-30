@@ -12,6 +12,7 @@ import {
   maxAdaptiveLevelForGame,
   nextDifficultyAfterCompletion,
   previousProgression,
+  requiredRunsForGame,
   shouldAnnounceGameIntro,
 } from "./adaptiveGameProgression";
 import { BalloonCountingGame } from "./BalloonCountingGame";
@@ -106,6 +107,7 @@ export function TrackedGame({
           progression,
           child.ageBand,
           maximumLevel,
+          requiredRunsForGame(activeGame, child.ageBand),
         );
         const reachedFinalLevel =
           progression.adaptiveLevel === maximumLevel && nextProgression.completedRunsAtLevel === 0;
