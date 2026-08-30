@@ -186,6 +186,10 @@ export function maxAdaptiveLevelForGame(game: Game): number {
       combinations = game.rounds.length * 2;
       break;
     case "mini_challenge":
+      if (game.id === "riko-where-001") {
+        combinations = 9;
+        break;
+      }
       if (game.rounds.every((round) => round.kind === "single")) {
         combinations = new Set(
           game.rounds.map((round) =>
@@ -346,7 +350,55 @@ export function adaptGameComplexity(
   );
 
   if (game.mechanic === "mini_challenge") {
-    const adaptiveRounds = avoidAdjacentDuplicateAnswers(game.rounds, challengeIndex);
+    const rikoExtraRounds =
+      game.id === "riko-where-001"
+        ? [
+            {
+              ...game.rounds[0],
+              id: "behind",
+              prompt: "Resme bak. Top kutunun neresinde saklanıyor?",
+              choices: [
+                { id: "behind", label: "Arkasında", icon: "riko-left" },
+                { id: "front", label: "Önünde", icon: "riko-right" },
+              ],
+              correctSequence: ["behind"],
+            },
+            {
+              ...game.rounds[0],
+              id: "front",
+              prompt: "Resme bak. Top kutunun neresinde?",
+              choices: [
+                { id: "behind", label: "Arkasında", icon: "riko-left" },
+                { id: "front", label: "Önünde", icon: "riko-right" },
+              ],
+              correctSequence: ["front"],
+            },
+            {
+              ...game.rounds[0],
+              id: "near",
+              prompt: "Resme bak. Top kutuya yakın mı, uzak mı?",
+              choices: [
+                { id: "near", label: "Yakınında", icon: "riko-left" },
+                { id: "far", label: "Uzağında", icon: "riko-right" },
+              ],
+              correctSequence: ["near"],
+            },
+            {
+              ...game.rounds[0],
+              id: "far",
+              prompt: "Son resme bak. Top kutuya yakın mı, uzak mı?",
+              choices: [
+                { id: "near", label: "Yakınında", icon: "riko-left" },
+                { id: "far", label: "Uzağında", icon: "riko-right" },
+              ],
+              correctSequence: ["far"],
+            },
+          ]
+        : [];
+    const adaptiveRounds = avoidAdjacentDuplicateAnswers(
+      [...game.rounds, ...rikoExtraRounds],
+      challengeIndex,
+    );
     const adaptiveRound = adaptiveRounds[0];
     if (!adaptiveRound) return game;
     if (adaptiveRound.kind === "single") {

@@ -103,16 +103,16 @@ describe("adaptive game progression", () => {
     });
   });
 
-  it("finishes Riko's five distinct spatial prompts without repeating each one", () => {
+  it("finishes Riko's distinct spatial prompts without repeating each one", () => {
     const riko = publishedGames.find((game) => game.id === "riko-where-001");
     if (!riko) throw new Error("Expected Riko game");
 
-    expect(maxAdaptiveLevelForGame(riko)).toBe(5);
+    expect(maxAdaptiveLevelForGame(riko)).toBe(9);
     const requiredRuns = requiredRunsForGame(riko, "2-4");
     expect(requiredRuns).toBe(1);
 
     let progress = createInitialAdaptiveState(riko);
-    for (let step = 0; step < 5; step += 1) {
+    for (let step = 0; step < 9; step += 1) {
       progress = nextDifficultyAfterCompletion(
         progress,
         "2-4",
@@ -120,7 +120,7 @@ describe("adaptive game progression", () => {
         requiredRuns,
       );
     }
-    expect(progress).toMatchObject({ adaptiveLevel: 5, completedRunsAtLevel: 0 });
+    expect(progress).toMatchObject({ adaptiveLevel: 9, completedRunsAtLevel: 0 });
   });
 
   it("drops exactly one adaptive level after difficulty", () => {
@@ -343,12 +343,28 @@ describe("adaptive game progression", () => {
     expect(first.rounds[0]?.correctSequence).not.toEqual(second.rounds[0]?.correctSequence);
   });
 
-  it("keeps Riko's simple spatial choices stable and includes left and right", () => {
+  it("keeps Riko's simple spatial choices stable and extends them with new scenes", () => {
     const riko = publishedGames.find((game) => game.id === "riko-where-001");
     if (!riko || riko.mechanic !== "mini_challenge") throw new Error("Expected Riko game");
 
     const positionIds = riko.rounds.map((round) => round.correctSequence[0]);
     expect(positionIds).toEqual(["inside", "under", "on", "left", "right"]);
+    const extendedPositionIds = Array.from({ length: 9 }, (_, challengeIndex) => {
+      const adapted = adaptGameComplexity(riko, 2, challengeIndex);
+      if (adapted.mechanic !== "mini_challenge") throw new Error("Expected Riko mini challenge");
+      return adapted.rounds[0]?.correctSequence[0];
+    });
+    expect(extendedPositionIds).toEqual([
+      "inside",
+      "under",
+      "on",
+      "left",
+      "right",
+      "behind",
+      "front",
+      "near",
+      "far",
+    ]);
 
     const first = adaptGameComplexity(riko, 2, 3);
     const next = adaptGameComplexity(riko, 2, 4);

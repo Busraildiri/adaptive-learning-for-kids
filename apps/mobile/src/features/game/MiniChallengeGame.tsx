@@ -213,6 +213,10 @@ function SpatialAnswerIcon({ position }: { position: string }) {
           position === "on" && styles.spatialBoxBelow,
           position === "left" && styles.spatialBoxRight,
           position === "right" && styles.spatialBoxLeft,
+          position === "behind" && styles.spatialBoxInside,
+          position === "front" && styles.spatialBoxInside,
+          position === "near" && styles.spatialBoxLeft,
+          position === "far" && styles.spatialBoxRight,
         ]}
       />
       <View
@@ -223,15 +227,18 @@ function SpatialAnswerIcon({ position }: { position: string }) {
           position === "on" && styles.spatialBallOn,
           position === "left" && styles.spatialBallLeft,
           position === "right" && styles.spatialBallRight,
+          position === "behind" && styles.spatialBallBehind,
+          position === "front" && styles.spatialBallFront,
+          position === "near" && styles.spatialBallNear,
+          position === "far" && styles.spatialBallFar,
         ]}
       />
     </View>
   );
 }
 
-function RikoScene({ icon }: { icon: string }) {
+function RikoScene({ icon, position }: { icon: string; position: string }) {
   const image = illustratedIcons[icon];
-  const position = icon.replace("riko-", "");
   return (
     <View style={styles.rikoScene}>
       <Text style={styles.rikoSceneLabel}>Resme dikkatlice bak</Text>
@@ -245,6 +252,10 @@ function RikoScene({ icon }: { icon: string }) {
               styles.rikoSceneBall,
               position === "left" && styles.rikoSceneBallLeft,
               position === "right" && styles.rikoSceneBallRight,
+              position === "behind" && styles.rikoSceneBallBehind,
+              position === "front" && styles.rikoSceneBallFront,
+              position === "near" && styles.rikoSceneBallNear,
+              position === "far" && styles.rikoSceneBallFar,
             ]}
           />
         </View>
@@ -598,7 +609,9 @@ export function MiniChallengeGame({
           </Text>
         </View>
         {round.displaySequence ? <PatternTrain sequence={round.displaySequence} /> : null}
-        {isRiko ? <RikoScene icon={correctChoice?.icon ?? ""} /> : null}
+        {isRiko ? (
+          <RikoScene icon={correctChoice?.icon ?? ""} position={correctChoice?.id ?? ""} />
+        ) : null}
         {round.previewIcon ? (
           <View style={styles.shadowPreview}>
             <Text style={styles.previewLabel}>Bunun eşini bul</Text>
@@ -832,6 +845,10 @@ const styles = StyleSheet.create({
   },
   rikoSceneBallLeft: { left: 22 },
   rikoSceneBallRight: { right: 22 },
+  rikoSceneBallBehind: { top: 48, left: 77, zIndex: -1 },
+  rikoSceneBallFront: { top: 66, left: 77, zIndex: 2 },
+  rikoSceneBallNear: { top: 87, left: 28, width: 38, height: 38, borderRadius: 19 },
+  rikoSceneBallFar: { top: 28, right: 18, width: 16, height: 16, borderRadius: 8, borderWidth: 2 },
   spatialIcon: { position: "relative", width: 88, height: 72 },
   spatialBox: {
     position: "absolute",
@@ -864,6 +881,10 @@ const styles = StyleSheet.create({
   spatialBallOn: { top: 2 },
   spatialBallLeft: { top: 27, left: 4 },
   spatialBallRight: { top: 27, left: 63 },
+  spatialBallBehind: { top: 25, zIndex: -1, opacity: 0.72 },
+  spatialBallFront: { top: 33, zIndex: 3 },
+  spatialBallNear: { top: 43, left: 4, width: 29, height: 29, borderRadius: 15 },
+  spatialBallFar: { top: 7, left: 64, width: 13, height: 13, borderRadius: 7, borderWidth: 2 },
   soundButton: {
     minWidth: 210,
     flexDirection: "row",
