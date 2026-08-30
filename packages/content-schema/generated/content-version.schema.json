@@ -3019,7 +3019,7 @@
                             },
                             "color": {
                               "type": "string",
-                              "enum": ["coral", "blue", "yellow"]
+                              "enum": ["coral", "blue", "yellow", "green", "purple"]
                             },
                             "matchKey": {
                               "type": "string",
