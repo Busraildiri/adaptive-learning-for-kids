@@ -6,6 +6,7 @@ import {
   crystalCountMatches,
   findCableDropTarget,
   isMomoRewardLevel,
+  momoFaultStageForLevel,
   momoRoundPrompt,
   momoRoundsForLevel,
   outcomeForGuidedAttempt,
@@ -184,5 +185,14 @@ describe("momoWorkshopEngine", () => {
         return round.endpoints.length / 2;
       });
     expect(cablePairCounts).toEqual([2, 3, 4]);
+  });
+
+  it("moves faulty-part challenges through bounded visual difficulty stages", () => {
+    expect(momoFaultStageForLevel(1)).toBe("shape");
+    expect(momoFaultStageForLevel(30)).toBe("shape");
+    expect(momoFaultStageForLevel(31)).toBe("contrast");
+    expect(momoFaultStageForLevel(61)).toBe("near_color");
+    expect(momoFaultStageForLevel(91)).toBe("detail");
+    expect(momoFaultStageForLevel(121)).toBe("two_rules");
   });
 });

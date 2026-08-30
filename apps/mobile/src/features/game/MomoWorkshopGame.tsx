@@ -27,6 +27,7 @@ import {
   crystalCountMatches,
   findCableDropTarget,
   isMomoRewardLevel,
+  type MomoFaultyPart,
   type MomoPartKind,
   momoRoundPrompt,
   momoRoundsForLevel,
@@ -127,7 +128,16 @@ function MomoAvatar({
   );
 }
 
-function ShapeArt({ shape, size = 58 }: { shape: MomoShape; size?: number }) {
+function ShapeArt({
+  shape,
+  size = 58,
+  color,
+}: {
+  shape: MomoShape;
+  size?: number;
+  color?: string;
+}) {
+  const fill = color ?? shapeColors[shape];
   if (shape === "triangle") {
     return (
       <View
@@ -139,7 +149,7 @@ function ShapeArt({ shape, size = 58 }: { shape: MomoShape; size?: number }) {
           borderBottomWidth: size,
           borderLeftColor: "transparent",
           borderRightColor: "transparent",
-          borderBottomColor: shapeColors[shape],
+          borderBottomColor: fill,
         }}
       />
     );
@@ -150,7 +160,7 @@ function ShapeArt({ shape, size = 58 }: { shape: MomoShape; size?: number }) {
         width: size,
         height: size,
         borderRadius: shape === "circle" ? size / 2 : 12,
-        backgroundColor: shapeColors[shape],
+        backgroundColor: fill,
       }}
     />
   );
@@ -536,21 +546,29 @@ function OddPartRound({
   locked,
   onChoose,
 }: {
-  choices: MomoShape[];
+  choices: MomoFaultyPart[];
   locked: boolean;
   onChoose: (index: number) => void;
 }) {
   return (
     <View style={styles.bonusChoices}>
-      {choices.map((shape, index) => (
+      {choices.map((part, index) => (
         <Pressable
           accessibilityLabel={`${index + 1}. robot parçası`}
           disabled={locked}
-          key={`${shape}-${index}`}
+          key={`${part.shape}-${part.color}-${index}`}
           onPress={() => onChoose(index)}
           style={({ pressed }) => [styles.bonusChoice, pressed && styles.pressed]}
         >
-          <ShapeArt shape={shape} size={48} />
+          <ShapeArt color={part.color} shape={part.shape} size={48} />
+          {part.marked ? (
+            <MaterialCommunityIcons
+              color="#E25555"
+              name="alert-circle"
+              size={22}
+              style={styles.faultMark}
+            />
+          ) : null}
         </Pressable>
       ))}
     </View>
@@ -1165,6 +1183,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: "#E6EFF2",
   },
+  faultMark: { position: "absolute", top: 5, right: 5 },
   partTarget: {
     width: 132,
     height: 132,

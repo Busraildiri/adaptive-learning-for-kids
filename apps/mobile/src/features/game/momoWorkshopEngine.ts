@@ -10,6 +10,12 @@ export type CableDropTarget = {
 
 export type GuidedAttemptOutcome = "matched" | "retry" | "reveal";
 export type MomoPartKind = "antenna" | "arm" | "battery" | "wheel" | "sensor";
+export type MomoFaultStage = "shape" | "contrast" | "near_color" | "detail" | "two_rules";
+export type MomoFaultyPart = {
+  shape: MomoShape;
+  color: string;
+  marked?: boolean;
+};
 export type MomoBonusRound =
   | {
       id: string;
@@ -22,7 +28,8 @@ export type MomoBonusRound =
       id: string;
       kind: "odd_part";
       prompt: string;
-      choices: MomoShape[];
+      stage: MomoFaultStage;
+      choices: MomoFaultyPart[];
       correctIndex: number;
     };
 export type MomoPlayableRound = MomoWorkshopRound | MomoBonusRound;
@@ -51,6 +58,14 @@ export function momoRoundPrompt(round: MomoPlayableRound): string {
     return `${sequence}; sıradaki şekli seç.`;
   }
   return round.prompt;
+}
+
+export function momoFaultStageForLevel(adaptiveLevel: number): MomoFaultStage {
+  if (adaptiveLevel <= 30) return "shape";
+  if (adaptiveLevel <= 60) return "contrast";
+  if (adaptiveLevel <= 90) return "near_color";
+  if (adaptiveLevel <= 120) return "detail";
+  return "two_rules";
 }
 
 export function momoRoundsForLevel(
@@ -89,14 +104,30 @@ export function momoRoundsForLevel(
   };
   const oddChoiceCount = Math.min(25, 4 + occurrence);
   const oddIndex = level % oddChoiceCount;
+  const faultStage = momoFaultStageForLevel(level);
   const commonShape: MomoShape = level % 2 === 0 ? "circle" : "square";
   const oddShape: MomoShape = commonShape === "circle" ? "triangle" : "circle";
+  const commonPart: MomoFaultyPart = { shape: commonShape, color: "#4B8FE8" };
+  const faultyPart: MomoFaultyPart =
+    faultStage === "shape"
+      ? { ...commonPart, shape: oddShape }
+      : faultStage === "contrast"
+        ? { ...commonPart, color: "#F37970" }
+        : faultStage === "near_color"
+          ? { ...commonPart, color: "#679DE8" }
+          : faultStage === "detail"
+            ? { ...commonPart, marked: true }
+            : { shape: oddShape, color: "#679DE8", marked: true };
   const oddRound: MomoBonusRound = {
     id: `momo-odd-${level}`,
     kind: "odd_part",
-    prompt: "Diğerlerinden farklı olan arızalı parçayı bul.",
+    prompt:
+      faultStage === "two_rules"
+        ? "Rengi ve şekli farklı olan arızalı parçayı bul."
+        : "Diğerlerinden farklı olan arızalı parçayı bul.",
+    stage: faultStage,
     choices: Array.from({ length: oddChoiceCount }, (_, index) =>
-      index === oddIndex ? oddShape : commonShape,
+      index === oddIndex ? faultyPart : commonPart,
     ),
     correctIndex: oddIndex,
   };
@@ -148,12 +179,31 @@ export function momoRoundsForLevel(
       ? {
           ...pattern,
           id: `${pattern.id}-encounter-${occurrence}`,
-          sequence: Array.from(
-            { length: patternLength },
-            (_, index) => pattern.sequence[index % pattern.sequence.length] as MomoShape,
-          ),
-          correctShape:
-            pattern.sequence[patternLength % pattern.sequence.length] ?? pattern.correctShape,
+          sequence: (() => {
+            const cycle: MomoShape[] =
+              occurrence <= 2
+                ? ["circle", "square"]
+                : occurrence <= 4
+                  ? ["circle", "circle", "square"]
+                  : occurrence <= 6
+                    ? ["circle", "square", "square"]
+                    : ["circle", "square", "triangle"];
+            return Array.from(
+              { length: patternLength },
+              (_, index) => cycle[index % cycle.length] as MomoShape,
+            );
+          })(),
+          correctShape: (() => {
+            const cycle: MomoShape[] =
+              occurrence <= 2
+                ? ["circle", "square"]
+                : occurrence <= 4
+                  ? ["circle", "circle", "square"]
+                  : occurrence <= 6
+                    ? ["circle", "square", "square"]
+                    : ["circle", "square", "triangle"];
+            return cycle[patternLength % cycle.length] as MomoShape;
+          })(),
         }
       : pattern;
   const levelCycle = [
