@@ -185,11 +185,12 @@ describe("momoWorkshopEngine", () => {
 
   it("moves faulty-part challenges through bounded visual difficulty stages", () => {
     expect(momoFaultStageForLevel(1)).toBe("shape");
-    expect(momoFaultStageForLevel(30)).toBe("shape");
-    expect(momoFaultStageForLevel(31)).toBe("contrast");
-    expect(momoFaultStageForLevel(61)).toBe("near_color");
-    expect(momoFaultStageForLevel(91)).toBe("detail");
-    expect(momoFaultStageForLevel(121)).toBe("two_rules");
+    expect(momoFaultStageForLevel(15)).toBe("shape");
+    expect(momoFaultStageForLevel(16)).toBe("contrast");
+    expect(momoFaultStageForLevel(31)).toBe("near_color");
+    expect(momoFaultStageForLevel(60)).toBe("near_color");
+    expect(momoFaultStageForLevel(61)).toBe("detail");
+    expect(momoFaultStageForLevel(101)).toBe("two_rules");
   });
 
   it("does not generate the same Momo chapter configuration twice", () => {

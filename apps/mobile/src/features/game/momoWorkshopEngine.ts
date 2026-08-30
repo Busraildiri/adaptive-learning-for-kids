@@ -98,10 +98,10 @@ export function momoRoundPrompt(round: MomoPlayableRound): string {
 }
 
 export function momoFaultStageForLevel(adaptiveLevel: number): MomoFaultStage {
-  if (adaptiveLevel <= 30) return "shape";
-  if (adaptiveLevel <= 60) return "contrast";
-  if (adaptiveLevel <= 90) return "near_color";
-  if (adaptiveLevel <= 120) return "detail";
+  if (adaptiveLevel <= 15) return "shape";
+  if (adaptiveLevel <= 30) return "contrast";
+  if (adaptiveLevel <= 60) return "near_color";
+  if (adaptiveLevel <= 100) return "detail";
   return "two_rules";
 }
 
