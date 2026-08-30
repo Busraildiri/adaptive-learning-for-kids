@@ -107,7 +107,7 @@ function ObjectArt({
     );
   }
   if (object.shape === "bear") {
-    return <Image source={happyDog} style={styles.dogImage} />;
+    return <Image source={happyDog} style={[styles.dogImage, compact && styles.compactDogImage]} />;
   }
   const iconName = {
     ball: "basketball",
@@ -119,7 +119,13 @@ function ObjectArt({
   }[object.shape] as "basketball";
   const size = compact ? 34 : object.size === "large" ? 104 : 38;
   return (
-    <View style={[styles.iconBadge, { backgroundColor: `${color}24` }]}>
+    <View
+      style={[
+        styles.iconBadge,
+        compact && styles.compactIconBadge,
+        { backgroundColor: `${color}24` },
+      ]}
+    >
       <MaterialCommunityIcons color={color} name={iconName} size={size} />
     </View>
   );
@@ -176,7 +182,7 @@ function DraggableObject({
       {...responder.panHandlers}
       style={[
         styles.objectCard,
-        itemCount > 10 && styles.compactObjectCard,
+        itemCount >= 8 && styles.compactObjectCard,
         compareSize && object.size === "large" && itemCount <= 10 && styles.largeObjectCard,
         highlighted && styles.objectHighlighted,
         { transform: position.getTranslateTransform() },
@@ -226,6 +232,7 @@ export function ClassifyAndSortGame({
   const mascotScale = useRef(new Animated.Value(1)).current;
   const basketBounce = useRef(new Animated.Value(1)).current;
   const currentRound = game.rounds[roundIndex];
+  const denseLayout = currentRound.objects.length >= 8;
   const shownInstruction = currentRound.instruction;
 
   const speak = useCallback(
@@ -444,17 +451,21 @@ export function ClassifyAndSortGame({
         </View>
         <Animated.Image
           source={minoHappy}
-          style={[styles.mascot, { transform: [{ scale: mascotScale }] }]}
+          style={[
+            styles.mascot,
+            denseLayout && styles.compactMascot,
+            { transform: [{ scale: mascotScale }] },
+          ]}
         />
         <Text style={styles.levelLabel}>SEVİYE {adaptiveLevel}</Text>
-        <Text style={styles.title}>{game.title}</Text>
-        <View style={styles.ruleCard}>
+        <Text style={[styles.title, denseLayout && styles.compactTitle]}>{game.title}</Text>
+        <View style={[styles.ruleCard, denseLayout && styles.compactRuleCard]}>
           {roundIndex > 0 ? <Text style={styles.ruleChanged}>KURAL DEĞİŞTİ!</Text> : null}
-          <Text style={styles.instruction}>{shownInstruction}</Text>
+          <Text style={[styles.instruction, denseLayout && styles.compactInstruction]}>
+            {shownInstruction}
+          </Text>
         </View>
-        <View
-          style={[styles.objectGrid, currentRound.objects.length > 10 && styles.compactObjectGrid]}
-        >
+        <View style={[styles.objectGrid, denseLayout && styles.compactObjectGrid]}>
           {currentRound.objects.map((object) => (
             <DraggableObject
               basketBounds={basketBounds}
@@ -478,11 +489,20 @@ export function ClassifyAndSortGame({
             )
           }
           ref={basketRef}
-          style={[styles.basket, { transform: [{ scale: basketBounce }] }]}
+          style={[
+            styles.basket,
+            denseLayout && styles.compactBasket,
+            { transform: [{ scale: basketBounce }] },
+          ]}
         >
-          <Image source={toyBasket} style={styles.basketImage} />
+          <Image
+            source={toyBasket}
+            style={[styles.basketImage, denseLayout && styles.compactBasketImage]}
+          />
         </Animated.View>
-        <Text style={styles.feedback}>{locked && !feedback ? "Pati anlatıyor…" : feedback}</Text>
+        <Text style={[styles.feedback, denseLayout && styles.compactFeedback]}>
+          {locked && !feedback ? "Pati anlatıyor…" : feedback}
+        </Text>
       </View>
       <View style={styles.ground} accessible={false} />
     </SafeAreaView>
@@ -542,9 +562,11 @@ const styles = StyleSheet.create({
   progressFlower: { backgroundColor: "#FFF1A8" },
   progressText: { color: "#DB8F42", fontSize: 20, fontWeight: "900" },
   mascot: { width: 76, height: 76, resizeMode: "contain" },
+  compactMascot: { width: 50, height: 50 },
   mascotLarge: { width: 150, height: 150, resizeMode: "contain" },
   levelLabel: { color: "#55776B", fontSize: 14, fontWeight: "900", letterSpacing: 1.4 },
   title: { color: "#473A31", fontSize: 25, fontWeight: "900" },
+  compactTitle: { fontSize: 22 },
   ruleCard: {
     minWidth: 280,
     marginTop: 7,
@@ -557,6 +579,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 7,
   },
+  compactRuleCard: { marginTop: 4, paddingHorizontal: 12, paddingVertical: 7 },
   ruleChanged: { color: "#D56B54", fontSize: 12, fontWeight: "900", textAlign: "center" },
   instruction: {
     color: "#473A31",
@@ -565,6 +588,7 @@ const styles = StyleSheet.create({
     lineHeight: 25,
     textAlign: "center",
   },
+  compactInstruction: { fontSize: 17, lineHeight: 21 },
   objectGrid: {
     width: "100%",
     maxWidth: 530,
@@ -576,7 +600,7 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 12,
   },
-  compactObjectGrid: { maxWidth: 330 },
+  compactObjectGrid: { maxWidth: 304, minHeight: 0, gap: 4, marginTop: 6 },
   objectCard: {
     width: 98,
     height: 124,
@@ -591,8 +615,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.16,
     shadowRadius: 6,
     zIndex: 4,
+    overflow: "hidden",
   },
-  compactObjectCard: { width: 58, height: 66, borderRadius: 15, borderWidth: 2 },
+  compactObjectCard: { width: 56, height: 62, borderRadius: 15, borderWidth: 2 },
   largeObjectCard: { width: 130, height: 154, borderColor: "#F3B51B", borderWidth: 5 },
   objectPressed: { transform: [{ scale: 0.92 }], backgroundColor: "#FFF1C9" },
   objectHighlighted: {
@@ -607,10 +632,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 28,
   },
+  compactIconBadge: { width: 44, height: 44, borderRadius: 14 },
   dogImage: { width: 82, height: 90, resizeMode: "contain" },
+  compactDogImage: { width: 34, height: 36 },
   dragHint: { marginTop: 2, color: "#7A6D61", fontSize: 10, fontWeight: "800" },
   basket: { width: 150, height: 112, alignItems: "center", marginTop: 5 },
   basketImage: { width: 150, height: 112, resizeMode: "contain" },
+  compactBasket: { width: 112, height: 84, marginTop: 2 },
+  compactBasketImage: { width: 112, height: 84 },
   basketHandle: {
     width: 78,
     height: 42,
@@ -640,6 +669,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
   },
+  compactFeedback: { minHeight: 24, marginTop: 2, fontSize: 13 },
   ball: { width: 62, height: 62, borderRadius: 31, borderWidth: 5, borderColor: "#FFFFFF70" },
   block: { width: 62, height: 62, borderRadius: 13, borderWidth: 5, borderColor: "#FFFFFF70" },
   star: { fontSize: 72, lineHeight: 80 },
