@@ -28,6 +28,7 @@ import {
   findCableDropTarget,
   isMomoRewardLevel,
   momoRoundPrompt,
+  momoRoundsForLevel,
   outcomeForGuidedAttempt,
   patternShapeMatches,
 } from "./momoWorkshopEngine";
@@ -478,6 +479,67 @@ function RewardChoice({
   );
 }
 
+function GearMatchRound({
+  choices,
+  locked,
+  targetSize,
+  onChoose,
+}: {
+  choices: number[];
+  locked: boolean;
+  targetSize: number;
+  onChoose: (size: number) => void;
+}) {
+  return (
+    <View style={styles.bonusRound}>
+      <View
+        style={[styles.gearSocket, { width: 54 + targetSize * 18, height: 54 + targetSize * 18 }]}
+      >
+        <MaterialCommunityIcons color="#7892A4" name="cog-outline" size={38 + targetSize * 12} />
+      </View>
+      <View style={styles.bonusChoices}>
+        {choices.map((size) => (
+          <Pressable
+            accessibilityLabel={`${size}. büyüklükte dişli`}
+            disabled={locked}
+            key={size}
+            onPress={() => onChoose(size)}
+            style={({ pressed }) => [styles.bonusChoice, pressed && styles.pressed]}
+          >
+            <MaterialCommunityIcons color="#4B8FE8" name="cog" size={30 + size * 12} />
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function OddPartRound({
+  choices,
+  locked,
+  onChoose,
+}: {
+  choices: MomoShape[];
+  locked: boolean;
+  onChoose: (index: number) => void;
+}) {
+  return (
+    <View style={styles.bonusChoices}>
+      {choices.map((shape, index) => (
+        <Pressable
+          accessibilityLabel={`${index + 1}. robot parçası`}
+          disabled={locked}
+          key={`${shape}-${index}`}
+          onPress={() => onChoose(index)}
+          style={({ pressed }) => [styles.bonusChoice, pressed && styles.pressed]}
+        >
+          <ShapeArt shape={shape} size={48} />
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 export function MomoWorkshopGame({
   adaptiveLevel,
   announceIntro = true,
@@ -505,7 +567,11 @@ export function MomoWorkshopGame({
   const [selectedPart, setSelectedPart] = useState<MomoPartVisual | null>(null);
   const [unlockedMilestones, setUnlockedMilestones] = useState<number[]>([]);
   const feedbackShake = useRef(new Animated.Value(0)).current;
-  const round = game.rounds[roundIndex];
+  const playableRounds = useMemo(
+    () => momoRoundsForLevel(game.rounds, adaptiveLevel),
+    [adaptiveLevel, game.rounds],
+  );
+  const round = playableRounds[roundIndex] as (typeof playableRounds)[number];
   const roundPrompt = momoRoundPrompt(round);
   const assemblyStage = unlockedMilestones.length;
   const isRewardLevel = isMomoRewardLevel(adaptiveLevel);
@@ -554,7 +620,7 @@ export function MomoWorkshopGame({
     setFeedback(game.feedback.matched);
     Vibration.vibrate(35);
     speak(game.feedback.matched, () => {
-      if (roundIndex === game.rounds.length - 1) {
+      if (roundIndex === playableRounds.length - 1) {
         if (isRewardLevel && !unlockedMilestones.includes(adaptiveLevel)) setPhase("reward");
         else report({ type: "completed", stepId: round.id });
       } else setRoundIndex((current) => current + 1);
@@ -562,8 +628,8 @@ export function MomoWorkshopGame({
   }, [
     adaptiveLevel,
     game.feedback.matched,
-    game.rounds.length,
     isRewardLevel,
+    playableRounds.length,
     report,
     round.id,
     roundIndex,
@@ -721,7 +787,7 @@ export function MomoWorkshopGame({
         <Text style={styles.closeText}>×</Text>
       </Pressable>
       <View style={styles.progressRow}>
-        {Array.from({ length: game.rounds.length }, (_, index) => (
+        {Array.from({ length: playableRounds.length }, (_, index) => (
           <View
             key={`step-${index}`}
             style={[styles.progressDot, index <= roundIndex && styles.progressDotOn]}
@@ -732,7 +798,7 @@ export function MomoWorkshopGame({
         <MomoAvatar assemblyStage={assemblyStage} selectedPart={selectedPart} />
         <View style={styles.headerCopy}>
           <Text style={styles.stepEyebrow}>
-            SEVİYE {adaptiveLevel} · GÖREV {roundIndex + 1}/{game.rounds.length}
+            SEVİYE {adaptiveLevel} · GÖREV {roundIndex + 1}/{playableRounds.length}
           </Text>
           <Text style={styles.gameTitle}>{game.title}</Text>
         </View>
@@ -769,7 +835,7 @@ export function MomoWorkshopGame({
             reveal={revealed}
             targetCount={round.targetCount}
           />
-        ) : (
+        ) : round.kind === "pattern_shape" ? (
           <PatternShapeRound
             choices={round.choices}
             correctShape={round.correctShape}
@@ -777,6 +843,19 @@ export function MomoWorkshopGame({
             onChoose={(shape) => handleAttempt(patternShapeMatches(shape, round.correctShape))}
             reveal={revealed}
             sequence={round.sequence}
+          />
+        ) : round.kind === "gear_match" ? (
+          <GearMatchRound
+            choices={round.choices}
+            locked={locked}
+            onChoose={(size) => handleAttempt(size === round.targetSize)}
+            targetSize={round.targetSize}
+          />
+        ) : (
+          <OddPartRound
+            choices={round.choices}
+            locked={locked}
+            onChoose={(index) => handleAttempt(index === round.correctIndex)}
           />
         )}
       </View>
@@ -1050,6 +1129,34 @@ const styles = StyleSheet.create({
     backgroundColor: "#4BAFA5",
   },
   patternRound: { width: "100%", maxWidth: 360, alignItems: "center" },
+  bonusRound: { width: "100%", alignItems: "center", justifyContent: "center", gap: 24 },
+  bonusChoices: {
+    maxWidth: 420,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  bonusChoice: {
+    width: 76,
+    height: 76,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 4,
+    borderColor: "#FFFFFF",
+    borderRadius: 22,
+    backgroundColor: "#E6EFF2",
+  },
+  gearSocket: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 4,
+    borderStyle: "dashed",
+    borderColor: "#7892A4",
+    borderRadius: 24,
+    backgroundColor: "#FFFFFF",
+  },
   patternSequence: {
     flexDirection: "row",
     flexWrap: "wrap",

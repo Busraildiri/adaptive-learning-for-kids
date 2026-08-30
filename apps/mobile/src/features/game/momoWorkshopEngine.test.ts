@@ -7,6 +7,7 @@ import {
   findCableDropTarget,
   isMomoRewardLevel,
   momoRoundPrompt,
+  momoRoundsForLevel,
   outcomeForGuidedAttempt,
   patternShapeMatches,
 } from "./momoWorkshopEngine";
@@ -106,5 +107,45 @@ describe("momoWorkshopEngine", () => {
     expect(isMomoRewardLevel(140)).toBe(true);
     expect(isMomoRewardLevel(150)).toBe(true);
     expect(isMomoRewardLevel(160)).toBe(false);
+  });
+
+  it("varies Momo task count and introduces new workshop mechanics", () => {
+    const baseRounds = [
+      {
+        id: "cables",
+        kind: "cable_match" as const,
+        prompt: "Kabloları bağla.",
+        endpoints: [
+          coralLeft,
+          coralRight,
+          { ...coralLeft, id: "blue-left", matchKey: "blue" },
+          blueRight,
+        ],
+      },
+      {
+        id: "crystals",
+        kind: "crystal_count" as const,
+        prompt: "Kristalleri seç.",
+        crystalCount: 5,
+        targetCount: 3,
+      },
+      {
+        id: "pattern",
+        kind: "pattern_shape" as const,
+        prompt: "Deseni tamamla.",
+        sequence: ["circle", "square", "circle"] as const,
+        choices: ["circle", "square", "triangle"] as const,
+        correctShape: "square" as const,
+      },
+    ];
+
+    expect(momoRoundsForLevel(baseRounds, 1)).toHaveLength(1);
+    expect(momoRoundsForLevel(baseRounds, 5)).toHaveLength(2);
+    expect(momoRoundsForLevel(baseRounds, 11).some((round) => round.kind === "gear_match")).toBe(
+      true,
+    );
+    expect(momoRoundsForLevel(baseRounds, 31).some((round) => round.kind === "odd_part")).toBe(
+      true,
+    );
   });
 });

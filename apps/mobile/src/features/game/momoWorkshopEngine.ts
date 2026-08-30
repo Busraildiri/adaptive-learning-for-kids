@@ -9,6 +9,16 @@ export type CableDropTarget = {
 };
 
 export type GuidedAttemptOutcome = "matched" | "retry" | "reveal";
+export type MomoBonusRound =
+  | { id: string; kind: "gear_match"; prompt: string; targetSize: number; choices: number[] }
+  | {
+      id: string;
+      kind: "odd_part";
+      prompt: string;
+      choices: MomoShape[];
+      correctIndex: number;
+    };
+export type MomoPlayableRound = MomoWorkshopRound | MomoBonusRound;
 
 const shapeLabels: Record<MomoShape, string> = {
   circle: "daire",
@@ -16,7 +26,13 @@ const shapeLabels: Record<MomoShape, string> = {
   triangle: "üçgen",
 };
 
-export function momoRoundPrompt(round: MomoWorkshopRound): string {
+function rotateRounds<T>(items: readonly T[], offset: number): T[] {
+  if (items.length === 0) return [];
+  const normalizedOffset = ((offset % items.length) + items.length) % items.length;
+  return [...items.slice(normalizedOffset), ...items.slice(0, normalizedOffset)];
+}
+
+export function momoRoundPrompt(round: MomoPlayableRound): string {
   if (round.kind === "crystal_count") {
     return `${round.targetCount} enerji kristalini Momo'nun piline koy.`;
   }
@@ -25,6 +41,53 @@ export function momoRoundPrompt(round: MomoWorkshopRound): string {
     return `${sequence}; sıradaki şekli seç.`;
   }
   return round.prompt;
+}
+
+export function momoRoundsForLevel(
+  baseRounds: readonly MomoWorkshopRound[],
+  adaptiveLevel: number,
+): MomoPlayableRound[] {
+  const level = Math.max(1, Math.min(150, Math.floor(adaptiveLevel)));
+  const leveledBase = baseRounds.map((round): MomoWorkshopRound => {
+    if (round.kind === "cable_match" && level >= 31) {
+      return { ...round, prompt: "Enerji devresindeki eş renkli bağlantıları tamamla." };
+    }
+    if (round.kind === "pattern_shape" && level >= 61) {
+      return { ...round, prompt: "Montaj sırasındaki eksik robot parçasını seç." };
+    }
+    if (round.kind === "crystal_count" && level >= 101) {
+      return {
+        ...round,
+        prompt: `${round.targetCount} güç modülünü enerji çekirdeğine yerleştir.`,
+      };
+    }
+    return round;
+  });
+  const gearRound: MomoBonusRound = {
+    id: `momo-gear-${level}`,
+    kind: "gear_match",
+    prompt: "Boşluğa uyan büyüklükteki dişliyi seç.",
+    targetSize: 1 + (level % 3),
+    choices: [1, 2, 3],
+  };
+  const oddIndex = level % 5;
+  const commonShape: MomoShape = level % 2 === 0 ? "circle" : "square";
+  const oddShape: MomoShape = commonShape === "circle" ? "triangle" : "circle";
+  const oddRound: MomoBonusRound = {
+    id: `momo-odd-${level}`,
+    kind: "odd_part",
+    prompt: "Diğerlerinden farklı olan arızalı parçayı bul.",
+    choices: Array.from({ length: 5 }, (_, index) => (index === oddIndex ? oddShape : commonShape)),
+    correctIndex: oddIndex,
+  };
+  const count = level <= 3 ? 1 : level <= 9 ? 2 : 3;
+  const rotatedBase = rotateRounds(leveledBase, level - 1);
+  if (level >= 31) {
+    const featured = level % 2 === 0 ? gearRound : oddRound;
+    return [featured, ...rotatedBase].slice(0, count);
+  }
+  if (level >= 11) return [gearRound, ...rotatedBase].slice(0, count);
+  return rotatedBase.slice(0, Math.min(count, rotatedBase.length));
 }
 
 export function boundedMomoItemCount(itemCount: number): number {
