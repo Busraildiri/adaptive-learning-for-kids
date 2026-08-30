@@ -245,6 +245,17 @@ describe("adaptive game progression", () => {
     expect(adapted.rounds[0]?.instruction).toBe("Kediyi sepete sürükle ve bırak.");
   });
 
+  it("does not select an unavailable Pati animal visual as a target", () => {
+    const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
+    if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
+
+    for (let challengeIndex = 0; challengeIndex < 80; challengeIndex += 1) {
+      const adapted = adaptGameComplexity(pati, 12, challengeIndex);
+      if (adapted.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
+      expect(adapted.rounds[0]?.instruction).not.toContain("ayıcık");
+    }
+  });
+
   it("audits every level of every published game for bounded adaptive content", () => {
     for (const game of publishedGames) {
       const maximumLevel = maxAdaptiveLevelForGame(game);

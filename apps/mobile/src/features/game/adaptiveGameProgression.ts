@@ -64,14 +64,6 @@ const patiVisualObjects: SortObject[] = [
     size: "small",
   },
   {
-    id: "bear",
-    label: "sarı ayıcık",
-    shape: "bear",
-    color: "yellow",
-    category: "animal",
-    size: "small",
-  },
-  {
     id: "bed",
     label: "büyük mavi yatak",
     shape: "block",
