@@ -147,9 +147,10 @@ describe("RAG-grounded parent session insights", () => {
     const evidence = gameEvidence.map((item, index) => ({
       ...item,
       outcome: "left_early" as const,
-      signals: index < 2
-        ? (["left_early", "progressed", "replayed"] as const)
-        : (["left_early", "replayed"] as const),
+      signals:
+        index < 2
+          ? (["left_early", "progressed", "replayed"] as const)
+          : (["left_early", "replayed"] as const),
     }));
     const summary = buildParentSessionSummary({ ...base, gameEvidence: evidence });
 
@@ -181,9 +182,7 @@ describe("RAG-grounded parent session insights", () => {
     );
     const summary = buildParentSessionSummary({ ...base, gameEvidence: evidence });
 
-    expect(summary.gameInsights.map((insight) => insight.code)).toContain(
-      "completed_and_moved_on",
-    );
+    expect(summary.gameInsights.map((insight) => insight.code)).toContain("completed_and_moved_on");
     expect(summary.gameInsights.map((insight) => insight.code)).toContain(
       "difficulty_related_dropout",
     );

@@ -141,7 +141,12 @@ function DraggableObject({
         { transform: position.getTranslateTransform() },
       ]}
     >
-      <ObjectArt compact={itemCount > 10} compareSize={compareSize} imageSource={imageSource} object={object} />
+      <ObjectArt
+        compact={itemCount > 10}
+        compareSize={compareSize}
+        imageSource={imageSource}
+        object={object}
+      />
       <Text style={styles.dragHint}>Tut ve sürükle</Text>
     </Animated.View>
   );
@@ -317,7 +322,9 @@ export function ClassifyAndSortGame({
           <Pressable accessibilityRole="button" onPress={onRestart} style={styles.exitButton}>
             <Text style={styles.exitButtonText}>Tekrar başlamak için dokun</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" onPress={onExit}><Text style={styles.completedCopy}>Oyunlara dön</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={onExit}>
+            <Text style={styles.completedCopy}>Oyunlara dön</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     );
@@ -366,10 +373,7 @@ export function ClassifyAndSortGame({
           <Text style={styles.instruction}>{shownInstruction}</Text>
         </View>
         <View
-          style={[
-            styles.objectGrid,
-            currentRound.objects.length > 10 && styles.compactObjectGrid,
-          ]}
+          style={[styles.objectGrid, currentRound.objects.length > 10 && styles.compactObjectGrid]}
         >
           {currentRound.objects.map((object, index) => (
             <DraggableObject

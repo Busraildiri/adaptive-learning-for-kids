@@ -1,15 +1,15 @@
-import { describe, expect, it } from "vitest";
 import { contentVersionSchema, type Game } from "@adaptive/content-schema";
 import contentV1 from "@adaptive/content-schema/content/tr-TR/v1";
+import { describe, expect, it } from "vitest";
 import {
   adaptGameComplexity,
   adaptiveGridDimensions,
   createInitialAdaptiveState,
   findGameVariant,
   itemCountForLevel,
-  maxAdaptiveLevelForGame,
-  MAX_ADAPTIVE_LEVEL,
   MAX_ADAPTIVE_ITEM_COUNT,
+  MAX_ADAPTIVE_LEVEL,
+  maxAdaptiveLevelForGame,
   nextDifficultyAfterCompletion,
   previousProgression,
   requiredRunsToAdvance,
@@ -44,25 +44,61 @@ describe("adaptive game progression", () => {
     expect(requiredRunsToAdvance("2-4")).toBe(2);
     expect(
       nextDifficultyAfterCompletion(
-        { difficulty: "starter", completedRunsAtLevel: 0, itemCount: 2, challengeIndex: 0, adaptiveLevel: 1 },
+        {
+          difficulty: "starter",
+          completedRunsAtLevel: 0,
+          itemCount: 2,
+          challengeIndex: 0,
+          adaptiveLevel: 1,
+        },
         "2-4",
       ),
-    ).toEqual({ difficulty: "starter", completedRunsAtLevel: 1, itemCount: 2, challengeIndex: 1, adaptiveLevel: 1 });
+    ).toEqual({
+      difficulty: "starter",
+      completedRunsAtLevel: 1,
+      itemCount: 2,
+      challengeIndex: 1,
+      adaptiveLevel: 1,
+    });
     expect(
       nextDifficultyAfterCompletion(
-        { difficulty: "starter", completedRunsAtLevel: 1, itemCount: 2, challengeIndex: 1, adaptiveLevel: 1 },
+        {
+          difficulty: "starter",
+          completedRunsAtLevel: 1,
+          itemCount: 2,
+          challengeIndex: 1,
+          adaptiveLevel: 1,
+        },
         "2-4",
       ),
-    ).toEqual({ difficulty: "starter", completedRunsAtLevel: 0, itemCount: 2, challengeIndex: 2, adaptiveLevel: 2 });
+    ).toEqual({
+      difficulty: "starter",
+      completedRunsAtLevel: 0,
+      itemCount: 2,
+      challengeIndex: 2,
+      adaptiveLevel: 2,
+    });
   });
 
   it("advances 4-7 year olds after one completed run", () => {
     expect(
       nextDifficultyAfterCompletion(
-        { difficulty: "starter", completedRunsAtLevel: 0, itemCount: 2, challengeIndex: 0, adaptiveLevel: 1 },
+        {
+          difficulty: "starter",
+          completedRunsAtLevel: 0,
+          itemCount: 2,
+          challengeIndex: 0,
+          adaptiveLevel: 1,
+        },
         "4-7",
       ),
-    ).toEqual({ difficulty: "starter", completedRunsAtLevel: 0, itemCount: 2, challengeIndex: 1, adaptiveLevel: 2 });
+    ).toEqual({
+      difficulty: "starter",
+      completedRunsAtLevel: 0,
+      itemCount: 2,
+      challengeIndex: 1,
+      adaptiveLevel: 2,
+    });
   });
 
   it("drops exactly one adaptive level after difficulty", () => {
@@ -131,7 +167,10 @@ describe("adaptive game progression", () => {
         const adapted = adaptGameComplexity(game, itemCount, level - 1);
         expect(adapted.id, `${game.id} level ${level}`).toBe(game.id);
         expect(itemCount, `${game.id} level ${level}`).toBeLessThanOrEqual(25);
-        expect(adaptiveGridDimensions(itemCount).rows, `${game.id} level ${level}`).toBeLessThanOrEqual(5);
+        expect(
+          adaptiveGridDimensions(itemCount).rows,
+          `${game.id} level ${level}`,
+        ).toBeLessThanOrEqual(5);
         switch (adapted.mechanic) {
           case "tap_or_wait": {
             const ruleIds = new Set(adapted.rules.map((rule) => rule.id));
@@ -298,9 +337,7 @@ describe("adaptive game progression", () => {
         case "momo_workshop":
           expect(adapted.rounds[0].endpoints.length, adapted.id).toBeLessThanOrEqual(24);
           expect(adapted.rounds[1].crystalCount, adapted.id).toBe(MAX_ADAPTIVE_ITEM_COUNT);
-          expect(adapted.rounds[2].sequence.length + 1, adapted.id).toBe(
-            MAX_ADAPTIVE_ITEM_COUNT,
-          );
+          expect(adapted.rounds[2].sequence.length + 1, adapted.id).toBe(MAX_ADAPTIVE_ITEM_COUNT);
           break;
         case "emotion_clues":
           expect(adapted.rounds, adapted.id).toHaveLength(1);

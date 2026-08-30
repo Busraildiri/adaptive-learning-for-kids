@@ -228,7 +228,9 @@ export function BalloonCountingGame({
             <Pressable onPress={onRestart} style={styles.exit}>
               <Text style={styles.exitText}>Tekrar başlamak için dokun</Text>
             </Pressable>
-            <Pressable onPress={onExit}><Text style={styles.finishCopy}>Oyunlara dön</Text></Pressable>
+            <Pressable onPress={onExit}>
+              <Text style={styles.finishCopy}>Oyunlara dön</Text>
+            </Pressable>
           </View>
         </ImageBackground>
       </SafeAreaView>

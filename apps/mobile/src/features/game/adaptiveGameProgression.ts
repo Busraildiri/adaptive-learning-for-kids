@@ -55,7 +55,10 @@ export function createInitialAdaptiveState(
 
 export function itemCountForLevel(adaptiveLevel: number): number {
   const normalizedLevel = Math.max(1, Math.min(MAX_ADAPTIVE_LEVEL, adaptiveLevel));
-  return Math.min(MAX_ADAPTIVE_ITEM_COUNT, MIN_ADAPTIVE_ITEM_COUNT + Math.floor((normalizedLevel - 1) / 6));
+  return Math.min(
+    MAX_ADAPTIVE_ITEM_COUNT,
+    MIN_ADAPTIVE_ITEM_COUNT + Math.floor((normalizedLevel - 1) / 6),
+  );
 }
 
 export function difficultyForLevel(adaptiveLevel: number): GameDifficultyLevel {
@@ -127,8 +130,7 @@ export function maxAdaptiveLevelForGame(game: Game): number {
     case "sequence_and_place":
       combinations = game.rounds.reduce(
         (total, round) =>
-          total +
-          (MAX_ADAPTIVE_ITEM_COUNT - MIN_ADAPTIVE_ITEM_COUNT + 1) * round.items.length,
+          total + (MAX_ADAPTIVE_ITEM_COUNT - MIN_ADAPTIVE_ITEM_COUNT + 1) * round.items.length,
         0,
       );
       break;
@@ -144,8 +146,7 @@ export function maxAdaptiveLevelForGame(game: Game): number {
     case "balloon_counting":
       combinations = game.rounds.reduce(
         (total, round) =>
-          total +
-          (MAX_ADAPTIVE_ITEM_COUNT - MIN_ADAPTIVE_ITEM_COUNT + 1) * round.balloons.length,
+          total + (MAX_ADAPTIVE_ITEM_COUNT - MIN_ADAPTIVE_ITEM_COUNT + 1) * round.balloons.length,
         0,
       );
       break;
@@ -226,7 +227,10 @@ function avoidAdjacentDuplicateAnswers<T>(items: readonly T[], offset: number): 
         answerSignature(candidate) !== answerSignature(ordered[index - 1]),
     );
     if (replacementIndex > index) {
-      [ordered[index], ordered[replacementIndex]] = [ordered[replacementIndex] as T, ordered[index] as T];
+      [ordered[index], ordered[replacementIndex]] = [
+        ordered[replacementIndex] as T,
+        ordered[index] as T,
+      ];
     }
   }
   return ordered;
@@ -263,11 +267,13 @@ export function adaptGameComplexity(
     if (adaptiveRound.kind === "single") {
       return {
         ...game,
-        rounds: [{
-          ...adaptiveRound,
-          id: `${adaptiveRound.id}-adaptive-${challengeIndex}`,
-          choices: rotate(adaptiveRound.choices, challengeIndex),
-        }],
+        rounds: [
+          {
+            ...adaptiveRound,
+            id: `${adaptiveRound.id}-adaptive-${challengeIndex}`,
+            choices: rotate(adaptiveRound.choices, challengeIndex),
+          },
+        ],
       };
     }
     const source =
@@ -281,10 +287,7 @@ export function adaptGameComplexity(
         {
           ...adaptiveRound,
           id: `${adaptiveRound.id}-adaptive-${itemCount}`,
-          prompt:
-            adaptiveRound.kind === "rhythm"
-              ? "Ritmi tahmin et."
-              : adaptiveRound.prompt,
+          prompt: adaptiveRound.kind === "rhythm" ? "Ritmi tahmin et." : adaptiveRound.prompt,
           correctSequence,
           demoSequence: adaptiveRound.kind === "rhythm" ? correctSequence : undefined,
         },
@@ -304,13 +307,15 @@ export function adaptGameComplexity(
         orderedChoices[visiblePatternLength % orderedChoices.length] ?? sourceRound.correctColor;
       return {
         ...game,
-        rounds: [{
-          ...sourceRound,
-          id: `${sourceRound.id}-adaptive-${challengeIndex}`,
-          sequence,
-          choices: orderedChoices,
-          correctColor,
-        }],
+        rounds: [
+          {
+            ...sourceRound,
+            id: `${sourceRound.id}-adaptive-${challengeIndex}`,
+            sequence,
+            choices: orderedChoices,
+            correctColor,
+          },
+        ],
       };
     }
     const rounds = game.rounds.filter((round) => round.kind === "sequence_memory");
@@ -319,7 +324,14 @@ export function adaptGameComplexity(
     const sequence = repeatToLength(rotate(sourceRound.sequence, challengeIndex), itemCount);
     return {
       ...game,
-      rounds: [{ ...sourceRound, id: `${sourceRound.id}-adaptive-${challengeIndex}`, fish: sequence, sequence }],
+      rounds: [
+        {
+          ...sourceRound,
+          id: `${sourceRound.id}-adaptive-${challengeIndex}`,
+          fish: sequence,
+          sequence,
+        },
+      ],
     };
   }
 
@@ -336,9 +348,7 @@ export function adaptGameComplexity(
 
   if (game.mechanic === "balloon_counting") {
     const sourceRound =
-      game.rounds[
-        (itemCount - MIN_ADAPTIVE_ITEM_COUNT + challengeIndex) % game.rounds.length
-      ];
+      game.rounds[(itemCount - MIN_ADAPTIVE_ITEM_COUNT + challengeIndex) % game.rounds.length];
     if (!sourceRound) return game;
     const palette = sourceRound.balloons;
     const targetOrder: typeof sourceRound.targetOrder =
@@ -350,20 +360,13 @@ export function adaptGameComplexity(
       ? palette.filter((color) => color !== targetColor)
       : palette;
     const safeColorDistractors: typeof palette =
-      colorDistractors.length > 0
-        ? colorDistractors
-        : targetColor === "red"
-          ? ["blue"]
-          : ["red"];
+      colorDistractors.length > 0 ? colorDistractors : targetColor === "red" ? ["blue"] : ["red"];
     const balloons: typeof sourceRound.balloons =
       sourceRound.kind === "order" && targetOrder
         ? rotate(targetOrder, challengeIndex)
         : sourceRound.kind === "color" && targetColor
           ? rotate(
-              [
-                targetColor,
-                ...repeatToLength(safeColorDistractors, itemCount - 1),
-              ],
+              [targetColor, ...repeatToLength(safeColorDistractors, itemCount - 1)],
               challengeIndex,
             )
           : repeatToLength(rotate(palette, challengeIndex), itemCount);
@@ -423,12 +426,14 @@ export function adaptGameComplexity(
     const items = repeatWithUniqueIds(sourceItems, itemCount);
     return {
       ...game,
-      rounds: [{
-        ...sourceRound,
-        id: `${sourceRound.id}-adaptive-${challengeIndex}`,
-        items,
-        correctOrder: items.map((item) => item.id),
-      }],
+      rounds: [
+        {
+          ...sourceRound,
+          id: `${sourceRound.id}-adaptive-${challengeIndex}`,
+          items,
+          correctOrder: items.map((item) => item.id),
+        },
+      ],
     };
   }
 
@@ -451,10 +456,14 @@ export function adaptGameComplexity(
     const pairCount = Math.max(2, Math.min(MAX_ADAPTIVE_GRID_AXIS, Math.floor(itemCount / 2)));
     const endpointPairs = Array.from({ length: pairCount }, (_, index) => {
       const sourcePair = cableRound.endpoints.filter(
-        (endpoint) => endpoint.matchKey === cableRound.endpoints[(index * 2) % cableRound.endpoints.length]?.matchKey,
+        (endpoint) =>
+          endpoint.matchKey ===
+          cableRound.endpoints[(index * 2) % cableRound.endpoints.length]?.matchKey,
       );
-      const left = sourcePair.find((endpoint) => endpoint.side === "left") ?? cableRound.endpoints[0];
-      const right = sourcePair.find((endpoint) => endpoint.side === "right") ?? cableRound.endpoints[1];
+      const left =
+        sourcePair.find((endpoint) => endpoint.side === "left") ?? cableRound.endpoints[0];
+      const right =
+        sourcePair.find((endpoint) => endpoint.side === "right") ?? cableRound.endpoints[1];
       const matchKey = `adaptive-pair-${index}`;
       return [
         { ...left, id: `${left.id}-adaptive-${index}`, matchKey, side: "left" as const },
@@ -466,13 +475,30 @@ export function adaptGameComplexity(
       Math.max(2, itemCount - 1),
     );
     const correctShape = sequence[sequence.length - 1] ?? patternRound.correctShape;
-    const choices = Array.from(new Set([correctShape, ...rotate(patternRound.choices, challengeIndex)]));
+    const choices = Array.from(
+      new Set([correctShape, ...rotate(patternRound.choices, challengeIndex)]),
+    );
     return {
       ...game,
       rounds: [
-        { ...cableRound, id: `${cableRound.id}-adaptive-${challengeIndex}`, endpoints: rotate(endpointPairs, challengeIndex * 2) },
-        { ...crystalRound, id: `${crystalRound.id}-adaptive-${challengeIndex}`, crystalCount: itemCount, targetCount: itemCount },
-        { ...patternRound, id: `${patternRound.id}-adaptive-${challengeIndex}`, sequence, choices, correctShape },
+        {
+          ...cableRound,
+          id: `${cableRound.id}-adaptive-${challengeIndex}`,
+          endpoints: rotate(endpointPairs, challengeIndex * 2),
+        },
+        {
+          ...crystalRound,
+          id: `${crystalRound.id}-adaptive-${challengeIndex}`,
+          crystalCount: itemCount,
+          targetCount: itemCount,
+        },
+        {
+          ...patternRound,
+          id: `${patternRound.id}-adaptive-${challengeIndex}`,
+          sequence,
+          choices,
+          correctShape,
+        },
       ],
     };
   }
@@ -492,18 +518,16 @@ export function findGameVariant(
 ): Game | undefined {
   const referenceSkillId =
     referenceGame.mechanic === "sequence_and_place" ? referenceGame.leveling?.skillId : undefined;
-  return games.find(
-    (candidate) => {
-      const candidateSkillId =
-        candidate.mechanic === "sequence_and_place" ? candidate.leveling?.skillId : undefined;
-      return (
-        candidate.status === "published" &&
-        candidate.mechanic === referenceGame.mechanic &&
-        (referenceSkillId
-          ? candidateSkillId === referenceSkillId
-          : candidate.id === referenceGame.id || candidate.title === referenceGame.title) &&
-        candidate.difficulty.level === difficulty
-      );
-    },
-  );
+  return games.find((candidate) => {
+    const candidateSkillId =
+      candidate.mechanic === "sequence_and_place" ? candidate.leveling?.skillId : undefined;
+    return (
+      candidate.status === "published" &&
+      candidate.mechanic === referenceGame.mechanic &&
+      (referenceSkillId
+        ? candidateSkillId === referenceSkillId
+        : candidate.id === referenceGame.id || candidate.title === referenceGame.title) &&
+      candidate.difficulty.level === difficulty
+    );
+  });
 }

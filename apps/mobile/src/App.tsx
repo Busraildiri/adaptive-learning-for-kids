@@ -8,8 +8,8 @@ import {
   resolveAgeBand,
 } from "@adaptive/shared-types";
 import type { Session } from "@supabase/supabase-js";
-import * as Linking from "expo-linking";
 import { setAudioModeAsync } from "expo-audio";
+import * as Linking from "expo-linking";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, SafeAreaView, StyleSheet } from "react-native";
 import { AccountLoadErrorScreen } from "./features/account/AccountLoadErrorScreen";

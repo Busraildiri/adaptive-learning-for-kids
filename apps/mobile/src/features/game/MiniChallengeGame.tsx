@@ -309,7 +309,17 @@ function BlockBoard({ pieceIcon, solved }: { pieceIcon: string; solved: boolean 
   );
 }
 
-export function MiniChallengeGame({ announceIntro = true, game, onExit, onRestart }: { announceIntro?: boolean; game: MiniGameContent; onExit: () => void; onRestart: () => void }) {
+export function MiniChallengeGame({
+  announceIntro = true,
+  game,
+  onExit,
+  onRestart,
+}: {
+  announceIntro?: boolean;
+  game: MiniGameContent;
+  onExit: () => void;
+  onRestart: () => void;
+}) {
   const report = useGameObservation();
   const soundPlayer = useAudioPlayer(null, { updateInterval: 100 });
   const soundStatus = useAudioPlayerStatus(soundPlayer);
@@ -533,7 +543,9 @@ export function MiniChallengeGame({ announceIntro = true, game, onExit, onRestar
           <Pressable onPress={onRestart} style={styles.exit}>
             <Text style={styles.exitText}>Tekrar başlamak için dokun</Text>
           </Pressable>
-          <Pressable onPress={onExit}><Text style={styles.copy}>Oyunlara dön</Text></Pressable>
+          <Pressable onPress={onExit}>
+            <Text style={styles.copy}>Oyunlara dön</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     );

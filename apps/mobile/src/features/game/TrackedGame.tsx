@@ -2,6 +2,17 @@ import type { Game } from "@adaptive/content-schema";
 import type { ChildSessionProfile } from "@adaptive/shared-types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createActivityEventRecorder } from "../../services/interactionEvents";
+import {
+  type AdaptiveProgressionState,
+  adaptGameComplexity,
+  applyDifficultyLevel,
+  createInitialAdaptiveState,
+  findGameVariant,
+  maxAdaptiveLevelForGame,
+  nextDifficultyAfterCompletion,
+  previousProgression,
+  shouldAnnounceGameIntro,
+} from "./adaptiveGameProgression";
 import { BalloonCountingGame } from "./BalloonCountingGame";
 import { ClassifyAndSortGame } from "./ClassifyAndSortGame";
 import { EmotionCluesGame } from "./EmotionCluesGame";
@@ -11,17 +22,6 @@ import { MiniChallengeGame } from "./MiniChallengeGame";
 import { MomoWorkshopGame } from "./MomoWorkshopGame";
 import { SequenceAndPlaceGame } from "./SequenceAndPlaceGame";
 import { TapOrWaitGame } from "./TapOrWaitGame";
-import {
-  adaptGameComplexity,
-  applyDifficultyLevel,
-  createInitialAdaptiveState,
-  findGameVariant,
-  maxAdaptiveLevelForGame,
-  nextDifficultyAfterCompletion,
-  previousProgression,
-  shouldAnnounceGameIntro,
-  type AdaptiveProgressionState,
-} from "./adaptiveGameProgression";
 
 export function TrackedGame({
   child,
@@ -77,13 +77,16 @@ export function TrackedGame({
     });
   }, [activeGame, progression.adaptiveLevel, recorder, runKey]);
 
-  const startRun = useCallback((nextGame: Game, nextProgression: AdaptiveProgressionState) => {
-    currentRunCompleted.current = false;
-    setProgression(nextProgression);
-    setActiveGame(nextGame);
-    setRunKey((current) => current + 1);
-    onProgress?.(nextProgression);
-  }, [onProgress]);
+  const startRun = useCallback(
+    (nextGame: Game, nextProgression: AdaptiveProgressionState) => {
+      currentRunCompleted.current = false;
+      setProgression(nextProgression);
+      setActiveGame(nextGame);
+      setRunKey((current) => current + 1);
+      onProgress?.(nextProgression);
+    },
+    [onProgress],
+  );
 
   const report = useCallback(
     (observation: GameObservation) => {
@@ -104,8 +107,7 @@ export function TrackedGame({
           maximumLevel,
         );
         const reachedFinalLevel =
-          progression.adaptiveLevel === maximumLevel &&
-          nextProgression.completedRunsAtLevel === 0;
+          progression.adaptiveLevel === maximumLevel && nextProgression.completedRunsAtLevel === 0;
         if (reachedFinalLevel) {
           setProgression(nextProgression);
           onProgress?.(nextProgression, true);
@@ -194,13 +196,37 @@ export function TrackedGame({
 
   const screen =
     activeGame.mechanic === "classify_and_sort" ? (
-      <ClassifyAndSortGame announceIntro={shouldAnnounceGameIntro(runKey)} game={activeGame} key={runKey} onExit={exit} onRestart={restart} />
+      <ClassifyAndSortGame
+        announceIntro={shouldAnnounceGameIntro(runKey)}
+        game={activeGame}
+        key={runKey}
+        onExit={exit}
+        onRestart={restart}
+      />
     ) : activeGame.mechanic === "sequence_and_place" ? (
-      <SequenceAndPlaceGame announceIntro={shouldAnnounceGameIntro(runKey)} game={activeGame} key={runKey} onExit={exit} onRestart={restart} />
+      <SequenceAndPlaceGame
+        announceIntro={shouldAnnounceGameIntro(runKey)}
+        game={activeGame}
+        key={runKey}
+        onExit={exit}
+        onRestart={restart}
+      />
     ) : activeGame.mechanic === "emotion_clues" ? (
-      <EmotionCluesGame announceIntro={shouldAnnounceGameIntro(runKey)} game={activeGame} key={runKey} onExit={exit} onRestart={restart} />
+      <EmotionCluesGame
+        announceIntro={shouldAnnounceGameIntro(runKey)}
+        game={activeGame}
+        key={runKey}
+        onExit={exit}
+        onRestart={restart}
+      />
     ) : activeGame.mechanic === "fish_patterns" ? (
-      <FishPatternsGame announceIntro={shouldAnnounceGameIntro(runKey)} game={activeGame} key={runKey} onExit={exit} onRestart={restart} />
+      <FishPatternsGame
+        announceIntro={shouldAnnounceGameIntro(runKey)}
+        game={activeGame}
+        key={runKey}
+        onExit={exit}
+        onRestart={restart}
+      />
     ) : activeGame.mechanic === "balloon_counting" ? (
       <BalloonCountingGame
         announceIntro={shouldAnnounceGameIntro(runKey)}
@@ -210,7 +236,13 @@ export function TrackedGame({
         onRestart={restart}
       />
     ) : activeGame.mechanic === "mini_challenge" ? (
-      <MiniChallengeGame announceIntro={shouldAnnounceGameIntro(runKey)} game={activeGame} key={runKey} onExit={exit} onRestart={restart} />
+      <MiniChallengeGame
+        announceIntro={shouldAnnounceGameIntro(runKey)}
+        game={activeGame}
+        key={runKey}
+        onExit={exit}
+        onRestart={restart}
+      />
     ) : activeGame.mechanic === "momo_workshop" ? (
       <MomoWorkshopGame
         childId={child.id}
@@ -222,7 +254,13 @@ export function TrackedGame({
         onRestart={restart}
       />
     ) : (
-      <TapOrWaitGame announceIntro={shouldAnnounceGameIntro(runKey)} game={activeGame} key={runKey} onExit={exit} onRestart={restart} />
+      <TapOrWaitGame
+        announceIntro={shouldAnnounceGameIntro(runKey)}
+        game={activeGame}
+        key={runKey}
+        onExit={exit}
+        onRestart={restart}
+      />
     );
 
   return <GameObservationProvider report={report}>{screen}</GameObservationProvider>;

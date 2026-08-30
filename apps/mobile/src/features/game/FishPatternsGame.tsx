@@ -36,7 +36,17 @@ const colorNames: Record<string, string> = {
   orange: "Turuncu",
 };
 
-export function FishPatternsGame({ announceIntro = true, game, onExit, onRestart }: { announceIntro?: boolean; game: FishGameContent; onExit: () => void; onRestart: () => void }) {
+export function FishPatternsGame({
+  announceIntro = true,
+  game,
+  onExit,
+  onRestart,
+}: {
+  announceIntro?: boolean;
+  game: FishGameContent;
+  onExit: () => void;
+  onRestart: () => void;
+}) {
   const report = useGameObservation();
   const [roundIndex, setRoundIndex] = useState(0);
   const [locked, setLocked] = useState(true);
@@ -152,7 +162,9 @@ export function FishPatternsGame({ announceIntro = true, game, onExit, onRestart
             <Pressable onPress={onRestart} style={styles.exitButton}>
               <Text style={styles.exitText}>Tekrar başlamak için dokun</Text>
             </Pressable>
-            <Pressable onPress={onExit}><Text style={styles.finishCopy}>Oyunlara dön</Text></Pressable>
+            <Pressable onPress={onExit}>
+              <Text style={styles.finishCopy}>Oyunlara dön</Text>
+            </Pressable>
           </View>
         </ImageBackground>
       </SafeAreaView>

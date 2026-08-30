@@ -148,9 +148,7 @@ export function SequenceAndPlaceGame({
   const [attempt, setAttempt] = useState(0);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [completed, setCompleted] = useState(false);
-  const slotRefs = useRef(
-    Array.from({ length: 25 }, () => createRef<View>()),
-  ).current;
+  const slotRefs = useRef(Array.from({ length: 25 }, () => createRef<View>())).current;
   const currentRound = game.rounds[roundIndex];
   const itemCount = currentRound.items.length;
   const sourceDensityStyle =
@@ -286,7 +284,9 @@ export function SequenceAndPlaceGame({
           <Pressable onPress={onRestart} style={styles.exitButton}>
             <Text style={styles.exitText}>Tekrar başlamak için dokun</Text>
           </Pressable>
-          <Pressable onPress={onExit}><Text style={styles.completedCopy}>Oyunlara dön</Text></Pressable>
+          <Pressable onPress={onExit}>
+            <Text style={styles.completedCopy}>Oyunlara dön</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     );

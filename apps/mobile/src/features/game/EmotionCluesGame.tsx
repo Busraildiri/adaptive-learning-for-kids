@@ -170,7 +170,9 @@ export function EmotionCluesGame({
           <Pressable onPress={onRestart} style={styles.exitButton}>
             <Text style={styles.exitText}>Tekrar başlamak için dokun</Text>
           </Pressable>
-          <Pressable onPress={onExit}><Text style={styles.finishText}>Oyunlara dön</Text></Pressable>
+          <Pressable onPress={onExit}>
+            <Text style={styles.finishText}>Oyunlara dön</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     );

@@ -15,7 +15,14 @@ import { ParentSettingsScreen } from "./ParentSettingsScreen";
 import { PasswordUpdateScreen } from "./PasswordUpdateScreen";
 import { PermissionProfileSelectionScreen } from "./PermissionProfileSelectionScreen";
 
-type ParentPanel = "home" | "settings" | "pin" | "account" | "password" | "permissions" | "children";
+type ParentPanel =
+  | "home"
+  | "settings"
+  | "pin"
+  | "account"
+  | "password"
+  | "permissions"
+  | "children";
 
 export function ParentHomeScreen({
   parentId,

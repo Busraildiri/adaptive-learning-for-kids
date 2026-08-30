@@ -624,7 +624,9 @@ export function MomoWorkshopGame({
           <Pressable accessibilityRole="button" onPress={onRestart} style={styles.exitButton}>
             <Text style={styles.exitButtonText}>Tekrar başlamak için dokun</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" onPress={onExit}><Text style={styles.finishCopy}>Oyunlara dön</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={onExit}>
+            <Text style={styles.finishCopy}>Oyunlara dön</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     );
@@ -969,7 +971,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#4BAFA5",
   },
   patternRound: { width: "100%", maxWidth: 382, alignItems: "center" },
-  patternSequence: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "center", gap: 8 },
+  patternSequence: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
   patternTile: {
     width: 70,
     height: 82,

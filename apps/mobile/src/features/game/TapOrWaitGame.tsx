@@ -241,7 +241,9 @@ export function TapOrWaitGame({
           <Pressable accessibilityRole="button" onPress={onRestart} style={styles.exitButton}>
             <Text style={styles.exitButtonText}>Tekrar başlamak için dokun</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" onPress={onExit}><Text style={styles.instruction}>Oyunlara dön</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={onExit}>
+            <Text style={styles.instruction}>Oyunlara dön</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     );

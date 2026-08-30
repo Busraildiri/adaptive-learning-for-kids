@@ -15,6 +15,7 @@ import {
   View,
 } from "react-native";
 import { supabase } from "../../lib/supabase";
+import type { GameProgressMap } from "../../services/gameProgress";
 import { createPublishedMediaResolver } from "../storyPlayer/mediaResolver";
 import {
   CONTENT_PAGE_SIZE,
@@ -31,7 +32,6 @@ import {
   type PublishedStorySelectionCard,
 } from "./publishedStorySelection";
 import { createStorySelectionCards, type StorySelectionCard } from "./storySelection";
-import type { GameProgressMap } from "../../services/gameProgress";
 
 const minoHappy = require("../../../assets/characters/mino-happy.png");
 const fishGameIcon = require("../../../assets/game/home/fish-patterns.png");
