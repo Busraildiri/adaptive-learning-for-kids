@@ -30,6 +30,13 @@ const iceCream = require("../../../assets/game/sort/ice-cream-v1.png");
 const spinningTop = require("../../../assets/game/sort/spinning-top-v1.png");
 const toothbrush = require("../../../assets/game/sort/toothbrush-v1.png");
 const soap = require("../../../assets/game/sort/soap-v1.png");
+const cat = require("../../../assets/game/sort/cat-v1.png");
+const fox = require("../../../assets/game/sort/fox-v1.png");
+const rabbit = require("../../../assets/game/sort/rabbit-v1.png");
+const bear = require("../../../assets/game/sort/bear-v1.png");
+const bed = require("../../../assets/game/sort/bed-v1.png");
+const pajamas = require("../../../assets/game/sort/pajamas-v1.png");
+const picnicBasket = require("../../../assets/game/sort/picnic-basket-v1.png");
 const gardenFlowers = [
   require("../../../assets/game/garden/tulip-v1.png"),
   require("../../../assets/game/garden/sunflower-v1.png"),
@@ -45,6 +52,25 @@ const colors = {
   green: "#65B987",
   purple: "#9674C8",
 } as const;
+
+const sortImageByObjectId: Record<string, ImageSourcePropType> = {
+  "red-balloon": redBalloon,
+  "purple-soap": soap,
+  "green-toothbrush": toothbrush,
+  "happy-dog": happyDog,
+  "ice-cream": iceCream,
+  "spinning-top": spinningTop,
+  "large-play-ball": playBall,
+  "small-play-ball-a": playBall,
+  "small-play-ball-b": playBall,
+  cat,
+  fox,
+  rabbit,
+  bear,
+  bed,
+  pajamas,
+  "picnic-basket": picnicBasket,
+};
 
 function ObjectArt({
   object,
@@ -180,12 +206,6 @@ export function ClassifyAndSortGame({
   const basketBounce = useRef(new Animated.Value(1)).current;
   const currentRound = game.rounds[roundIndex];
   const shownInstruction = currentRound.instruction;
-  const roundImages =
-    currentRound.dimension === "color"
-      ? [redBalloon, soap, toothbrush]
-      : currentRound.dimension === "category"
-        ? [happyDog, iceCream, spinningTop]
-        : [playBall, playBall, playBall];
 
   const speak = useCallback(
     (text: string, onDone?: () => void) => {
@@ -398,13 +418,15 @@ export function ClassifyAndSortGame({
         <View
           style={[styles.objectGrid, currentRound.objects.length > 10 && styles.compactObjectGrid]}
         >
-          {currentRound.objects.map((object, index) => (
+          {currentRound.objects.map((object) => (
             <DraggableObject
               basketBounds={basketBounds}
               compareSize={currentRound.dimension === "size"}
               enabled={!locked}
               highlighted={highlightedObjectId === object.id}
-              imageSource={roundImages[index]}
+              imageSource={
+                sortImageByObjectId[object.id.replace(/-adaptive-(target|distractor)$/, "")]
+              }
               itemCount={currentRound.objects.length}
               key={object.id}
               object={object}
