@@ -198,6 +198,10 @@ describe("adaptive game progression", () => {
 
     expect(adapted.rounds[0]?.objects).toHaveLength(2);
     expect(adapted.rounds[0]?.instruction).toContain("Şimdi iki nesne var.");
+
+    const finalRound = adaptGameComplexity(pati, 2, 4);
+    expect(finalRound.rounds[0]?.objects).toHaveLength(2);
+    expect(finalRound.rounds[0]?.instruction).toContain("İki nesnenin içinden");
   });
 
   it("uses Pati's clearly colored source asset as the color-rule target", () => {

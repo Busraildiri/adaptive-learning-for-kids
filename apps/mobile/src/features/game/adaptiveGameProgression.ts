@@ -572,10 +572,13 @@ export function adaptGameComplexity(
       ],
       challengeIndex,
     );
-    const instruction = sourceRound.instruction.replace(
-      /Şimdi dört nesne var\./,
-      `Şimdi ${turkishObjectCounts[objects.length] ?? objects.length} nesne var.`,
-    );
+    const objectCountWord = turkishObjectCounts[objects.length] ?? String(objects.length);
+    const instruction = sourceRound.instruction
+      .replace(/Şimdi dört nesne var\./, `Şimdi ${objectCountWord} nesne var.`)
+      .replace(
+        /Dört nesnenin içinden/,
+        `${objectCountWord.charAt(0).toLocaleUpperCase("tr-TR")}${objectCountWord.slice(1)} nesnenin içinden`,
+      );
     return {
       ...game,
       rounds: [
