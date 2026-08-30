@@ -952,7 +952,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "color-lights-001",
-      "version": 2,
+      "version": 3,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "tap_or_wait",
@@ -1037,7 +1037,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "rule-changed-garden-001",
-      "version": 2,
+      "version": 3,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "classify_and_sort",

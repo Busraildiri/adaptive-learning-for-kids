@@ -30,6 +30,13 @@ const iceCream = require("../../../assets/game/sort/ice-cream-v1.png");
 const spinningTop = require("../../../assets/game/sort/spinning-top-v1.png");
 const toothbrush = require("../../../assets/game/sort/toothbrush-v1.png");
 const soap = require("../../../assets/game/sort/soap-v1.png");
+const cat = require("../../../assets/game/sort/cat-v1.png");
+const fox = require("../../../assets/game/sort/fox-v1.png");
+const rabbit = require("../../../assets/game/sort/rabbit-v1.png");
+const bear = require("../../../assets/game/sort/bear-v1.png");
+const bed = require("../../../assets/game/sort/bed-v1.png");
+const pajamas = require("../../../assets/game/sort/pajamas-v1.png");
+const picnicBasket = require("../../../assets/game/sort/picnic-basket-v1.png");
 const gardenFlowers = [
   require("../../../assets/game/garden/tulip-v1.png"),
   require("../../../assets/game/garden/sunflower-v1.png"),
@@ -45,6 +52,25 @@ const colors = {
   green: "#65B987",
   purple: "#9674C8",
 } as const;
+
+const sortImageByObjectId: Record<string, ImageSourcePropType> = {
+  "red-balloon": redBalloon,
+  "purple-soap": soap,
+  "green-toothbrush": toothbrush,
+  "happy-dog": happyDog,
+  "ice-cream": iceCream,
+  "spinning-top": spinningTop,
+  "large-play-ball": playBall,
+  "small-play-ball-a": playBall,
+  "small-play-ball-b": playBall,
+  cat,
+  fox,
+  rabbit,
+  bear,
+  bed,
+  pajamas,
+  "picnic-basket": picnicBasket,
+};
 
 function ObjectArt({
   object,
@@ -173,22 +199,13 @@ export function ClassifyAndSortGame({
   const [basketBounds, setBasketBounds] = useState<BasketBounds | null>(null);
   const [highlightedObjectId, setHighlightedObjectId] = useState<string | null>(null);
   const roundStartedAt = useRef(Date.now());
+  const speechToken = useRef(0);
+  const isMounted = useRef(true);
   const basketRef = useRef<View>(null);
   const mascotScale = useRef(new Animated.Value(1)).current;
   const basketBounce = useRef(new Animated.Value(1)).current;
   const currentRound = game.rounds[roundIndex];
-  const shownInstruction =
-    currentRound.dimension === "color"
-      ? "Kırmızı olanı sepete sürükle ve bırak."
-      : currentRound.dimension === "category"
-        ? "Hayvanı sepete sürükle ve bırak."
-        : "En büyük olanı sepete sürükle ve bırak.";
-  const roundImages =
-    currentRound.dimension === "color"
-      ? [redBalloon, soap, toothbrush]
-      : currentRound.dimension === "category"
-        ? [happyDog, iceCream, spinningTop]
-        : [playBall, playBall, playBall];
+  const shownInstruction = currentRound.instruction;
 
   const speak = useCallback(
     (text: string, onDone?: () => void) => {
@@ -196,11 +213,37 @@ export function ClassifyAndSortGame({
         onDone?.();
         return;
       }
-      void Speech.stop().then(() =>
-        Speech.speak(text, { language: "tr-TR", rate: 0.84, onDone, onStopped: onDone }),
-      );
+      const token = speechToken.current + 1;
+      speechToken.current = token;
+      void Speech.stop().then(() => {
+        if (!isMounted.current || speechToken.current !== token) return;
+        const complete = () => {
+          if (isMounted.current && speechToken.current === token) onDone?.();
+        };
+        Speech.speak(text, {
+          language: "tr-TR",
+          rate: 0.84,
+          onDone: complete,
+          onStopped: complete,
+        });
+      });
     },
     [game.presentation.playAudioInstructions],
+  );
+
+  const exitGame = useCallback(() => {
+    speechToken.current += 1;
+    void Speech.stop();
+    onExit();
+  }, [onExit]);
+
+  useEffect(
+    () => () => {
+      isMounted.current = false;
+      speechToken.current += 1;
+      void Speech.stop();
+    },
+    [],
   );
 
   useEffect(() => {
@@ -322,7 +365,7 @@ export function ClassifyAndSortGame({
           <Pressable accessibilityRole="button" onPress={onRestart} style={styles.exitButton}>
             <Text style={styles.exitButtonText}>Tekrar başlamak için dokun</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" onPress={onExit}>
+          <Pressable accessibilityRole="button" onPress={exitGame}>
             <Text style={styles.completedCopy}>Oyunlara dön</Text>
           </Pressable>
         </View>
@@ -340,7 +383,7 @@ export function ClassifyAndSortGame({
         accessibilityLabel="Oyundan çık"
         accessibilityRole="button"
         hitSlop={10}
-        onPress={onExit}
+        onPress={exitGame}
         style={styles.parentButton}
       >
         <Text style={styles.parentButtonText}>×</Text>
@@ -375,13 +418,15 @@ export function ClassifyAndSortGame({
         <View
           style={[styles.objectGrid, currentRound.objects.length > 10 && styles.compactObjectGrid]}
         >
-          {currentRound.objects.map((object, index) => (
+          {currentRound.objects.map((object) => (
             <DraggableObject
               basketBounds={basketBounds}
               compareSize={currentRound.dimension === "size"}
               enabled={!locked}
               highlighted={highlightedObjectId === object.id}
-              imageSource={roundImages[index]}
+              imageSource={
+                sortImageByObjectId[object.id.replace(/-adaptive-(target|distractor)$/, "")]
+              }
               itemCount={currentRound.objects.length}
               key={object.id}
               object={object}

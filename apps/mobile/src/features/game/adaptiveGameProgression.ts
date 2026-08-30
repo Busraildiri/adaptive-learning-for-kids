@@ -1,4 +1,4 @@
-import type { AgeBand, Game, GameDifficultyLevel } from "@adaptive/content-schema";
+import type { AgeBand, Game, GameDifficultyLevel, SortObject } from "@adaptive/content-schema";
 
 const levels: readonly GameDifficultyLevel[] = ["starter", "growing", "advanced"];
 const balloonColorNames = {
@@ -11,6 +11,67 @@ const balloonColorNames = {
   pink: "pembe",
   cyan: "turkuaz",
 } as const;
+
+// These are the additional illustrated Pati objects. They stay outside the
+// five starter rounds, but join the adaptive pool as distinct visuals.
+const patiVisualObjects: SortObject[] = [
+  {
+    id: "cat",
+    label: "mavi kedi",
+    shape: "bear",
+    color: "blue",
+    category: "animal",
+    size: "small",
+  },
+  {
+    id: "fox",
+    label: "kırmızı tilki",
+    shape: "bear",
+    color: "red",
+    category: "animal",
+    size: "small",
+  },
+  {
+    id: "rabbit",
+    label: "mor tavşan",
+    shape: "bear",
+    color: "purple",
+    category: "animal",
+    size: "small",
+  },
+  {
+    id: "bear",
+    label: "sarı ayıcık",
+    shape: "bear",
+    color: "yellow",
+    category: "animal",
+    size: "small",
+  },
+  {
+    id: "bed",
+    label: "büyük mavi yatak",
+    shape: "block",
+    color: "blue",
+    category: "toy",
+    size: "large",
+  },
+  {
+    id: "pajamas",
+    label: "mor pijama",
+    shape: "block",
+    color: "purple",
+    category: "toy",
+    size: "small",
+  },
+  {
+    id: "picnic-basket",
+    label: "büyük sarı sepet",
+    shape: "block",
+    color: "yellow",
+    category: "toy",
+    size: "large",
+  },
+];
 export const MIN_ADAPTIVE_ITEM_COUNT = 2;
 export const MAX_ADAPTIVE_GRID_AXIS = 5;
 export const MAX_ADAPTIVE_ITEM_COUNT = MAX_ADAPTIVE_GRID_AXIS ** 2;
@@ -408,17 +469,30 @@ export function adaptGameComplexity(
   if (game.mechanic === "classify_and_sort") {
     const sourceRound = game.rounds[challengeIndex % game.rounds.length];
     if (!sourceRound) return game;
-    const matching = sourceRound.objects.find(
-      (object) => object[sourceRound.dimension] === sourceRound.targetValue,
+    const sourceObjects = [
+      ...game.rounds.flatMap((round) => round.objects),
+      ...(game.id === "rule-changed-garden-001" ? patiVisualObjects : []),
+    ];
+    const objectPool = Array.from(
+      new Map(sourceObjects.map((object) => [object.id, object])).values(),
     );
-    const distractors = sourceRound.objects.filter(
-      (object) => object[sourceRound.dimension] !== sourceRound.targetValue,
+    const matching = rotate(
+      objectPool.filter((object) => object[sourceRound.dimension] === sourceRound.targetValue),
+      challengeIndex,
+    )[0];
+    const distractors = rotate(
+      objectPool.filter((object) => object[sourceRound.dimension] !== sourceRound.targetValue),
+      challengeIndex,
     );
     if (!matching || distractors.length === 0) return game;
+    const visibleCount = Math.min(itemCount, distractors.length + 1);
     const objects = rotate(
       [
         { ...matching, id: `${matching.id}-adaptive-target` },
-        ...repeatWithUniqueIds(rotate(distractors, challengeIndex), itemCount - 1),
+        ...distractors.slice(0, visibleCount - 1).map((object) => ({
+          ...object,
+          id: `${object.id}-adaptive-distractor`,
+        })),
       ],
       challengeIndex,
     );

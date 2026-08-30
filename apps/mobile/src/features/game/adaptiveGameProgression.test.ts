@@ -196,7 +196,9 @@ describe("adaptive game progression", () => {
           }
           case "classify_and_sort": {
             const round = adapted.rounds[0];
-            expect(round?.objects, `${game.id} level ${level}`).toHaveLength(itemCount);
+            expect(round?.objects.length, `${game.id} level ${level}`).toBeLessThanOrEqual(
+              itemCount,
+            );
             expect(
               round?.objects.filter((object) => object[round.dimension] === round.targetValue),
               `${game.id} level ${level}`,
@@ -361,7 +363,9 @@ describe("adaptive game progression", () => {
           expect(adapted.roundPlan.rounds, adapted.id).toHaveLength(MAX_ADAPTIVE_ITEM_COUNT);
           break;
         case "classify_and_sort":
-          expect(adapted.rounds[0]?.objects, adapted.id).toHaveLength(MAX_ADAPTIVE_ITEM_COUNT);
+          expect(adapted.rounds[0]?.objects.length, adapted.id).toBeLessThanOrEqual(
+            MAX_ADAPTIVE_ITEM_COUNT,
+          );
           break;
         case "sequence_and_place":
           expect(adapted.rounds[0]?.items, adapted.id).toHaveLength(MAX_ADAPTIVE_ITEM_COUNT);
@@ -396,6 +400,24 @@ describe("adaptive game progression", () => {
           break;
       }
     }
+  });
+
+  it("uses Pati's visual pool without duplicating an object in a round", () => {
+    const game = publishedGames.find((candidate) => candidate.id === "rule-changed-garden-001");
+    if (!game || game.mechanic !== "classify_and_sort") {
+      throw new Error("Expected Pati game");
+    }
+
+    const visibleAcrossRounds = new Set<string>();
+    for (let challengeIndex = 0; challengeIndex < game.rounds.length; challengeIndex += 1) {
+      const adapted = adaptGameComplexity(game, MAX_ADAPTIVE_ITEM_COUNT, challengeIndex);
+      const objectIds = adapted.rounds[0]?.objects.map((object) => object.id) ?? [];
+      const baseIds = objectIds.map((id) => id.replace(/-adaptive-(target|distractor)$/, ""));
+      expect(new Set(baseIds).size).toBe(baseIds.length);
+      baseIds.forEach((id) => visibleAcrossRounds.add(id));
+    }
+    expect(visibleAcrossRounds).toContain("cat");
+    expect(visibleAcrossRounds).toContain("picnic-basket");
   });
 
   it("keeps every generated balloon instruction consistent with visible balloons", () => {
