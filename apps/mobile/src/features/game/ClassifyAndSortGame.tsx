@@ -198,13 +198,17 @@ export function ClassifyAndSortGame({
   adaptiveLevel,
   game,
   onExit,
+  onInstructionSpoken,
   onRestart,
+  wasInstructionSpoken,
 }: {
   announceIntro?: boolean;
   adaptiveLevel: number;
   game: ClassifyAndSortGameContent;
   onExit: () => void;
+  onInstructionSpoken: (instruction: string) => void;
   onRestart: () => void;
+  wasInstructionSpoken: (instruction: string) => boolean;
 }) {
   const report = useGameObservation();
   const [roundIndex, setRoundIndex] = useState(0);
@@ -274,9 +278,17 @@ export function ClassifyAndSortGame({
     setHighlightedObjectId(null);
     setFeedback(roundIndex === 0 ? "" : "Kural değişti!");
     roundStartedAt.current = Date.now();
+    const speakInstructionOnce = () => {
+      if (wasInstructionSpoken(shownInstruction)) {
+        setLocked(false);
+        return;
+      }
+      onInstructionSpoken(shownInstruction);
+      speak(shownInstruction, () => setLocked(false));
+    };
     speak(text, () => {
       if (roundIndex === 0 && !announceIntro) setLocked(false);
-      else speak(shownInstruction, () => setLocked(false));
+      else speakInstructionOnce();
     });
     Animated.sequence([
       Animated.timing(mascotScale, { toValue: 1.1, duration: 220, useNativeDriver: true }),
@@ -291,8 +303,10 @@ export function ClassifyAndSortGame({
     game.presentation.introNarration,
     game.presentation.ruleChangeNarration,
     mascotScale,
+    onInstructionSpoken,
     roundIndex,
     speak,
+    wasInstructionSpoken,
   ]);
 
   const choose = (object: SortObject) => {
@@ -307,8 +321,13 @@ export function ClassifyAndSortGame({
         setFeedback(game.feedback.retry);
         speak(game.feedback.retry);
       } else {
-        setFeedback("Birlikte bulalım: yönergeyi yeniden dinle.");
-        speak(shownInstruction);
+        const message = "Birlikte bulalım. Sana ipucu gösteriyorum.";
+        setFeedback(message);
+        setHighlightedObjectId(
+          currentRound.objects.find((candidate) => objectMatchesRound(candidate, currentRound))
+            ?.id ?? null,
+        );
+        speak(message);
       }
       return;
     }

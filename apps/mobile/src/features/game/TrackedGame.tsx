@@ -56,6 +56,7 @@ export function TrackedGame({
   const [runKey, setRunKey] = useState(0);
   const [progression, setProgression] = useState<AdaptiveProgressionState>(initialState);
   const currentRunCompleted = useRef(false);
+  const spokenInstructions = useRef(new Set<string>());
   const progressedStepCount = useRef(0);
   const exiting = useRef(false);
   const recorder = useMemo(
@@ -206,7 +207,9 @@ export function TrackedGame({
         game={activeGame}
         key={runKey}
         onExit={exit}
+        onInstructionSpoken={(instruction) => spokenInstructions.current.add(instruction)}
         onRestart={restart}
+        wasInstructionSpoken={(instruction) => spokenInstructions.current.has(instruction)}
       />
     ) : activeGame.mechanic === "sequence_and_place" ? (
       <SequenceAndPlaceGame
