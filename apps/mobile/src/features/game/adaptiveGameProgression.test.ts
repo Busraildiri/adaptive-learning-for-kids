@@ -198,6 +198,22 @@ describe("adaptive game progression", () => {
 
     expect(adapted.rounds[0]?.objects).toHaveLength(2);
     expect(adapted.rounds[0]?.instruction).toContain("Şimdi iki nesne var.");
+
+    const finalRound = adaptGameComplexity(pati, 2, 4);
+    expect(finalRound.rounds[0]?.objects).toHaveLength(2);
+    expect(finalRound.rounds[0]?.instruction).toContain("İki nesnenin içinden");
+  });
+
+  it("uses Pati's clearly colored source asset as the color-rule target", () => {
+    const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
+    if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
+
+    const adapted = adaptGameComplexity(pati, 2, 10);
+    const target = adapted.rounds[0]?.objects.find((object) =>
+      object.id.endsWith("-adaptive-target"),
+    );
+
+    expect(target?.id).toBe("red-balloon-adaptive-target");
   });
 
   it("audits every level of every published game for bounded adaptive content", () => {
