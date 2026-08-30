@@ -1,3 +1,4 @@
+import type { Game } from "@adaptive/content-schema";
 import { type ChildProfile, calculateAgeInMonths, resolveAgeBand } from "@adaptive/shared-types";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
@@ -7,6 +8,7 @@ import { AccountShell } from "./AccountShell";
 import { ChildConsentSettingsScreen } from "./ChildConsentSettingsScreen";
 import { ChildProfileForm } from "./ChildProfileForm";
 import { ChildProfilesManagementScreen } from "./ChildProfilesManagementScreen";
+import { CompletedGamesScreen } from "./CompletedGamesScreen";
 import { formStyles } from "./formStyles";
 import { ParentAccountInfoScreen } from "./ParentAccountInfoScreen";
 import { ParentPinUpdateScreen } from "./ParentPinUpdateScreen";
@@ -22,13 +24,15 @@ type ParentPanel =
   | "account"
   | "password"
   | "permissions"
-  | "children";
+  | "children"
+  | "completed-games";
 
 export function ParentHomeScreen({
   parentId,
   parentDisplayName,
   parentEmail,
   children,
+  games,
   onChildCreated,
   onChildUpdated,
   onChildDeleted,
@@ -38,6 +42,7 @@ export function ParentHomeScreen({
   parentDisplayName: string;
   parentEmail: string;
   children: ChildProfile[];
+  games: Game[];
   onChildCreated: (profile: ChildProfile) => void;
   onChildUpdated: (profile: ChildProfile) => void;
   onChildDeleted: (childId: string) => void;
@@ -47,6 +52,7 @@ export function ParentHomeScreen({
   const [panel, setPanel] = useState<ParentPanel>("home");
   const [settingsChild, setSettingsChild] = useState<ChildProfile | null>(null);
   const [summaryChild, setSummaryChild] = useState<ChildProfile | null>(null);
+  const [completedGamesChild, setCompletedGamesChild] = useState<ChildProfile | null>(null);
   const [startingChildId, setStartingChildId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -90,6 +96,16 @@ export function ParentHomeScreen({
 
   if (summaryChild) {
     return <ParentSessionSummaryScreen child={summaryChild} onBack={() => setSummaryChild(null)} />;
+  }
+
+  if (completedGamesChild) {
+    return (
+      <CompletedGamesScreen
+        child={completedGamesChild}
+        games={games}
+        onBack={() => setCompletedGamesChild(null)}
+      />
+    );
   }
 
   if (panel === "permissions") {
@@ -170,6 +186,9 @@ export function ParentHomeScreen({
             <View style={styles.childActions}>
               <Pressable onPress={() => setSummaryChild(child)} style={styles.summaryButton}>
                 <Text style={styles.summaryButtonText}>Özet</Text>
+              </Pressable>
+              <Pressable onPress={() => setCompletedGamesChild(child)} style={styles.summaryButton}>
+                <Text style={styles.summaryButtonText}>Tamamlananlar</Text>
               </Pressable>
               <Pressable
                 disabled={!canStart || startingChildId !== null}

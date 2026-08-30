@@ -39,12 +39,7 @@ import {
 import { loadChildConsentSettings } from "./services/consents";
 import { loadPublishedGames } from "./services/gameCatalog";
 import { loadGameVariantPreference } from "./services/gamePersonalization";
-import {
-  type GameProgressMap,
-  loadGameProgress,
-  restartCompletedGame,
-  saveGameProgress,
-} from "./services/gameProgress";
+import { type GameProgressMap, loadGameProgress, saveGameProgress } from "./services/gameProgress";
 import { initializeInteractionEventSync } from "./services/interactionEvents";
 import { loadPublishedStoryExperiences } from "./services/storyExperiences";
 
@@ -451,7 +446,7 @@ export default function App() {
         <TrackedGame
           child={activeChild}
           game={selectedGame}
-          games={eligibleGames}
+          games={eligibleGames.filter((game) => !gameProgress[game.id]?.completed)}
           initialProgress={gameProgress[selectedGame.id]}
           onExit={() => {
             if (
@@ -498,14 +493,7 @@ export default function App() {
           onSelectGame={(gameId) => {
             setDiscoveryTab("games");
             setSelectedStoryId(null);
-            if (gameProgress[gameId]?.completed) {
-              void restartCompletedGame(activeChild.id, gameId).then((next) => {
-                setGameProgress(next);
-                setSelectedGameId(gameId);
-              });
-            } else {
-              setSelectedGameId(gameId);
-            }
+            setSelectedGameId(gameId);
           }}
           onSelectStory={(storyId) => {
             setDiscoveryTab("stories");
@@ -548,6 +536,7 @@ export default function App() {
   return (
     <ParentHomeScreen
       children={children}
+      games={content.games ?? []}
       onChildCreated={(profile) => setChildren((current) => [...current, profile])}
       onChildDeleted={(childId) =>
         setChildren((current) => current.filter((child) => child.id !== childId))
