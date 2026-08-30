@@ -1161,7 +1161,7 @@
           "id": "find-green-final",
           "dimension": "color",
           "targetValue": "green",
-          "instruction": "Son görev! Yeşil olanı sepete sürükle ve bırak.",
+          "instruction": "Şimdi yeşil olanı sepete sürükle ve bırak.",
           "objects": [
             {
               "id": "large-green-car",

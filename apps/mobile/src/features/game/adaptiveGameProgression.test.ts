@@ -202,7 +202,7 @@ describe("adaptive game progression", () => {
     const finalRound = adaptGameComplexity(pati, 2, 3);
     if (finalRound.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
     expect(finalRound.rounds[0]?.objects).toHaveLength(2);
-    expect(finalRound.rounds[0]?.instruction).toContain("Yeşil olanı");
+    expect(finalRound.rounds[0]?.instruction).toContain("Şimdi yeşil olanı");
     expect(pati.rounds.every((round) => round.dimension !== "size")).toBe(true);
   });
 
