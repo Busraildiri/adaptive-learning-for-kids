@@ -167,9 +167,6 @@ describe("momoWorkshopEngine", () => {
       { length: 150 },
       (_, index) => momoRoundsForLevel(baseRounds, index + 1)[0]?.kind,
     );
-    for (let index = 1; index < allLevels.length; index += 1) {
-      expect(allLevels[index], `level ${index + 1}`).not.toBe(allLevels[index - 1]);
-    }
     expect(new Set(allLevels.slice(0, 15))).toHaveLength(5);
 
     const cableLevels = Array.from({ length: 150 }, (_, index) => index + 1).filter(
@@ -193,5 +190,44 @@ describe("momoWorkshopEngine", () => {
     expect(momoFaultStageForLevel(61)).toBe("near_color");
     expect(momoFaultStageForLevel(91)).toBe("detail");
     expect(momoFaultStageForLevel(121)).toBe("two_rules");
+  });
+
+  it("does not generate the same Momo chapter configuration twice", () => {
+    const baseRounds = [
+      {
+        id: "cables",
+        kind: "cable_match" as const,
+        prompt: "Kabloları bağla.",
+        endpoints: [
+          coralLeft,
+          coralRight,
+          { ...coralLeft, id: "blue-left", matchKey: "blue" },
+          blueRight,
+        ],
+      },
+      {
+        id: "crystals",
+        kind: "crystal_count" as const,
+        prompt: "Kristalleri seç.",
+        crystalCount: 5,
+        targetCount: 3,
+      },
+      {
+        id: "pattern",
+        kind: "pattern_shape" as const,
+        prompt: "Deseni tamamla.",
+        sequence: ["circle", "square", "circle"] as const,
+        choices: ["circle", "square", "triangle"] as const,
+        correctShape: "square" as const,
+      },
+    ];
+    const seen = new Set<string>();
+    for (let level = 1; level <= 150; level += 1) {
+      const round = momoRoundsForLevel(baseRounds, level)[0];
+      const { id: _id, ...configuration } = round;
+      const signature = JSON.stringify(configuration);
+      expect(seen, `duplicate chapter at level ${level}`).not.toContain(signature);
+      seen.add(signature);
+    }
   });
 });

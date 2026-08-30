@@ -39,6 +39,10 @@ type MomoTaskKind = "crystals" | "pattern" | "part" | "odd" | "cables";
 const momoTaskOrder: readonly MomoTaskKind[] = ["crystals", "pattern", "part", "odd", "cables"];
 const momoTaskMaximumEncounters: Partial<Record<MomoTaskKind, number>> = {
   cables: 4,
+  crystals: 45,
+  pattern: 45,
+  part: 25,
+  odd: 31,
 };
 
 function shuffledMomoTaskIndex(level: number, taskCount: number): number {
@@ -101,6 +105,22 @@ export function momoFaultStageForLevel(adaptiveLevel: number): MomoFaultStage {
   return "two_rules";
 }
 
+function rotateItems<T>(items: readonly T[], offset: number): T[] {
+  const normalizedOffset = ((offset % items.length) + items.length) % items.length;
+  return [...items.slice(normalizedOffset), ...items.slice(0, normalizedOffset)];
+}
+
+function patternCycleForEncounter(encounter: number): MomoShape[] {
+  const shapes: MomoShape[] = ["circle", "square", "triangle"];
+  const seed = encounter - 1;
+  return [
+    shapes[seed % 3] as MomoShape,
+    shapes[(Math.floor(seed / 3) + 1) % 3] as MomoShape,
+    shapes[(Math.floor(seed / 9) + 2) % 3] as MomoShape,
+    shapes[Math.floor(seed / 27) % 3] as MomoShape,
+  ];
+}
+
 export function momoRoundsForLevel(
   baseRounds: readonly MomoWorkshopRound[],
   adaptiveLevel: number,
@@ -124,17 +144,16 @@ export function momoRoundsForLevel(
     return round;
   });
   const partKinds: MomoPartKind[] = ["antenna", "arm", "battery", "wheel", "sensor"];
-  const partChoiceCount = Math.min(5, 2 + occurrence);
-  const targetPart = partKinds[(occurrence - 1) % partKinds.length] as MomoPartKind;
+  const partChoiceCount = Math.min(5, 2 + Math.floor((occurrence - 1) / 5));
+  const partChoices = rotateItems(partKinds, occurrence - 1).slice(0, partChoiceCount);
+  const correctChoiceIndex = Math.floor((occurrence - 1) / 5) % partChoiceCount;
+  const targetPart = partChoices[correctChoiceIndex] as MomoPartKind;
   const partRound: MomoBonusRound = {
     id: `momo-part-${level}`,
     kind: "part_match",
     prompt: "Momo'nun eksik parçasının aynısını bul.",
     targetPart,
-    choices: [targetPart, ...partKinds.filter((part) => part !== targetPart)].slice(
-      0,
-      partChoiceCount,
-    ),
+    choices: partChoices,
   };
   const oddChoiceCount = Math.min(25, 4 + occurrence);
   const oddIndex = level % oddChoiceCount;
@@ -214,28 +233,14 @@ export function momoRoundsForLevel(
           ...pattern,
           id: `${pattern.id}-encounter-${occurrence}`,
           sequence: (() => {
-            const cycle: MomoShape[] =
-              occurrence <= 2
-                ? ["circle", "square"]
-                : occurrence <= 4
-                  ? ["circle", "circle", "square"]
-                  : occurrence <= 6
-                    ? ["circle", "square", "square"]
-                    : ["circle", "square", "triangle"];
+            const cycle = patternCycleForEncounter(occurrence);
             return Array.from(
               { length: patternLength },
               (_, index) => cycle[index % cycle.length] as MomoShape,
             );
           })(),
           correctShape: (() => {
-            const cycle: MomoShape[] =
-              occurrence <= 2
-                ? ["circle", "square"]
-                : occurrence <= 4
-                  ? ["circle", "circle", "square"]
-                  : occurrence <= 6
-                    ? ["circle", "square", "square"]
-                    : ["circle", "square", "triangle"];
+            const cycle = patternCycleForEncounter(occurrence);
             return cycle[patternLength % cycle.length] as MomoShape;
           })(),
         }
