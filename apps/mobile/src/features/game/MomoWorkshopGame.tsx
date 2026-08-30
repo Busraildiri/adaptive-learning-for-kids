@@ -13,18 +13,31 @@ import {
   PanResponder,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   Vibration,
   View,
 } from "react-native";
-import { loadMomoCustomization, saveMomoCustomization } from "../../services/momoCustomization";
+import {
+  loadMomoCustomization,
+  markMomoChapterCompleted,
+  saveMomoCustomization,
+} from "../../services/momoCustomization";
 import { useGameObservation } from "./GameObservationContext";
 import {
   type Bounds,
+  boundedMomoItemCount,
   cableEndpointsMatch,
   crystalCountMatches,
   findCableDropTarget,
+  isMomoRewardLevel,
+  type MomoFaultyPart,
+  type MomoPartKind,
+  momoRoundPrompt,
+  momoRoundsForLevel,
+  nextUnseenMomoChapterIndex,
   outcomeForGuidedAttempt,
   patternShapeMatches,
 } from "./momoWorkshopEngine";
@@ -33,6 +46,8 @@ const cableColors = {
   coral: "#F37970",
   blue: "#4B8FE8",
   yellow: "#F3BF3D",
+  green: "#4BAF78",
+  purple: "#8B6DDB",
 } as const;
 
 const shapeColors: Record<MomoShape, string> = {
@@ -43,10 +58,12 @@ const shapeColors: Record<MomoShape, string> = {
 
 function MomoAvatar({
   selectedPart,
+  assemblyStage = 0,
   large = false,
   dancing = false,
 }: {
   selectedPart: MomoPartVisual | null;
+  assemblyStage?: number;
   large?: boolean;
   dancing?: boolean;
 }) {
@@ -81,18 +98,31 @@ function MomoAvatar({
       accessible
       style={[styles.momo, { width: size, height: size, transform: [{ translateY: bounce }] }]}
     >
-      <View style={[styles.momoAntennaStem, large && styles.momoAntennaStemLarge]} />
-      <View style={[styles.momoAntennaTop, large && styles.momoAntennaTopLarge]}>
-        {selectedPart === "star-antenna" ? (
-          <MaterialCommunityIcons color="#F4B83C" name="star-four-points" size={large ? 44 : 27} />
-        ) : selectedPart === "spring-antenna" ? (
-          <MaterialCommunityIcons color="#EF776C" name="heart" size={large ? 40 : 25} />
-        ) : (
-          <View style={[styles.momoAntennaDot, large && styles.momoAntennaDotLarge]} />
-        )}
-      </View>
-      <View style={[styles.momoEar, styles.momoEarLeft]} />
-      <View style={[styles.momoEar, styles.momoEarRight]} />
+      {assemblyStage >= 1 ? (
+        <>
+          <View style={[styles.momoAntennaStem, large && styles.momoAntennaStemLarge]} />
+          <View style={[styles.momoAntennaTop, large && styles.momoAntennaTopLarge]}>
+            {selectedPart === "star-antenna" ? (
+              <MaterialCommunityIcons
+                color="#F4B83C"
+                name="star-four-points"
+                size={large ? 44 : 27}
+              />
+            ) : selectedPart === "spring-antenna" ? (
+              <MaterialCommunityIcons color="#EF776C" name="heart" size={large ? 40 : 25} />
+            ) : (
+              <View style={[styles.momoAntennaDot, large && styles.momoAntennaDotLarge]} />
+            )}
+          </View>
+        </>
+      ) : null}
+      {assemblyStage >= 7 ? <View style={[styles.momoEar, styles.momoEarLeft]} /> : null}
+      {assemblyStage >= 7 ? <View style={[styles.momoEar, styles.momoEarRight]} /> : null}
+      {assemblyStage >= 9 ? <View style={styles.momoBody} /> : null}
+      {assemblyStage >= 2 ? <View style={[styles.momoArm, styles.momoArmLeft]} /> : null}
+      {assemblyStage >= 3 ? <View style={[styles.momoArm, styles.momoArmRight]} /> : null}
+      {assemblyStage >= 4 ? <View style={[styles.momoLeg, styles.momoLegLeft]} /> : null}
+      {assemblyStage >= 5 ? <View style={[styles.momoLeg, styles.momoLegRight]} /> : null}
       <View style={styles.momoFace}>
         <View style={styles.momoEyes}>
           <View style={styles.momoEye} />
@@ -100,12 +130,21 @@ function MomoAvatar({
         </View>
         <View style={styles.momoSmile} />
       </View>
-      <View style={styles.momoGlow} />
+      {assemblyStage >= 6 ? <View style={styles.momoGlow} /> : null}
     </Animated.View>
   );
 }
 
-function ShapeArt({ shape, size = 58 }: { shape: MomoShape; size?: number }) {
+function ShapeArt({
+  shape,
+  size = 58,
+  color,
+}: {
+  shape: MomoShape;
+  size?: number;
+  color?: string;
+}) {
+  const fill = color ?? shapeColors[shape];
   if (shape === "triangle") {
     return (
       <View
@@ -117,7 +156,7 @@ function ShapeArt({ shape, size = 58 }: { shape: MomoShape; size?: number }) {
           borderBottomWidth: size,
           borderLeftColor: "transparent",
           borderRightColor: "transparent",
-          borderBottomColor: shapeColors[shape],
+          borderBottomColor: fill,
         }}
       />
     );
@@ -128,7 +167,7 @@ function ShapeArt({ shape, size = 58 }: { shape: MomoShape; size?: number }) {
         width: size,
         height: size,
         borderRadius: shape === "circle" ? size / 2 : 12,
-        backgroundColor: shapeColors[shape],
+        backgroundColor: fill,
       }}
     />
   );
@@ -343,6 +382,7 @@ function CrystalCountRound({
   onSubmit: (selectedCount: number) => void;
 }) {
   const [selected, setSelected] = useState<number[]>([]);
+  const visibleCrystalCount = boundedMomoItemCount(crystalCount);
   useEffect(() => {
     if (reveal) setSelected(Array.from({ length: targetCount }, (_, index) => index));
   }, [reveal, targetCount]);
@@ -353,7 +393,7 @@ function CrystalCountRound({
   return (
     <View style={styles.crystalRound}>
       <View style={styles.crystalShelf}>
-        {Array.from({ length: crystalCount }, (_, index) => (
+        {Array.from({ length: visibleCrystalCount }, (_, index) => (
           <Pressable
             accessibilityLabel={`${index + 1}. enerji kristali`}
             disabled={locked}
@@ -400,16 +440,31 @@ function PatternShapeRound({
   reveal: boolean;
   onChoose: (shape: MomoShape) => void;
 }) {
+  const { width } = useWindowDimensions();
+  const tileSize = Math.max(48, Math.min(64, Math.floor((width - 58) / 5)));
+  const choiceSize = Math.max(82, Math.min(104, Math.floor((width - 72) / 3)));
   return (
     <View style={styles.patternRound}>
       <View style={styles.patternSequence}>
         {sequence.map((shape, index) => (
-          <View key={`${shape}-${index}`} style={styles.patternTile}>
-            <ShapeArt shape={shape} size={44} />
+          <View
+            key={`${shape}-${index}`}
+            style={[
+              styles.patternTile,
+              { borderRadius: tileSize * 0.28, height: tileSize, width: tileSize },
+            ]}
+          >
+            <ShapeArt shape={shape} size={Math.floor(tileSize * 0.62)} />
           </View>
         ))}
-        <View style={[styles.patternTile, styles.missingTile]}>
-          <Text style={styles.questionMark}>?</Text>
+        <View
+          style={[
+            styles.patternTile,
+            styles.missingTile,
+            { borderRadius: tileSize * 0.28, height: tileSize, width: tileSize },
+          ]}
+        >
+          <Text style={[styles.questionMark, { fontSize: Math.floor(tileSize * 0.58) }]}>?</Text>
         </View>
       </View>
       <View style={styles.shapeChoices}>
@@ -421,11 +476,12 @@ function PatternShapeRound({
             onPress={() => onChoose(shape)}
             style={({ pressed }) => [
               styles.shapeChoice,
+              { borderRadius: choiceSize * 0.25, height: choiceSize, width: choiceSize },
               reveal && shape === correctShape && styles.highlighted,
               pressed && styles.pressed,
             ]}
           >
-            <ShapeArt shape={shape} />
+            <ShapeArt shape={shape} size={Math.floor(choiceSize * 0.52)} />
           </Pressable>
         ))}
       </View>
@@ -434,11 +490,13 @@ function PatternShapeRound({
 }
 
 function RewardChoice({
+  assemblyStage,
   visual,
   label,
   onPress,
 }: {
   visual: MomoPartVisual;
+  assemblyStage: number;
   label: string;
   onPress: () => void;
 }) {
@@ -448,7 +506,7 @@ function RewardChoice({
       onPress={onPress}
       style={({ pressed }) => [styles.rewardCard, pressed && styles.rewardCardPressed]}
     >
-      <MomoAvatar selectedPart={visual} />
+      <MomoAvatar assemblyStage={assemblyStage} selectedPart={visual} />
       <Text style={styles.rewardLabel}>{label}</Text>
       <View style={styles.choosePill}>
         <MaterialCommunityIcons color="#FFFFFF" name="hand-pointing-up" size={24} />
@@ -457,15 +515,102 @@ function RewardChoice({
   );
 }
 
+const momoPartIcons: Record<MomoPartKind, keyof typeof MaterialCommunityIcons.glyphMap> = {
+  antenna: "antenna",
+  arm: "arm-flex",
+  battery: "battery-high",
+  wheel: "car-tire-alert",
+  sensor: "radar",
+};
+
+const momoPartLabels: Record<MomoPartKind, string> = {
+  antenna: "anten",
+  arm: "kol",
+  battery: "enerji pili",
+  wheel: "tekerlek",
+  sensor: "sensör",
+};
+
+function PartMatchRound({
+  choices,
+  locked,
+  targetPart,
+  onChoose,
+}: {
+  choices: MomoPartKind[];
+  locked: boolean;
+  targetPart: MomoPartKind;
+  onChoose: (part: MomoPartKind) => void;
+}) {
+  return (
+    <View style={styles.bonusRound}>
+      <View style={styles.partTarget}>
+        <MaterialCommunityIcons color="#7892A4" name={momoPartIcons[targetPart]} size={76} />
+      </View>
+      <View style={styles.bonusChoices}>
+        {choices.map((part) => (
+          <Pressable
+            accessibilityLabel={`${momoPartLabels[part]} parçası`}
+            disabled={locked}
+            key={part}
+            onPress={() => onChoose(part)}
+            style={({ pressed }) => [styles.bonusChoice, pressed && styles.pressed]}
+          >
+            <MaterialCommunityIcons color="#4B8FE8" name={momoPartIcons[part]} size={48} />
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function OddPartRound({
+  choices,
+  locked,
+  onChoose,
+}: {
+  choices: MomoFaultyPart[];
+  locked: boolean;
+  onChoose: (index: number) => void;
+}) {
+  return (
+    <View style={styles.bonusChoices}>
+      {choices.map((part, index) => (
+        <Pressable
+          accessibilityLabel={`${index + 1}. robot parçası`}
+          disabled={locked}
+          key={`${part.shape}-${part.color}-${index}`}
+          onPress={() => onChoose(index)}
+          style={({ pressed }) => [styles.bonusChoice, pressed && styles.pressed]}
+        >
+          <ShapeArt color={part.color} shape={part.shape} size={48} />
+          {part.marked ? (
+            <MaterialCommunityIcons
+              color="#E25555"
+              name="alert-circle"
+              size={22}
+              style={styles.faultMark}
+            />
+          ) : null}
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 export function MomoWorkshopGame({
+  adaptiveLevel,
   announceIntro = true,
+  chapterIndex,
   childId,
   childName,
   game,
   onExit,
   onRestart,
 }: {
+  adaptiveLevel: number;
   announceIntro?: boolean;
+  chapterIndex: number;
   childId: string;
   childName: string;
   game: MomoWorkshopGameContent;
@@ -480,22 +625,70 @@ export function MomoWorkshopGame({
   const [revealed, setRevealed] = useState(false);
   const [phase, setPhase] = useState<"rounds" | "reward" | "complete">("rounds");
   const [selectedPart, setSelectedPart] = useState<MomoPartVisual | null>(null);
+  const [unlockedMilestones, setUnlockedMilestones] = useState<number[]>([]);
+  const [chapterCursor, setChapterCursor] = useState(chapterIndex + 1);
   const feedbackShake = useRef(new Animated.Value(0)).current;
-  const round = game.rounds[roundIndex];
+  const speechToken = useRef(0);
+  const isMounted = useRef(true);
+  const playableRounds = useMemo(
+    () => momoRoundsForLevel(game.rounds, chapterCursor, adaptiveLevel),
+    [adaptiveLevel, chapterCursor, game.rounds],
+  );
+  const round = playableRounds[roundIndex] as (typeof playableRounds)[number];
+  const roundPrompt = momoRoundPrompt(round);
+  const assemblyStage = unlockedMilestones.length;
+  const isRewardLevel = isMomoRewardLevel(adaptiveLevel);
 
   const speak = useCallback(
     (text: string, done?: () => void) => {
       if (!game.presentation.playAudioInstructions) return done?.();
-      void Speech.stop().then(() =>
-        Speech.speak(text, { language: "tr-TR", rate: 0.84, onDone: done, onStopped: done }),
-      );
+      const token = speechToken.current + 1;
+      speechToken.current = token;
+      void Speech.stop().then(() => {
+        if (!isMounted.current || speechToken.current !== token) return;
+        const complete = () => {
+          if (isMounted.current && speechToken.current === token) done?.();
+        };
+        Speech.speak(text, {
+          language: "tr-TR",
+          rate: 0.84,
+          onDone: complete,
+          onStopped: complete,
+        });
+      });
     },
     [game.presentation.playAudioInstructions],
   );
 
+  const exitGame = useCallback(() => {
+    speechToken.current += 1;
+    void Speech.stop();
+    onExit();
+  }, [onExit]);
+
+  useEffect(
+    () => () => {
+      isMounted.current = false;
+      speechToken.current += 1;
+      void Speech.stop();
+    },
+    [],
+  );
+
   useEffect(() => {
     void loadMomoCustomization(childId)
-      .then(setSelectedPart)
+      .then((customization) => {
+        setSelectedPart(customization.selectedPart);
+        setUnlockedMilestones(customization.unlockedMilestones);
+        setChapterCursor(
+          nextUnseenMomoChapterIndex(
+            game.rounds,
+            chapterIndex + 1,
+            adaptiveLevel,
+            customization.completedChapterIds,
+          ),
+        );
+      })
       .catch(() => undefined);
   }, [childId]);
 
@@ -505,12 +698,12 @@ export function MomoWorkshopGame({
     setFeedback("");
     setRevealed(false);
     setLocked(true);
-    const unlockWithPrompt = () => speak(round.prompt, () => setLocked(false));
+    const unlockWithPrompt = () => speak(roundPrompt, () => setLocked(false));
     if (roundIndex === 0 && announceIntro)
       speak(game.presentation.introNarration, unlockWithPrompt);
     else unlockWithPrompt();
     return () => void Speech.stop();
-  }, [announceIntro, game.presentation.introNarration, phase, round, roundIndex, speak]);
+  }, [announceIntro, game.presentation.introNarration, phase, roundPrompt, roundIndex, speak]);
 
   useEffect(() => {
     if (phase !== "reward") return;
@@ -524,10 +717,23 @@ export function MomoWorkshopGame({
     setFeedback(game.feedback.matched);
     Vibration.vibrate(35);
     speak(game.feedback.matched, () => {
-      if (roundIndex === game.rounds.length - 1) setPhase("reward");
-      else setRoundIndex((current) => current + 1);
+      void markMomoChapterCompleted(childId, round.id).catch(() => undefined);
+      if (roundIndex === playableRounds.length - 1) {
+        if (isRewardLevel && !unlockedMilestones.includes(adaptiveLevel)) setPhase("reward");
+        else report({ type: "completed", stepId: round.id });
+      } else setRoundIndex((current) => current + 1);
     });
-  }, [game.feedback.matched, game.rounds.length, roundIndex, speak]);
+  }, [
+    adaptiveLevel,
+    game.feedback.matched,
+    isRewardLevel,
+    playableRounds.length,
+    report,
+    round.id,
+    roundIndex,
+    speak,
+    unlockedMilestones,
+  ]);
 
   const handleAttempt = useCallback(
     (correct: boolean) => {
@@ -600,12 +806,12 @@ export function MomoWorkshopGame({
     if (locked) return;
     setLocked(true);
     setSelectedPart(part);
+    setUnlockedMilestones((current) => [...new Set([...current, adaptiveLevel])]);
     report({ type: "attempt", stepId, correct: true });
-    void saveMomoCustomization(childId, part).catch(() => undefined);
-    const closing = game.presentation.closingNarration.replace("{childName}", childName);
+    void saveMomoCustomization(childId, part, adaptiveLevel).catch(() => undefined);
+    const closing = `${childName}, Momo'nun yeni parçasını kazandın!`;
     speak(closing, () => {
       report({ type: "completed", stepId });
-      setPhase("complete");
     });
   };
 
@@ -616,7 +822,7 @@ export function MomoWorkshopGame({
         <View style={styles.sparkleTwo} />
         <View style={styles.finishCard}>
           <Text style={styles.finishEyebrow}>ATÖLYE IŞIL IŞIL!</Text>
-          <MomoAvatar dancing large selectedPart={selectedPart} />
+          <MomoAvatar assemblyStage={assemblyStage} dancing large selectedPart={selectedPart} />
           <Text style={styles.finishTitle}>Momo uyandı!</Text>
           <Text style={styles.finishCopy}>
             {game.presentation.closingNarration.replace("{childName}", childName)}
@@ -624,7 +830,7 @@ export function MomoWorkshopGame({
           <Pressable accessibilityRole="button" onPress={onRestart} style={styles.exitButton}>
             <Text style={styles.exitButtonText}>Tekrar başlamak için dokun</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" onPress={onExit}>
+          <Pressable accessibilityRole="button" onPress={exitGame}>
             <Text style={styles.finishCopy}>Oyunlara dön</Text>
           </Pressable>
         </View>
@@ -638,19 +844,21 @@ export function MomoWorkshopGame({
         <Pressable
           accessibilityLabel="Oyundan çık"
           hitSlop={10}
-          onPress={onExit}
+          onPress={exitGame}
           style={styles.close}
         >
           <Text style={styles.closeText}>×</Text>
         </Pressable>
         <View style={styles.rewardScreen}>
           <Text style={styles.stepEyebrow}>SON DOKUNUŞ</Text>
-          <Text style={styles.rewardTitle}>Momo’nun parçasını seç</Text>
+          <Text style={styles.rewardTitle}>Momo’nun yeni parçasını seç</Text>
+          <Text style={styles.finishCopy}>Seviye {adaptiveLevel} ödülü</Text>
           <View style={styles.rewardChoices}>
             {game.rewardChoices.map((choice) => (
               <RewardChoice
+                assemblyStage={Math.min(15, assemblyStage + 1)}
                 key={choice.id}
-                label={choice.label}
+                label={choice.visual === "star-antenna" ? "Parlak parça" : "Kalpli parça"}
                 onPress={() => selectReward(choice.visual, choice.id)}
                 visual={choice.visual}
               />
@@ -671,13 +879,13 @@ export function MomoWorkshopGame({
       <Pressable
         accessibilityLabel="Oyundan çık"
         hitSlop={10}
-        onPress={onExit}
+        onPress={exitGame}
         style={styles.close}
       >
         <Text style={styles.closeText}>×</Text>
       </Pressable>
       <View style={styles.progressRow}>
-        {Array.from({ length: 5 }, (_, index) => (
+        {Array.from({ length: playableRounds.length }, (_, index) => (
           <View
             key={`step-${index}`}
             style={[styles.progressDot, index <= roundIndex && styles.progressDotOn]}
@@ -685,54 +893,74 @@ export function MomoWorkshopGame({
         ))}
       </View>
       <View style={styles.gameHeader}>
-        <MomoAvatar selectedPart={selectedPart} />
+        <MomoAvatar assemblyStage={assemblyStage} selectedPart={selectedPart} />
         <View style={styles.headerCopy}>
-          <Text style={styles.stepEyebrow}>MOMO’YU UYANDIR · {roundIndex + 1}/3</Text>
+          <Text style={styles.stepEyebrow}>
+            SEVİYE {adaptiveLevel} · GÖREV {roundIndex + 1}/{playableRounds.length}
+          </Text>
           <Text style={styles.gameTitle}>{game.title}</Text>
         </View>
         <Pressable
           accessibilityLabel="Yönergeyi yeniden dinle"
           disabled={locked}
-          onPress={() => speak(round.prompt)}
+          onPress={() => speak(roundPrompt)}
           style={styles.listenButton}
         >
           <MaterialCommunityIcons color="#3C6E92" name="volume-high" size={28} />
         </Pressable>
       </View>
       <View style={styles.instructionCard}>
-        <Text style={styles.instruction}>{round.prompt}</Text>
+        <Text style={styles.instruction}>{roundPrompt}</Text>
       </View>
       <View style={styles.roundArea}>
-        {round.kind === "cable_match" ? (
-          <CableMatchRound
-            endpoints={round.endpoints}
-            locked={locked}
-            onAttempt={(correct) => {
-              if (correct) report({ type: "attempt", stepId: round.id, correct: true });
-              else handleAttempt(false);
-            }}
-            onComplete={finishRound}
-            reveal={revealed}
-          />
-        ) : round.kind === "crystal_count" ? (
-          <CrystalCountRound
-            crystalCount={round.crystalCount}
-            key={round.id}
-            locked={locked}
-            onSubmit={(count) => handleAttempt(crystalCountMatches(count, round.targetCount))}
-            reveal={revealed}
-            targetCount={round.targetCount}
-          />
-        ) : (
-          <PatternShapeRound
-            choices={round.choices}
-            correctShape={round.correctShape}
-            locked={locked}
-            onChoose={(shape) => handleAttempt(patternShapeMatches(shape, round.correctShape))}
-            reveal={revealed}
-            sequence={round.sequence}
-          />
-        )}
+        <ScrollView
+          contentContainerStyle={styles.roundScrollContent}
+          showsVerticalScrollIndicator={round.kind === "pattern_shape"}
+        >
+          {round.kind === "cable_match" ? (
+            <CableMatchRound
+              endpoints={round.endpoints}
+              locked={locked}
+              onAttempt={(correct) => {
+                if (correct) report({ type: "attempt", stepId: round.id, correct: true });
+                else handleAttempt(false);
+              }}
+              onComplete={finishRound}
+              reveal={revealed}
+            />
+          ) : round.kind === "crystal_count" ? (
+            <CrystalCountRound
+              crystalCount={round.crystalCount}
+              key={round.id}
+              locked={locked}
+              onSubmit={(count) => handleAttempt(crystalCountMatches(count, round.targetCount))}
+              reveal={revealed}
+              targetCount={round.targetCount}
+            />
+          ) : round.kind === "pattern_shape" ? (
+            <PatternShapeRound
+              choices={round.choices}
+              correctShape={round.correctShape}
+              locked={locked}
+              onChoose={(shape) => handleAttempt(patternShapeMatches(shape, round.correctShape))}
+              reveal={revealed}
+              sequence={round.sequence}
+            />
+          ) : round.kind === "part_match" ? (
+            <PartMatchRound
+              choices={round.choices}
+              locked={locked}
+              onChoose={(part) => handleAttempt(part === round.targetPart)}
+              targetPart={round.targetPart}
+            />
+          ) : (
+            <OddPartRound
+              choices={round.choices}
+              locked={locked}
+              onChoose={(index) => handleAttempt(index === round.correctIndex)}
+            />
+          )}
+        </ScrollView>
       </View>
       <Animated.Text style={[styles.feedback, { transform: [{ translateX: feedbackShake }] }]}>
         {locked && !feedback ? "Momo anlatıyor…" : feedback}
@@ -821,7 +1049,13 @@ const styles = StyleSheet.create({
     lineHeight: 27,
     textAlign: "center",
   },
-  roundArea: { flex: 1, alignItems: "center", justifyContent: "center" },
+  roundArea: { flex: 1, minHeight: 0, width: "100%" },
+  roundScrollContent: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+  },
   feedback: {
     minHeight: 48,
     maxWidth: 520,
@@ -843,6 +1077,39 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     backgroundColor: "#56B9B0",
   },
+  momoBody: {
+    position: "absolute",
+    zIndex: 0,
+    bottom: "-18%",
+    width: "58%",
+    height: "42%",
+    borderWidth: 4,
+    borderColor: "#FFFFFF",
+    borderRadius: 18,
+    backgroundColor: "#3C8F8A",
+  },
+  momoArm: {
+    position: "absolute",
+    zIndex: 0,
+    bottom: "-8%",
+    width: "14%",
+    height: "38%",
+    borderRadius: 12,
+    backgroundColor: "#56B9B0",
+  },
+  momoArmLeft: { left: "5%", transform: [{ rotate: "18deg" }] },
+  momoArmRight: { right: "5%", transform: [{ rotate: "-18deg" }] },
+  momoLeg: {
+    position: "absolute",
+    zIndex: 0,
+    bottom: "-32%",
+    width: "15%",
+    height: "30%",
+    borderRadius: 10,
+    backgroundColor: "#397C78",
+  },
+  momoLegLeft: { left: "31%" },
+  momoLegRight: { right: "31%" },
   momoEyes: { flexDirection: "row", gap: 18 },
   momoEye: { width: 11, height: 17, borderRadius: 6, backgroundColor: "#24383F" },
   momoSmile: {
@@ -929,7 +1196,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     backgroundColor: "#7892A4",
   },
-  crystalRound: { width: "100%", maxWidth: 480, alignItems: "center" },
+  crystalRound: { width: "100%", maxWidth: 420, alignItems: "center" },
   crystalShelf: {
     minHeight: 150,
     flexDirection: "row",
@@ -939,8 +1206,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   crystalButton: {
-    width: 88,
-    height: 102,
+    width: 72,
+    height: 72,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 4,
@@ -970,7 +1237,37 @@ const styles = StyleSheet.create({
     borderRadius: 29,
     backgroundColor: "#4BAFA5",
   },
-  patternRound: { width: "100%", maxWidth: 382, alignItems: "center" },
+  patternRound: { width: "100%", maxWidth: 390, alignItems: "center", paddingHorizontal: 2 },
+  bonusRound: { width: "100%", alignItems: "center", justifyContent: "center", gap: 24 },
+  bonusChoices: {
+    maxWidth: 420,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  bonusChoice: {
+    width: 76,
+    height: 76,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 4,
+    borderColor: "#FFFFFF",
+    borderRadius: 22,
+    backgroundColor: "#E6EFF2",
+  },
+  faultMark: { position: "absolute", top: 5, right: 5 },
+  partTarget: {
+    width: 132,
+    height: 132,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 4,
+    borderColor: "#7892A4",
+    borderRadius: 34,
+    backgroundColor: "#FFFFFF",
+  },
   patternSequence: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -979,26 +1276,20 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   patternTile: {
-    width: 70,
-    height: 82,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 3,
     borderColor: "#FFFFFF",
-    borderRadius: 20,
     backgroundColor: "#E6EFF2",
   },
   missingTile: { borderStyle: "dashed", borderColor: "#7A98A4", backgroundColor: "#FFFFFF" },
   questionMark: { color: "#607D89", fontSize: 40, fontWeight: "900" },
-  shapeChoices: { flexDirection: "row", gap: 18, marginTop: 28 },
+  shapeChoices: { flexDirection: "row", justifyContent: "center", gap: 12, marginTop: 18 },
   shapeChoice: {
-    width: 112,
-    height: 118,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 4,
     borderColor: "#FFFFFF",
-    borderRadius: 28,
     backgroundColor: "#F8FBFC",
   },
   pressed: { opacity: 0.72, transform: [{ scale: 0.96 }] },

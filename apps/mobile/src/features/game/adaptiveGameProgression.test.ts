@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   adaptGameComplexity,
   adaptiveGridDimensions,
+  continuesAfterMaximumLevel,
   createInitialAdaptiveState,
   findGameVariant,
   itemCountForLevel,
@@ -150,6 +151,14 @@ describe("adaptive game progression", () => {
     }
   });
 
+  it("keeps Momo playable after mastery while finite games may complete", () => {
+    const momo = publishedGames.find((game) => game.mechanic === "momo_workshop");
+    const finite = publishedGames.find((game) => game.mechanic !== "momo_workshop");
+    if (!momo || !finite) throw new Error("Expected Momo and a finite game");
+    expect(continuesAfterMaximumLevel(momo)).toBe(true);
+    expect(continuesAfterMaximumLevel(finite)).toBe(false);
+  });
+
   it("keeps the shared adaptive layout inside a five by five grid", () => {
     for (let itemCount = 1; itemCount <= MAX_ADAPTIVE_ITEM_COUNT; itemCount += 1) {
       const grid = adaptiveGridDimensions(itemCount);
@@ -241,10 +250,37 @@ describe("adaptive game progression", () => {
             sidesByKey.forEach((sides) => expect(sides).toEqual(new Set(["left", "right"])));
             expect(crystals.targetCount).toBeLessThanOrEqual(crystals.crystalCount);
             expect(pattern.choices).toContain(pattern.correctShape);
+            expect(pattern.sequence.length + 1).toBeLessThanOrEqual(25);
+            const sourcePattern = game.mechanic === "momo_workshop" ? game.rounds[2] : undefined;
+            const patternCycle = sourcePattern
+              ? Array.from(new Set([...sourcePattern.sequence, sourcePattern.correctShape]))
+              : [];
+            const lastShape = pattern.sequence.at(-1);
+            const lastIndex = lastShape ? patternCycle.indexOf(lastShape) : -1;
+            expect(pattern.correctShape).toBe(patternCycle[(lastIndex + 1) % patternCycle.length]);
             break;
           }
         }
       }
+    }
+  });
+
+  it("keeps consecutive Momo adaptive targets different through all 150 levels", () => {
+    const game = publishedGames.find((candidate) => candidate.mechanic === "momo_workshop");
+    if (!game || game.mechanic !== "momo_workshop") {
+      throw new Error("Expected the Momo workshop game");
+    }
+
+    let previousCrystalTarget: number | undefined;
+    let previousPatternTarget: string | undefined;
+    for (let level = 1; level <= MAX_ADAPTIVE_LEVEL; level += 1) {
+      const adapted = adaptGameComplexity(game, itemCountForLevel(level), level - 1);
+      if (adapted.mechanic !== "momo_workshop") throw new Error("Expected Momo workshop");
+      const [, crystals, pattern] = adapted.rounds;
+      expect(crystals.targetCount, `crystal level ${level}`).not.toBe(previousCrystalTarget);
+      expect(pattern.correctShape, `pattern level ${level}`).not.toBe(previousPatternTarget);
+      previousCrystalTarget = crystals.targetCount;
+      previousPatternTarget = pattern.correctShape;
     }
   });
 

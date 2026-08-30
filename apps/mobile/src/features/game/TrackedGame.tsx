@@ -6,6 +6,7 @@ import {
   type AdaptiveProgressionState,
   adaptGameComplexity,
   applyDifficultyLevel,
+  continuesAfterMaximumLevel,
   createInitialAdaptiveState,
   findGameVariant,
   maxAdaptiveLevelForGame,
@@ -108,7 +109,7 @@ export function TrackedGame({
         );
         const reachedFinalLevel =
           progression.adaptiveLevel === maximumLevel && nextProgression.completedRunsAtLevel === 0;
-        if (reachedFinalLevel) {
+        if (reachedFinalLevel && !continuesAfterMaximumLevel(activeGame)) {
           setProgression(nextProgression);
           onProgress?.(nextProgression, true);
           return;
@@ -245,8 +246,10 @@ export function TrackedGame({
       />
     ) : activeGame.mechanic === "momo_workshop" ? (
       <MomoWorkshopGame
+        adaptiveLevel={progression.adaptiveLevel}
         childId={child.id}
         childName={child.nickname}
+        chapterIndex={progression.challengeIndex}
         announceIntro={shouldAnnounceGameIntro(runKey)}
         game={activeGame}
         key={runKey}

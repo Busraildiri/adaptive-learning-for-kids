@@ -28,6 +28,10 @@ export function shouldAnnounceGameIntro(runKey: number): boolean {
   return runKey === 0;
 }
 
+export function continuesAfterMaximumLevel(game: Game): boolean {
+  return game.mechanic === "momo_workshop";
+}
+
 export function adaptiveGridDimensions(itemCount: number): { columns: number; rows: number } {
   const boundedCount = Math.max(1, Math.min(MAX_ADAPTIVE_ITEM_COUNT, Math.floor(itemCount)));
   const columns = Math.min(MAX_ADAPTIVE_GRID_AXIS, boundedCount);
@@ -470,11 +474,15 @@ export function adaptGameComplexity(
         { ...right, id: `${right.id}-adaptive-${index}`, matchKey, side: "right" as const },
       ];
     }).flat();
-    const sequence = repeatToLength(
-      rotate(patternRound.sequence, challengeIndex),
-      Math.max(2, itemCount - 1),
-    );
-    const correctShape = sequence[sequence.length - 1] ?? patternRound.correctShape;
+    const patternCycle = Array.from(new Set([...patternRound.sequence, patternRound.correctShape]));
+    const correctShape =
+      patternCycle[challengeIndex % patternCycle.length] ?? patternRound.correctShape;
+    const visiblePatternLength = Math.max(2, itemCount - 1);
+    const targetIndex = patternCycle.indexOf(correctShape);
+    const sequenceOffset =
+      (targetIndex - visiblePatternLength + patternCycle.length * visiblePatternLength) %
+      patternCycle.length;
+    const sequence = repeatToLength(rotate(patternCycle, sequenceOffset), visiblePatternLength);
     const choices = Array.from(
       new Set([correctShape, ...rotate(patternRound.choices, challengeIndex)]),
     );
@@ -490,7 +498,7 @@ export function adaptGameComplexity(
           ...crystalRound,
           id: `${crystalRound.id}-adaptive-${challengeIndex}`,
           crystalCount: itemCount,
-          targetCount: itemCount,
+          targetCount: 1 + (challengeIndex % itemCount),
         },
         {
           ...patternRound,
