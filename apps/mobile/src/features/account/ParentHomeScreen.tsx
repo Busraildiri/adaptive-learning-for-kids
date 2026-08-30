@@ -1,3 +1,4 @@
+import type { Game } from "@adaptive/content-schema";
 import { type ChildProfile, calculateAgeInMonths, resolveAgeBand } from "@adaptive/shared-types";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
@@ -7,6 +8,7 @@ import { AccountShell } from "./AccountShell";
 import { ChildConsentSettingsScreen } from "./ChildConsentSettingsScreen";
 import { ChildProfileForm } from "./ChildProfileForm";
 import { ChildProfilesManagementScreen } from "./ChildProfilesManagementScreen";
+import { CompletedGamesScreen } from "./CompletedGamesScreen";
 import { formStyles } from "./formStyles";
 import { ParentAccountInfoScreen } from "./ParentAccountInfoScreen";
 import { ParentPinUpdateScreen } from "./ParentPinUpdateScreen";
@@ -22,13 +24,15 @@ type ParentPanel =
   | "account"
   | "password"
   | "permissions"
-  | "children";
+  | "children"
+  | "completed-games";
 
 export function ParentHomeScreen({
   parentId,
   parentDisplayName,
   parentEmail,
   children,
+  games,
   onChildCreated,
   onChildUpdated,
   onChildDeleted,
@@ -38,6 +42,7 @@ export function ParentHomeScreen({
   parentDisplayName: string;
   parentEmail: string;
   children: ChildProfile[];
+  games: Game[];
   onChildCreated: (profile: ChildProfile) => void;
   onChildUpdated: (profile: ChildProfile) => void;
   onChildDeleted: (childId: string) => void;
@@ -92,6 +97,12 @@ export function ParentHomeScreen({
     return <ParentSessionSummaryScreen child={summaryChild} onBack={() => setSummaryChild(null)} />;
   }
 
+  if (panel === "completed-games") {
+    return (
+      <CompletedGamesScreen children={children} games={games} onBack={() => setPanel("settings")} />
+    );
+  }
+
   if (panel === "permissions") {
     return (
       <PermissionProfileSelectionScreen
@@ -120,6 +131,7 @@ export function ParentHomeScreen({
         onOpenAccount={() => setPanel("account")}
         onOpenPassword={() => setPanel("password")}
         onOpenChildren={() => setPanel("children")}
+        onOpenCompletedGames={() => setPanel("completed-games")}
         onOpenPermissions={() => setPanel("permissions")}
         onOpenPin={() => setPanel("pin")}
       />

@@ -952,7 +952,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "color-lights-001",
-      "version": 2,
+      "version": 3,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "tap_or_wait",
@@ -1037,7 +1037,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "rule-changed-garden-001",
-      "version": 2,
+      "version": 3,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "classify_and_sort",
@@ -1512,7 +1512,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "bobi-fish-memory-4-7-001",
-      "version": 3,
+      "version": 4,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "fish_patterns",
@@ -1893,26 +1893,24 @@
           "correctSequence": ["on"]
         },
         {
-          "id": "inside-three-choices",
+          "id": "left",
           "kind": "single",
-          "prompt": "Resme bak. Top kutunun neresinde?",
+          "prompt": "Resme bak. Top kutunun hangi yanında?",
           "choices": [
-            { "id": "inside", "label": "İçinde", "icon": "riko-inside" },
-            { "id": "under", "label": "Altında", "icon": "riko-under" },
-            { "id": "on", "label": "Üstünde", "icon": "riko-on" }
+            { "id": "left", "label": "Solunda", "icon": "riko-left" },
+            { "id": "right", "label": "Sağında", "icon": "riko-right" }
           ],
-          "correctSequence": ["inside"]
+          "correctSequence": ["left"]
         },
         {
-          "id": "under-three-choices",
+          "id": "right",
           "kind": "single",
-          "prompt": "Son resme bak. Top kutunun neresinde?",
+          "prompt": "Son resme bak. Top kutunun hangi yanında?",
           "choices": [
-            { "id": "on", "label": "Üstünde", "icon": "riko-on" },
-            { "id": "inside", "label": "İçinde", "icon": "riko-inside" },
-            { "id": "under", "label": "Altında", "icon": "riko-under" }
+            { "id": "left", "label": "Solunda", "icon": "riko-left" },
+            { "id": "right", "label": "Sağında", "icon": "riko-right" }
           ],
-          "correctSequence": ["under"]
+          "correctSequence": ["right"]
         }
       ],
       "feedback": { "matched": "Konumu buldun!", "retry": "Resme bir daha bakalım." },

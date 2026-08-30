@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   adaptGameComplexity,
   adaptiveGridDimensions,
+  continuesAfterMaximumLevel,
   createInitialAdaptiveState,
   findGameVariant,
   itemCountForLevel,
@@ -12,6 +13,7 @@ import {
   maxAdaptiveLevelForGame,
   nextDifficultyAfterCompletion,
   previousProgression,
+  requiredRunsForGame,
   requiredRunsToAdvance,
   shouldAnnounceGameIntro,
 } from "./adaptiveGameProgression";
@@ -101,6 +103,26 @@ describe("adaptive game progression", () => {
     });
   });
 
+  it("finishes Riko's distinct spatial prompts without repeating each one", () => {
+    const riko = publishedGames.find((game) => game.id === "riko-where-001");
+    if (!riko) throw new Error("Expected Riko game");
+
+    expect(maxAdaptiveLevelForGame(riko)).toBe(9);
+    const requiredRuns = requiredRunsForGame(riko, "2-4");
+    expect(requiredRuns).toBe(1);
+
+    let progress = createInitialAdaptiveState(riko);
+    for (let step = 0; step < 9; step += 1) {
+      progress = nextDifficultyAfterCompletion(
+        progress,
+        "2-4",
+        maxAdaptiveLevelForGame(riko),
+        requiredRuns,
+      );
+    }
+    expect(progress).toMatchObject({ adaptiveLevel: 9, completedRunsAtLevel: 0 });
+  });
+
   it("drops exactly one adaptive level after difficulty", () => {
     expect(
       previousProgression({
@@ -150,6 +172,14 @@ describe("adaptive game progression", () => {
     }
   });
 
+  it("keeps Momo playable after mastery while finite games may complete", () => {
+    const momo = publishedGames.find((game) => game.mechanic === "momo_workshop");
+    const finite = publishedGames.find((game) => game.mechanic !== "momo_workshop");
+    if (!momo || !finite) throw new Error("Expected Momo and a finite game");
+    expect(continuesAfterMaximumLevel(momo)).toBe(true);
+    expect(continuesAfterMaximumLevel(finite)).toBe(false);
+  });
+
   it("keeps the shared adaptive layout inside a five by five grid", () => {
     for (let itemCount = 1; itemCount <= MAX_ADAPTIVE_ITEM_COUNT; itemCount += 1) {
       const grid = adaptiveGridDimensions(itemCount);
@@ -157,6 +187,17 @@ describe("adaptive game progression", () => {
       expect(grid.rows).toBeLessThanOrEqual(5);
       expect(grid.columns * grid.rows).toBeGreaterThanOrEqual(itemCount);
     }
+  });
+
+  it("states the number of Pati objects that are actually shown", () => {
+    const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
+    if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
+
+    const adapted = adaptGameComplexity(pati, 2, 3);
+    if (adapted.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
+
+    expect(adapted.rounds[0]?.objects).toHaveLength(2);
+    expect(adapted.rounds[0]?.instruction).toContain("Şimdi iki nesne var.");
   });
 
   it("audits every level of every published game for bounded adaptive content", () => {
@@ -187,7 +228,9 @@ describe("adaptive game progression", () => {
           }
           case "classify_and_sort": {
             const round = adapted.rounds[0];
-            expect(round?.objects, `${game.id} level ${level}`).toHaveLength(itemCount);
+            expect(round?.objects.length, `${game.id} level ${level}`).toBeLessThanOrEqual(
+              itemCount,
+            );
             expect(
               round?.objects.filter((object) => object[round.dimension] === round.targetValue),
               `${game.id} level ${level}`,
@@ -241,10 +284,37 @@ describe("adaptive game progression", () => {
             sidesByKey.forEach((sides) => expect(sides).toEqual(new Set(["left", "right"])));
             expect(crystals.targetCount).toBeLessThanOrEqual(crystals.crystalCount);
             expect(pattern.choices).toContain(pattern.correctShape);
+            expect(pattern.sequence.length + 1).toBeLessThanOrEqual(25);
+            const sourcePattern = game.mechanic === "momo_workshop" ? game.rounds[2] : undefined;
+            const patternCycle = sourcePattern
+              ? Array.from(new Set([...sourcePattern.sequence, sourcePattern.correctShape]))
+              : [];
+            const lastShape = pattern.sequence.at(-1);
+            const lastIndex = lastShape ? patternCycle.indexOf(lastShape) : -1;
+            expect(pattern.correctShape).toBe(patternCycle[(lastIndex + 1) % patternCycle.length]);
             break;
           }
         }
       }
+    }
+  });
+
+  it("keeps consecutive Momo adaptive targets different through all 150 levels", () => {
+    const game = publishedGames.find((candidate) => candidate.mechanic === "momo_workshop");
+    if (!game || game.mechanic !== "momo_workshop") {
+      throw new Error("Expected the Momo workshop game");
+    }
+
+    let previousCrystalTarget: number | undefined;
+    let previousPatternTarget: string | undefined;
+    for (let level = 1; level <= MAX_ADAPTIVE_LEVEL; level += 1) {
+      const adapted = adaptGameComplexity(game, itemCountForLevel(level), level - 1);
+      if (adapted.mechanic !== "momo_workshop") throw new Error("Expected Momo workshop");
+      const [, crystals, pattern] = adapted.rounds;
+      expect(crystals.targetCount, `crystal level ${level}`).not.toBe(previousCrystalTarget);
+      expect(pattern.correctShape, `pattern level ${level}`).not.toBe(previousPatternTarget);
+      previousCrystalTarget = crystals.targetCount;
+      previousPatternTarget = pattern.correctShape;
     }
   });
 
@@ -274,6 +344,38 @@ describe("adaptive game progression", () => {
       throw new Error("Expected mini challenge games");
     }
     expect(first.rounds[0]?.correctSequence).not.toEqual(second.rounds[0]?.correctSequence);
+  });
+
+  it("keeps Riko's simple spatial choices stable and extends them with new scenes", () => {
+    const riko = publishedGames.find((game) => game.id === "riko-where-001");
+    if (!riko || riko.mechanic !== "mini_challenge") throw new Error("Expected Riko game");
+
+    const positionIds = riko.rounds.map((round) => round.correctSequence[0]);
+    expect(positionIds).toEqual(["inside", "under", "on", "left", "right"]);
+    const extendedPositionIds = Array.from({ length: 9 }, (_, challengeIndex) => {
+      const adapted = adaptGameComplexity(riko, 2, challengeIndex);
+      if (adapted.mechanic !== "mini_challenge") throw new Error("Expected Riko mini challenge");
+      return adapted.rounds[0]?.correctSequence[0];
+    });
+    expect(extendedPositionIds).toEqual([
+      "inside",
+      "under",
+      "on",
+      "left",
+      "right",
+      "behind",
+      "front",
+      "near",
+      "far",
+    ]);
+
+    const first = adaptGameComplexity(riko, 2, 3);
+    const next = adaptGameComplexity(riko, 2, 4);
+    if (first.mechanic !== "mini_challenge" || next.mechanic !== "mini_challenge") {
+      throw new Error("Expected Riko mini challenge");
+    }
+    expect(first.rounds[0]?.choices.map((choice) => choice.id)).toEqual(["left", "right"]);
+    expect(next.rounds[0]?.choices.map((choice) => choice.id)).toEqual(["left", "right"]);
   });
 
   it("does not treat a different mini challenge as a difficulty variant", () => {
@@ -312,7 +414,9 @@ describe("adaptive game progression", () => {
           expect(adapted.roundPlan.rounds, adapted.id).toHaveLength(MAX_ADAPTIVE_ITEM_COUNT);
           break;
         case "classify_and_sort":
-          expect(adapted.rounds[0]?.objects, adapted.id).toHaveLength(MAX_ADAPTIVE_ITEM_COUNT);
+          expect(adapted.rounds[0]?.objects.length, adapted.id).toBeLessThanOrEqual(
+            MAX_ADAPTIVE_ITEM_COUNT,
+          );
           break;
         case "sequence_and_place":
           expect(adapted.rounds[0]?.items, adapted.id).toHaveLength(MAX_ADAPTIVE_ITEM_COUNT);
@@ -350,6 +454,27 @@ describe("adaptive game progression", () => {
           break;
       }
     }
+  });
+
+  it("uses Pati's visual pool without duplicating an object in a round", () => {
+    const game = publishedGames.find((candidate) => candidate.id === "rule-changed-garden-001");
+    if (!game || game.mechanic !== "classify_and_sort") {
+      throw new Error("Expected Pati game");
+    }
+
+    const visibleAcrossRounds = new Set<string>();
+    for (let challengeIndex = 0; challengeIndex < game.rounds.length; challengeIndex += 1) {
+      const adapted = adaptGameComplexity(game, MAX_ADAPTIVE_ITEM_COUNT, challengeIndex);
+      if (adapted.mechanic !== "classify_and_sort") {
+        throw new Error("Expected adapted Pati game");
+      }
+      const objectIds = adapted.rounds[0]?.objects.map((object) => object.id) ?? [];
+      const baseIds = objectIds.map((id) => id.replace(/-adaptive-(target|distractor)$/, ""));
+      expect(new Set(baseIds).size).toBe(baseIds.length);
+      baseIds.forEach((id) => visibleAcrossRounds.add(id));
+    }
+    expect(visibleAcrossRounds).toContain("cat");
+    expect(visibleAcrossRounds).toContain("picnic-basket");
   });
 
   it("keeps every generated balloon instruction consistent with visible balloons", () => {

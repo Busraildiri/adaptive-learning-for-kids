@@ -1,5 +1,7 @@
-import type { AgeBand, Game, GameDifficultyLevel } from "@adaptive/content-schema";
+import type { AgeBand, Game, GameDifficultyLevel, SortObject } from "@adaptive/content-schema";
 import { adaptRhythmRound } from "./miniChallengeEngine";
+
+type MiniChallengeContent = Extract<Game, { mechanic: "mini_challenge" }>;
 
 const levels: readonly GameDifficultyLevel[] = ["starter", "growing", "advanced"];
 const balloonColorNames = {
@@ -12,6 +14,80 @@ const balloonColorNames = {
   pink: "pembe",
   cyan: "turkuaz",
 } as const;
+
+const turkishObjectCounts: Record<number, string> = {
+  1: "bir",
+  2: "iki",
+  3: "üç",
+  4: "dört",
+  5: "beş",
+  6: "altı",
+  7: "yedi",
+  8: "sekiz",
+  9: "dokuz",
+  10: "on",
+};
+
+// These are the additional illustrated Pati objects. They stay outside the
+// five starter rounds, but join the adaptive pool as distinct visuals.
+const patiVisualObjects: SortObject[] = [
+  {
+    id: "cat",
+    label: "mavi kedi",
+    shape: "bear",
+    color: "blue",
+    category: "animal",
+    size: "small",
+  },
+  {
+    id: "fox",
+    label: "kırmızı tilki",
+    shape: "bear",
+    color: "red",
+    category: "animal",
+    size: "small",
+  },
+  {
+    id: "rabbit",
+    label: "mor tavşan",
+    shape: "bear",
+    color: "purple",
+    category: "animal",
+    size: "small",
+  },
+  {
+    id: "bear",
+    label: "sarı ayıcık",
+    shape: "bear",
+    color: "yellow",
+    category: "animal",
+    size: "small",
+  },
+  {
+    id: "bed",
+    label: "büyük mavi yatak",
+    shape: "block",
+    color: "blue",
+    category: "toy",
+    size: "large",
+  },
+  {
+    id: "pajamas",
+    label: "mor pijama",
+    shape: "block",
+    color: "purple",
+    category: "toy",
+    size: "small",
+  },
+  {
+    id: "picnic-basket",
+    label: "büyük sarı sepet",
+    shape: "block",
+    color: "yellow",
+    category: "toy",
+    size: "large",
+  },
+];
 export const MIN_ADAPTIVE_ITEM_COUNT = 2;
 export const MAX_ADAPTIVE_GRID_AXIS = 5;
 export const MAX_ADAPTIVE_ITEM_COUNT = MAX_ADAPTIVE_GRID_AXIS ** 2;
@@ -27,6 +103,10 @@ export type AdaptiveProgressionState = {
 
 export function shouldAnnounceGameIntro(runKey: number): boolean {
   return runKey === 0;
+}
+
+export function continuesAfterMaximumLevel(game: Game): boolean {
+  return game.mechanic === "momo_workshop";
 }
 
 export function adaptiveGridDimensions(itemCount: number): { columns: number; rows: number } {
@@ -76,13 +156,20 @@ export function requiredRunsToAdvance(ageBand: AgeBand): number {
   return ageBand === "2-4" ? 2 : 1;
 }
 
+export function requiredRunsForGame(game: Game, ageBand: AgeBand): number {
+  // Riko has five fixed, distinct spatial concepts. Repeating each one just
+  // to satisfy the slower 2–4 cadence would make a completed curriculum loop.
+  return game.id === "riko-where-001" ? 1 : requiredRunsToAdvance(ageBand);
+}
+
 export function nextDifficultyAfterCompletion(
   state: AdaptiveProgressionState,
   ageBand: AgeBand,
   maximumLevel = MAX_ADAPTIVE_LEVEL,
+  requiredRuns = requiredRunsToAdvance(ageBand),
 ): AdaptiveProgressionState {
   const completedRunsAtLevel = state.completedRunsAtLevel + 1;
-  if (completedRunsAtLevel < requiredRunsToAdvance(ageBand)) {
+  if (completedRunsAtLevel < requiredRuns) {
     return { ...state, completedRunsAtLevel, challengeIndex: state.challengeIndex + 1 };
   }
   const adaptiveLevel = Math.min(maximumLevel, state.adaptiveLevel + 1);
@@ -102,6 +189,10 @@ export function maxAdaptiveLevelForGame(game: Game): number {
       combinations = game.rounds.length * 2;
       break;
     case "mini_challenge":
+      if (game.id === "riko-where-001") {
+        combinations = 9;
+        break;
+      }
       if (game.rounds.every((round) => round.kind === "single")) {
         combinations = new Set(
           game.rounds.map((round) =>
@@ -262,7 +353,55 @@ export function adaptGameComplexity(
   );
 
   if (game.mechanic === "mini_challenge") {
-    const adaptiveRounds = avoidAdjacentDuplicateAnswers(game.rounds, challengeIndex);
+    const rikoExtraRounds: MiniChallengeContent["rounds"] =
+      game.id === "riko-where-001"
+        ? [
+            {
+              ...game.rounds[0],
+              id: "behind",
+              prompt: "Resme bak. Top kutunun neresinde saklanıyor?",
+              choices: [
+                { id: "behind", label: "Arkasında", icon: "riko-left" },
+                { id: "front", label: "Önünde", icon: "riko-right" },
+              ],
+              correctSequence: ["behind"],
+            },
+            {
+              ...game.rounds[0],
+              id: "front",
+              prompt: "Resme bak. Top kutunun neresinde?",
+              choices: [
+                { id: "behind", label: "Arkasında", icon: "riko-left" },
+                { id: "front", label: "Önünde", icon: "riko-right" },
+              ],
+              correctSequence: ["front"],
+            },
+            {
+              ...game.rounds[0],
+              id: "near",
+              prompt: "Resme bak. Top kutuya yakın mı, uzak mı?",
+              choices: [
+                { id: "near", label: "Yakınında", icon: "riko-left" },
+                { id: "far", label: "Uzağında", icon: "riko-right" },
+              ],
+              correctSequence: ["near"],
+            },
+            {
+              ...game.rounds[0],
+              id: "far",
+              prompt: "Son resme bak. Top kutuya yakın mı, uzak mı?",
+              choices: [
+                { id: "near", label: "Yakınında", icon: "riko-left" },
+                { id: "far", label: "Uzağında", icon: "riko-right" },
+              ],
+              correctSequence: ["far"],
+            },
+          ]
+        : [];
+    const adaptiveRounds = avoidAdjacentDuplicateAnswers(
+      [...game.rounds, ...rikoExtraRounds],
+      challengeIndex,
+    );
     const adaptiveRound = adaptiveRounds[0];
     if (!adaptiveRound) return game;
     if (adaptiveRound.kind === "single") {
@@ -272,7 +411,12 @@ export function adaptGameComplexity(
           {
             ...adaptiveRound,
             id: `${adaptiveRound.id}-adaptive-${challengeIndex}`,
-            choices: rotate(adaptiveRound.choices, challengeIndex),
+            // Riko is a 2–4 age spatial-language activity. Its answer order is
+            // deliberately stable; moving answers is not treated as difficulty.
+            choices:
+              game.id === "riko-where-001"
+                ? adaptiveRound.choices
+                : rotate(adaptiveRound.choices, challengeIndex),
           },
         ],
       };
@@ -403,23 +547,47 @@ export function adaptGameComplexity(
   if (game.mechanic === "classify_and_sort") {
     const sourceRound = game.rounds[challengeIndex % game.rounds.length];
     if (!sourceRound) return game;
-    const matching = sourceRound.objects.find(
-      (object) => object[sourceRound.dimension] === sourceRound.targetValue,
+    const sourceObjects = [
+      ...game.rounds.flatMap((round) => round.objects),
+      ...(game.id === "rule-changed-garden-001" ? patiVisualObjects : []),
+    ];
+    const objectPool = Array.from(
+      new Map(sourceObjects.map((object) => [object.id, object])).values(),
     );
-    const distractors = sourceRound.objects.filter(
-      (object) => object[sourceRound.dimension] !== sourceRound.targetValue,
+    const matching = rotate(
+      objectPool.filter((object) => object[sourceRound.dimension] === sourceRound.targetValue),
+      challengeIndex,
+    )[0];
+    const distractors = rotate(
+      objectPool.filter((object) => object[sourceRound.dimension] !== sourceRound.targetValue),
+      challengeIndex,
     );
     if (!matching || distractors.length === 0) return game;
+    const visibleCount = Math.min(itemCount, distractors.length + 1);
     const objects = rotate(
       [
         { ...matching, id: `${matching.id}-adaptive-target` },
-        ...repeatWithUniqueIds(rotate(distractors, challengeIndex), itemCount - 1),
+        ...distractors.slice(0, visibleCount - 1).map((object) => ({
+          ...object,
+          id: `${object.id}-adaptive-distractor`,
+        })),
       ],
       challengeIndex,
     );
+    const instruction = sourceRound.instruction.replace(
+      /Şimdi dört nesne var\./,
+      `Şimdi ${turkishObjectCounts[objects.length] ?? objects.length} nesne var.`,
+    );
     return {
       ...game,
-      rounds: [{ ...sourceRound, id: `${sourceRound.id}-adaptive-${challengeIndex}`, objects }],
+      rounds: [
+        {
+          ...sourceRound,
+          id: `${sourceRound.id}-adaptive-${challengeIndex}`,
+          instruction,
+          objects,
+        },
+      ],
     };
   }
 
@@ -474,11 +642,15 @@ export function adaptGameComplexity(
         { ...right, id: `${right.id}-adaptive-${index}`, matchKey, side: "right" as const },
       ];
     }).flat();
-    const sequence = repeatToLength(
-      rotate(patternRound.sequence, challengeIndex),
-      Math.max(2, itemCount - 1),
-    );
-    const correctShape = sequence[sequence.length - 1] ?? patternRound.correctShape;
+    const patternCycle = Array.from(new Set([...patternRound.sequence, patternRound.correctShape]));
+    const correctShape =
+      patternCycle[challengeIndex % patternCycle.length] ?? patternRound.correctShape;
+    const visiblePatternLength = Math.max(2, itemCount - 1);
+    const targetIndex = patternCycle.indexOf(correctShape);
+    const sequenceOffset =
+      (targetIndex - visiblePatternLength + patternCycle.length * visiblePatternLength) %
+      patternCycle.length;
+    const sequence = repeatToLength(rotate(patternCycle, sequenceOffset), visiblePatternLength);
     const choices = Array.from(
       new Set([correctShape, ...rotate(patternRound.choices, challengeIndex)]),
     );
@@ -494,7 +666,7 @@ export function adaptGameComplexity(
           ...crystalRound,
           id: `${crystalRound.id}-adaptive-${challengeIndex}`,
           crystalCount: itemCount,
-          targetCount: itemCount,
+          targetCount: 1 + (challengeIndex % itemCount),
         },
         {
           ...patternRound,

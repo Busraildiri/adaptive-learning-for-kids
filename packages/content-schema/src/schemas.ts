@@ -819,6 +819,8 @@ const miniIconSchema = z.enum([
   "riko-inside",
   "riko-under",
   "riko-on",
+  "riko-left",
+  "riko-right",
   "zuzu-circle",
   "zuzu-square",
   "zuzu-triangle",
@@ -896,7 +898,7 @@ export const miniChallengeGameSchema = z.strictObject({
   }),
 });
 
-export const momoCableColorSchema = z.enum(["coral", "blue", "yellow"]);
+export const momoCableColorSchema = z.enum(["coral", "blue", "yellow", "green", "purple"]);
 export const momoShapeSchema = z.enum(["circle", "square", "triangle"]);
 export const momoPartVisualSchema = z.enum(["star-antenna", "spring-antenna"]);
 
