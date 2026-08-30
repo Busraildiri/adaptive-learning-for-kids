@@ -35,11 +35,15 @@ const FLOWERS = [
 ];
 
 export function TapOrWaitGame({
+  announceIntro = true,
   game,
   onExit,
+  onRestart,
 }: {
+  announceIntro?: boolean;
   game: TapOrWaitGameContent;
   onExit: () => void;
+  onRestart: () => void;
 }) {
   const report = useGameObservation();
   const [phase, setPhase] = useState<Phase>("intro");
@@ -114,9 +118,13 @@ export function TapOrWaitGame({
 
   useEffect(() => {
     if (phase !== "intro") return;
+    if (!announceIntro) {
+      setPhase("instruction");
+      return;
+    }
     speak(game.presentation.introNarration, () => setPhase("instruction"));
     return () => void Speech.stop();
-  }, [game.presentation.introNarration, phase, speak]);
+  }, [announceIntro, game.presentation.introNarration, phase, speak]);
 
   useEffect(() => {
     if (phase !== "instruction") return;
@@ -230,9 +238,10 @@ export function TapOrWaitGame({
             ))}
           </View>
           <Text style={styles.instruction}>Lila ile bütün ışıkları uyandırdın.</Text>
-          <Pressable accessibilityRole="button" onPress={onExit} style={styles.exitButton}>
-            <Text style={styles.exitButtonText}>Oyunlara dön</Text>
+          <Pressable accessibilityRole="button" onPress={onRestart} style={styles.exitButton}>
+            <Text style={styles.exitButtonText}>Tekrar başlamak için dokun</Text>
           </Pressable>
+          <Pressable accessibilityRole="button" onPress={onExit}><Text style={styles.instruction}>Oyunlara dön</Text></Pressable>
         </View>
       </SafeAreaView>
     );
@@ -357,7 +366,7 @@ const styles = StyleSheet.create({
   parentButton: {
     position: "absolute",
     zIndex: 2,
-    top: 12,
+    top: 28,
     left: 16,
     width: 52,
     height: 52,
@@ -375,15 +384,19 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
   flowerRow: {
+    width: "100%",
+    maxWidth: 302,
     minHeight: 42,
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "center",
     gap: 3,
   },
-  progressFlowerImage: { width: 34, height: 42, resizeMode: "contain" },
-  completedFlower: { width: 58, height: 92, resizeMode: "contain" },
+  progressFlowerImage: { flexBasis: "18%", width: 34, height: 42, resizeMode: "contain" },
+  completedFlower: { flexBasis: "18%", width: 58, height: 92, resizeMode: "contain" },
   flowerWaiting: {
+    flexBasis: "18%",
     width: 13,
     height: 13,
     marginHorizontal: 7,

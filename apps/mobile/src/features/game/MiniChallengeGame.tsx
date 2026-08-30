@@ -309,7 +309,7 @@ function BlockBoard({ pieceIcon, solved }: { pieceIcon: string; solved: boolean 
   );
 }
 
-export function MiniChallengeGame({ game, onExit }: { game: MiniGameContent; onExit: () => void }) {
+export function MiniChallengeGame({ announceIntro = true, game, onExit, onRestart }: { announceIntro?: boolean; game: MiniGameContent; onExit: () => void; onRestart: () => void }) {
   const report = useGameObservation();
   const soundPlayer = useAudioPlayer(null, { updateInterval: 100 });
   const soundStatus = useAudioPlayerStatus(soundPlayer);
@@ -406,13 +406,7 @@ export function MiniChallengeGame({ game, onExit }: { game: MiniGameContent; onE
       setTimeout(() => setHighlight(null), index * 1000 + 700);
     });
     setTimeout(() => {
-      if (round.kind !== "rhythm") return setLocked(false);
-      Speech.speak("Ritmi tahmin et.", {
-        language: "tr-TR",
-        rate: 0.84,
-        onDone: () => setLocked(false),
-        onStopped: () => setLocked(false),
-      });
+      setLocked(false);
     }, round.demoSequence.length * 1000);
   }, [isLumi, playLumiSound, round, speak]);
   useEffect(() => {
@@ -424,10 +418,8 @@ export function MiniChallengeGame({ game, onExit }: { game: MiniGameContent; onE
     setLocked(true);
     const text =
       round.kind === "rhythm"
-        ? roundIndex === 0
-          ? "Nino'nun ritmini dinle. Ritmi tahmin et."
-          : "Ritmi tahmin et."
-        : roundIndex === 0
+        ? round.prompt
+        : roundIndex === 0 && announceIntro
           ? `${game.presentation.introNarration} ${round.prompt}`
           : round.prompt;
     speak(text, demonstrate);
@@ -439,6 +431,7 @@ export function MiniChallengeGame({ game, onExit }: { game: MiniGameContent; onE
     };
   }, [
     demonstrate,
+    announceIntro,
     game.presentation.introNarration,
     isLumi,
     pauseLumiSoundSafely,
@@ -537,9 +530,10 @@ export function MiniChallengeGame({ game, onExit }: { game: MiniGameContent; onE
           <MaterialCommunityIcons name="star-circle" color="#F4B942" size={92} />
           <Text style={styles.finishTitle}>{game.title} tamamlandı!</Text>
           <Text style={styles.copy}>{game.presentation.closingNarration}</Text>
-          <Pressable onPress={onExit} style={styles.exit}>
-            <Text style={styles.exitText}>Oyunlara dön</Text>
+          <Pressable onPress={onRestart} style={styles.exit}>
+            <Text style={styles.exitText}>Tekrar başlamak için dokun</Text>
           </Pressable>
+          <Pressable onPress={onExit}><Text style={styles.copy}>Oyunlara dön</Text></Pressable>
         </View>
       </SafeAreaView>
     );
@@ -697,7 +691,7 @@ const styles = StyleSheet.create({
   close: {
     position: "absolute",
     zIndex: 3,
-    top: 2,
+    top: 18,
     left: 0,
     width: 60,
     height: 60,
@@ -727,6 +721,7 @@ const styles = StyleSheet.create({
     maxWidth: 520,
     minHeight: 108,
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "flex-end",
     justifyContent: "center",
     gap: 5,
@@ -736,6 +731,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#80634D",
   },
   trainWagon: {
+    flexBasis: "18%",
     minWidth: 42,
     maxWidth: 67,
     height: 72,

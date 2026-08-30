@@ -6,6 +6,7 @@ import { signOutParent } from "../../services/account";
 import { AccountShell } from "./AccountShell";
 import { ChildConsentSettingsScreen } from "./ChildConsentSettingsScreen";
 import { ChildProfileForm } from "./ChildProfileForm";
+import { ChildProfilesManagementScreen } from "./ChildProfilesManagementScreen";
 import { formStyles } from "./formStyles";
 import { ParentAccountInfoScreen } from "./ParentAccountInfoScreen";
 import { ParentPinUpdateScreen } from "./ParentPinUpdateScreen";
@@ -14,7 +15,7 @@ import { ParentSettingsScreen } from "./ParentSettingsScreen";
 import { PasswordUpdateScreen } from "./PasswordUpdateScreen";
 import { PermissionProfileSelectionScreen } from "./PermissionProfileSelectionScreen";
 
-type ParentPanel = "home" | "settings" | "pin" | "account" | "password" | "permissions";
+type ParentPanel = "home" | "settings" | "pin" | "account" | "password" | "permissions" | "children";
 
 export function ParentHomeScreen({
   parentId,
@@ -23,6 +24,7 @@ export function ParentHomeScreen({
   children,
   onChildCreated,
   onChildUpdated,
+  onChildDeleted,
   onStartChildMode,
 }: {
   parentId: string;
@@ -31,6 +33,7 @@ export function ParentHomeScreen({
   children: ChildProfile[];
   onChildCreated: (profile: ChildProfile) => void;
   onChildUpdated: (profile: ChildProfile) => void;
+  onChildDeleted: (childId: string) => void;
   onStartChildMode: (profile: ChildProfile) => Promise<void>;
 }) {
   const [showForm, setShowForm] = useState(children.length === 0);
@@ -92,12 +95,24 @@ export function ParentHomeScreen({
     );
   }
 
+  if (panel === "children") {
+    return (
+      <ChildProfilesManagementScreen
+        children={children}
+        onBack={() => setPanel("settings")}
+        onDeleted={onChildDeleted}
+        onUpdated={onChildUpdated}
+      />
+    );
+  }
+
   if (panel === "settings") {
     return (
       <ParentSettingsScreen
         onBack={() => setPanel("home")}
         onOpenAccount={() => setPanel("account")}
         onOpenPassword={() => setPanel("password")}
+        onOpenChildren={() => setPanel("children")}
         onOpenPermissions={() => setPanel("permissions")}
         onOpenPin={() => setPanel("pin")}
       />

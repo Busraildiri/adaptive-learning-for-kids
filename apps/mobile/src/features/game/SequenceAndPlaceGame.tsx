@@ -3,7 +3,7 @@ import type {
   SequenceAndPlaceGame as SequenceAndPlaceGameContent,
 } from "@adaptive/content-schema";
 import * as Speech from "expo-speech";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Image,
@@ -124,11 +124,15 @@ function DraggableRoutineCard({
 }
 
 export function SequenceAndPlaceGame({
+  announceIntro = true,
   game,
   onExit,
+  onRestart,
 }: {
+  announceIntro?: boolean;
   game: SequenceAndPlaceGameContent;
   onExit: () => void;
+  onRestart: () => void;
 }) {
   const report = useGameObservation();
   const [roundIndex, setRoundIndex] = useState(0);
@@ -144,13 +148,9 @@ export function SequenceAndPlaceGame({
   const [attempt, setAttempt] = useState(0);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [completed, setCompleted] = useState(false);
-  const slotRefs = [
-    useRef<View>(null),
-    useRef<View>(null),
-    useRef<View>(null),
-    useRef<View>(null),
-    useRef<View>(null),
-  ];
+  const slotRefs = useRef(
+    Array.from({ length: 25 }, () => createRef<View>()),
+  ).current;
   const currentRound = game.rounds[roundIndex];
   const itemCount = currentRound.items.length;
   const sourceDensityStyle =
@@ -177,8 +177,9 @@ export function SequenceAndPlaceGame({
   const speak = useCallback(
     (text: string, onDone?: () => void) => {
       if (!game.presentation.playAudioInstructions) return onDone?.();
-      void Speech.stop();
-      Speech.speak(text, { language: "tr-TR", rate: 0.84, onDone, onStopped: onDone });
+      void Speech.stop().then(() =>
+        Speech.speak(text, { language: "tr-TR", rate: 0.84, onDone, onStopped: onDone }),
+      );
     },
     [game.presentation.playAudioInstructions],
   );
@@ -189,15 +190,19 @@ export function SequenceAndPlaceGame({
     setHighlightedId(null);
     setFeedback(roundIndex === 0 ? "" : "Yeni rutin geliyor!");
     setLocked(true);
-    const intro = roundIndex === 0 ? game.presentation.introNarration : currentRound.instruction;
+    const intro =
+      roundIndex === 0 && announceIntro
+        ? game.presentation.introNarration
+        : currentRound.instruction;
     speak(intro, () => {
-      if (roundIndex === 0) speak(currentRound.instruction, () => setLocked(false));
+      if (roundIndex === 0 && announceIntro)
+        speak(currentRound.instruction, () => setLocked(false));
       else setLocked(false);
     });
     return () => {
       void Speech.stop();
     };
-  }, [currentRound, game.presentation.introNarration, roundIndex, speak]);
+  }, [announceIntro, currentRound, game.presentation.introNarration, roundIndex, speak]);
 
   useEffect(() => {
     if (locked || completed) return;
@@ -278,9 +283,10 @@ export function SequenceAndPlaceGame({
           <Image source={minoHappy} style={styles.completedMascot} />
           <Text style={styles.completedTitle}>Rutin yolu tamamlandı!</Text>
           <Text style={styles.completedCopy}>{game.presentation.closingNarration}</Text>
-          <Pressable onPress={onExit} style={styles.exitButton}>
-            <Text style={styles.exitText}>Oyunlara dön</Text>
+          <Pressable onPress={onRestart} style={styles.exitButton}>
+            <Text style={styles.exitText}>Tekrar başlamak için dokun</Text>
           </Pressable>
+          <Pressable onPress={onExit}><Text style={styles.completedCopy}>Oyunlara dön</Text></Pressable>
         </View>
       </SafeAreaView>
     );
@@ -396,7 +402,7 @@ const styles = StyleSheet.create({
   closeButton: {
     position: "absolute",
     zIndex: 3,
-    top: 12,
+    top: 28,
     left: 16,
     width: 52,
     height: 52,
@@ -432,8 +438,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   sourceRow: {
+    width: "100%",
+    maxWidth: 334,
     minHeight: 150,
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "center",
     gap: 14,
@@ -454,18 +463,26 @@ const styles = StyleSheet.create({
   cardContent: { width: "100%", height: "100%", alignItems: "center", justifyContent: "center" },
   compactSourceCard: { width: 104, height: 116, borderRadius: 20 },
   denseSourceCard: { width: 78, height: 96, borderRadius: 17 },
-  tinySourceCard: { width: 62, height: 86, borderRadius: 15, borderWidth: 2 },
+  tinySourceCard: { width: 52, height: 48, borderRadius: 12, borderWidth: 2 },
   sourcePlaceholder: { width: 145, height: 145 },
   highlightedCard: { borderWidth: 6, borderColor: "#FFD95A", backgroundColor: "#FFF3B3" },
   sourceImage: { width: 100, height: 94, resizeMode: "contain" },
   compactSourceImage: { width: 72, height: 70 },
   denseSourceImage: { width: 54, height: 52 },
-  tinySourceImage: { width: 44, height: 42 },
+  tinySourceImage: { width: 32, height: 28 },
   cardLabel: { color: "#4F443C", fontSize: 13, fontWeight: "900" },
   denseCardLabel: { maxWidth: 58, fontSize: 9, lineHeight: 10, textAlign: "center" },
   dragLabel: { color: "#83776E", fontSize: 10, fontWeight: "700" },
   denseDragLabel: { fontSize: 7 },
-  slotRow: { flexDirection: "row", gap: 14, marginTop: 14 },
+  slotRow: {
+    width: "100%",
+    maxWidth: 334,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 14,
+  },
   slot: {
     width: 150,
     height: 150,
@@ -479,13 +496,13 @@ const styles = StyleSheet.create({
   },
   compactSlot: { width: 104, height: 124, borderRadius: 22 },
   denseSlot: { width: 78, height: 104, borderRadius: 18, borderWidth: 3 },
-  tinySlot: { width: 62, height: 92, borderRadius: 16, borderWidth: 3 },
+  tinySlot: { width: 52, height: 54, borderRadius: 12, borderWidth: 2 },
   slotLabel: { position: "absolute", top: 9, color: "#FFD95A", fontSize: 14, fontWeight: "900" },
   compactSlotLabel: { fontSize: 11 },
   slotImage: { width: 110, height: 110, marginTop: 20, resizeMode: "contain" },
   compactSlotImage: { width: 78, height: 78 },
   denseSlotImage: { width: 56, height: 56 },
-  tinySlotImage: { width: 45, height: 45 },
+  tinySlotImage: { width: 30, height: 28 },
   slotArrow: { color: "#A7C7E8", fontSize: 42, fontWeight: "900" },
   feedback: {
     minHeight: 44,

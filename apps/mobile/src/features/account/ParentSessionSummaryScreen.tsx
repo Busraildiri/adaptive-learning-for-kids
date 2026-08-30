@@ -54,6 +54,26 @@ const insightThemes: Record<
     color: "#B45C60",
     background: "#FBEAEC",
   },
+  progressed_without_finishing: {
+    icon: "chart-line",
+    color: "#287A72",
+    background: "#E4F4F1",
+  },
+  returned_to_game: {
+    icon: "replay",
+    color: "#6C58A6",
+    background: "#EFEAF8",
+  },
+  completed_and_moved_on: {
+    icon: "arrow-right-circle-outline",
+    color: "#36758D",
+    background: "#E7F3F7",
+  },
+  difficulty_related_dropout: {
+    icon: "chart-timeline-variant-shimmer",
+    color: "#B2673D",
+    background: "#FFF0E5",
+  },
 };
 
 function statusMessage(summary: ParentSessionSummary): string {
@@ -239,6 +259,7 @@ export function ParentSessionSummaryScreen({
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
   const [showEvidenceDetails, setShowEvidenceDetails] = useState(false);
+  const [showOngoingGames, setShowOngoingGames] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -437,6 +458,64 @@ export function ParentSessionSummaryScreen({
               ) : null}
             </DetailCard>
           </View>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showOngoingGames }}
+            onPress={() => setShowOngoingGames((current) => !current)}
+            style={styles.ongoingCard}
+          >
+            <View style={styles.ongoingHeader}>
+              <View style={styles.ongoingIcon}>
+                <MaterialCommunityIcons color="#B56B3D" name="progress-clock" size={25} />
+              </View>
+              <View style={styles.insightCopy}>
+                <Text style={styles.ongoingTitle}>Devam eden etkinlikler</Text>
+                <Text style={styles.ongoingSubtitle}>
+                  {summary.ongoingGames.length > 0
+                    ? `${summary.ongoingGames.length} oyun yarıda bırakıldı veya devam ediyor.`
+                    : "Yarım bırakılmış oyun bulunmuyor."}
+                </Text>
+              </View>
+              <MaterialCommunityIcons
+                color="#9A6B50"
+                name={showOngoingGames ? "chevron-up" : "chevron-down"}
+                size={27}
+              />
+            </View>
+            {showOngoingGames ? (
+              <View style={styles.ongoingList}>
+                {summary.ongoingGames.length > 0 ? (
+                  summary.ongoingGames.map((ongoing, index) => (
+                    <View
+                      key={ongoing.gameId}
+                      style={[
+                        styles.ongoingRow,
+                        index < summary.ongoingGames.length - 1 && styles.rowBorder,
+                      ]}
+                    >
+                      <View style={styles.activityCopy}>
+                        <Text style={styles.activityTitle}>
+                          {gameTitles.get(ongoing.gameId) ?? "Oyun etkinliği"}
+                        </Text>
+                        <Text style={styles.activityDate}>
+                          Son oynama: {formatDate(ongoing.lastPlayedAt)}
+                          {ongoing.adaptiveLevel ? ` · Seviye ${ongoing.adaptiveLevel}` : ""}
+                        </Text>
+                      </View>
+                      <View style={styles.pausedPill}>
+                        <Text style={styles.pausedText}>
+                          {ongoing.outcome === "in_progress" ? "Devam ediyor" : "Yarıda bırakıldı"}
+                        </Text>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.emptyHistory}>Bütün oyunlar tamamlanmış görünüyor.</Text>
+                )}
+              </View>
+            ) : null}
+          </Pressable>
 
           <View style={styles.historyCard}>
             <View style={styles.historyHeader}>
@@ -769,6 +848,27 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: "#FFFFFF",
   },
+  ongoingCard: {
+    marginTop: 13,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: "#F0DCCF",
+    borderRadius: 22,
+    backgroundColor: "#FFF8F3",
+  },
+  ongoingHeader: { flexDirection: "row", alignItems: "center", gap: 11 },
+  ongoingIcon: {
+    width: 43,
+    height: 43,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 15,
+    backgroundColor: "#FFE9DA",
+  },
+  ongoingTitle: { color: "#70472F", fontSize: 17, fontWeight: "900" },
+  ongoingSubtitle: { marginTop: 3, color: "#8A6956", fontSize: 12, lineHeight: 17 },
+  ongoingList: { marginTop: 12, paddingTop: 3, borderTopWidth: 1, borderTopColor: "#F0DCCF" },
+  ongoingRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 11 },
   historyHeader: {
     flexDirection: "row",
     alignItems: "center",

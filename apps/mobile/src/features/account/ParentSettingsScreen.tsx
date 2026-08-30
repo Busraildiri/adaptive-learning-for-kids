@@ -7,7 +7,7 @@ import { formStyles } from "./formStyles";
 type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
 
 const settingsItems: Array<{
-  id: "pin" | "account" | "password" | "permissions";
+  id: "pin" | "account" | "password" | "permissions" | "children";
   title: string;
   description: string;
   icon: IconName;
@@ -39,6 +39,14 @@ const settingsItems: Array<{
     background: "#FCE9DE",
   },
   {
+    id: "children",
+    title: "Çocuk profillerini düzenle",
+    description: "Çocukların yaş, doğum ve profil bilgilerini yönetin",
+    icon: "account-child-outline",
+    color: "#B45F3E",
+    background: "#FCE9DE",
+  },
+  {
     id: "permissions",
     title: "İzinler",
     description: "Çocuk profillerinin veri ve kişiselleştirme tercihleri",
@@ -52,17 +60,20 @@ export function ParentSettingsScreen({
   onBack,
   onOpenAccount,
   onOpenPassword,
+  onOpenChildren,
   onOpenPermissions,
   onOpenPin,
 }: {
   onBack: () => void;
   onOpenAccount: () => void;
   onOpenPassword: () => void;
+  onOpenChildren: () => void;
   onOpenPermissions: () => void;
   onOpenPin: () => void;
 }) {
   const actions = {
     account: onOpenAccount,
+    children: onOpenChildren,
     password: onOpenPassword,
     permissions: onOpenPermissions,
     pin: onOpenPin,

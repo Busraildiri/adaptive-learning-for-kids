@@ -1,5 +1,6 @@
 import type { AgeBand, Asset, Game, Story } from "@adaptive/content-schema";
 import type { PublishedStoryExperience } from "@adaptive/media-schema";
+import type { GameProgressMap } from "../../services/gameProgress";
 import { DiscoveryScreen } from "./OlderDiscoveryScreen";
 
 interface StorySelectionScreenProps {
@@ -15,6 +16,7 @@ interface StorySelectionScreenProps {
   recommendedGameId: string | null;
   gameRecommendationExplanation: string | null;
   games: Game[];
+  gameProgress: GameProgressMap;
   onSelectGame: (gameId: string) => void;
   publishedStories?: PublishedStoryExperience[];
 }
@@ -31,6 +33,7 @@ export function StorySelectionScreen({
   recommendedStoryId,
   recommendedGameId,
   games,
+  gameProgress,
   onSelectGame,
   publishedStories = [],
 }: StorySelectionScreenProps) {
@@ -42,6 +45,7 @@ export function StorySelectionScreen({
       childName={childName}
       games={games}
       initialTab={initialTab}
+      gameProgress={gameProgress}
       onRequestParentArea={onRequestParentArea}
       onSelectGame={onSelectGame}
       onSelectStory={onSelectStory}

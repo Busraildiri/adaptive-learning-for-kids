@@ -36,7 +36,7 @@ const colorNames: Record<string, string> = {
   orange: "Turuncu",
 };
 
-export function FishPatternsGame({ game, onExit }: { game: FishGameContent; onExit: () => void }) {
+export function FishPatternsGame({ announceIntro = true, game, onExit, onRestart }: { announceIntro?: boolean; game: FishGameContent; onExit: () => void; onRestart: () => void }) {
   const report = useGameObservation();
   const [roundIndex, setRoundIndex] = useState(0);
   const [locked, setLocked] = useState(true);
@@ -50,8 +50,9 @@ export function FishPatternsGame({ game, onExit }: { game: FishGameContent; onEx
   const speak = useCallback(
     (text: string, done?: () => void) => {
       if (!game.presentation.playAudioInstructions) return done?.();
-      void Speech.stop();
-      Speech.speak(text, { language: "tr-TR", rate: 0.84, onDone: done, onStopped: done });
+      void Speech.stop().then(() =>
+        Speech.speak(text, { language: "tr-TR", rate: 0.84, onDone: done, onStopped: done }),
+      );
     },
     [game.presentation.playAudioInstructions],
   );
@@ -73,10 +74,12 @@ export function FishPatternsGame({ game, onExit }: { game: FishGameContent; onEx
     setWrongAttempts(0);
     setLocked(true);
     const intro =
-      roundIndex === 0 ? `${game.presentation.introNarration} ${round.prompt}` : round.prompt;
+      roundIndex === 0 && announceIntro
+        ? `${game.presentation.introNarration} ${round.prompt}`
+        : round.prompt;
     speak(intro, () => (round.kind === "sequence_memory" ? revealMemory() : setLocked(false)));
     return () => void Speech.stop();
-  }, [game.presentation.introNarration, revealMemory, round, roundIndex, speak]);
+  }, [announceIntro, game.presentation.introNarration, revealMemory, round, roundIndex, speak]);
 
   const finishRound = () => {
     setLocked(true);
@@ -116,11 +119,13 @@ export function FishPatternsGame({ game, onExit }: { game: FishGameContent; onEx
   const choose = (color: string) => {
     if (locked) return;
     if (round.kind === "color_prediction") {
+      report({ type: "attempt", stepId: round.id, correct: color === round.correctColor });
       if (color !== round.correctColor) return retry();
       setHighlighted(color);
       return finishRound();
     }
     const nextIndex = entered.length;
+    report({ type: "attempt", stepId: round.id, correct: color === round.sequence[nextIndex] });
     if (color !== round.sequence[nextIndex]) return retry();
     const next = [...entered, color];
     setEntered(next);
@@ -144,9 +149,10 @@ export function FishPatternsGame({ game, onExit }: { game: FishGameContent; onEx
             <Text style={styles.finishIcon}>✦</Text>
             <Text style={styles.finishTitle}>Göl tamamlandı!</Text>
             <Text style={styles.finishCopy}>{game.presentation.closingNarration}</Text>
-            <Pressable onPress={onExit} style={styles.exitButton}>
-              <Text style={styles.exitText}>Oyunlara dön</Text>
+            <Pressable onPress={onRestart} style={styles.exitButton}>
+              <Text style={styles.exitText}>Tekrar başlamak için dokun</Text>
             </Pressable>
+            <Pressable onPress={onExit}><Text style={styles.finishCopy}>Oyunlara dön</Text></Pressable>
           </View>
         </ImageBackground>
       </SafeAreaView>
@@ -232,7 +238,7 @@ const styles = StyleSheet.create({
   closeButton: {
     position: "absolute",
     zIndex: 3,
-    top: 12,
+    top: 28,
     left: 16,
     width: 52,
     height: 52,
@@ -258,7 +264,7 @@ const styles = StyleSheet.create({
   watch: { marginTop: 4, color: "#D56B32", fontSize: 16, fontWeight: "900", textAlign: "center" },
   lakeRow: {
     width: "100%",
-    maxWidth: 500,
+    maxWidth: 410,
     minHeight: 180,
     flexDirection: "row",
     flexWrap: "wrap",
