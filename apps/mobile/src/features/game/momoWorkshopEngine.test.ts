@@ -109,7 +109,7 @@ describe("momoWorkshopEngine", () => {
     expect(isMomoRewardLevel(160)).toBe(false);
   });
 
-  it("varies Momo task count and introduces new workshop mechanics", () => {
+  it("makes every Momo level one distinct workshop task", () => {
     const baseRounds = [
       {
         id: "cables",
@@ -139,13 +139,19 @@ describe("momoWorkshopEngine", () => {
       },
     ];
 
-    expect(momoRoundsForLevel(baseRounds, 1)).toHaveLength(1);
-    expect(momoRoundsForLevel(baseRounds, 5)).toHaveLength(2);
-    expect(momoRoundsForLevel(baseRounds, 11).some((round) => round.kind === "gear_match")).toBe(
-      true,
+    const firstCycle = Array.from(
+      { length: 5 },
+      (_, index) => momoRoundsForLevel(baseRounds, index + 1)[0]?.kind,
     );
-    expect(momoRoundsForLevel(baseRounds, 31).some((round) => round.kind === "odd_part")).toBe(
-      true,
-    );
+    expect(firstCycle).toEqual([
+      "crystal_count",
+      "pattern_shape",
+      "gear_match",
+      "odd_part",
+      "cable_match",
+    ]);
+    expect(new Set(firstCycle)).toHaveLength(5);
+    expect(momoRoundsForLevel(baseRounds, 6)[0]?.kind).toBe("crystal_count");
+    expect(momoRoundsForLevel(baseRounds, 7)[0]?.kind).toBe("pattern_shape");
   });
 });

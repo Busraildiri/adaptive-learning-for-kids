@@ -26,12 +26,6 @@ const shapeLabels: Record<MomoShape, string> = {
   triangle: "üçgen",
 };
 
-function rotateRounds<T>(items: readonly T[], offset: number): T[] {
-  if (items.length === 0) return [];
-  const normalizedOffset = ((offset % items.length) + items.length) % items.length;
-  return [...items.slice(normalizedOffset), ...items.slice(0, normalizedOffset)];
-}
-
 export function momoRoundPrompt(round: MomoPlayableRound): string {
   if (round.kind === "crystal_count") {
     return `${round.targetCount} enerji kristalini Momo'nun piline koy.`;
@@ -80,14 +74,11 @@ export function momoRoundsForLevel(
     choices: Array.from({ length: 5 }, (_, index) => (index === oddIndex ? oddShape : commonShape)),
     correctIndex: oddIndex,
   };
-  const count = level <= 3 ? 1 : level <= 9 ? 2 : 3;
-  const rotatedBase = rotateRounds(leveledBase, level - 1);
-  if (level >= 31) {
-    const featured = level % 2 === 0 ? gearRound : oddRound;
-    return [featured, ...rotatedBase].slice(0, count);
-  }
-  if (level >= 11) return [gearRound, ...rotatedBase].slice(0, count);
-  return rotatedBase.slice(0, Math.min(count, rotatedBase.length));
+  const [cables, crystals, pattern] = leveledBase;
+  const levelCycle = [crystals, pattern, gearRound, oddRound, cables].filter(
+    (round): round is MomoPlayableRound => Boolean(round),
+  );
+  return [levelCycle[(level - 1) % levelCycle.length] as MomoPlayableRound];
 }
 
 export function boundedMomoItemCount(itemCount: number): number {
