@@ -52,7 +52,6 @@ export function ParentHomeScreen({
   const [panel, setPanel] = useState<ParentPanel>("home");
   const [settingsChild, setSettingsChild] = useState<ChildProfile | null>(null);
   const [summaryChild, setSummaryChild] = useState<ChildProfile | null>(null);
-  const [completedGamesChild, setCompletedGamesChild] = useState<ChildProfile | null>(null);
   const [startingChildId, setStartingChildId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,13 +97,9 @@ export function ParentHomeScreen({
     return <ParentSessionSummaryScreen child={summaryChild} onBack={() => setSummaryChild(null)} />;
   }
 
-  if (completedGamesChild) {
+  if (panel === "completed-games") {
     return (
-      <CompletedGamesScreen
-        child={completedGamesChild}
-        games={games}
-        onBack={() => setCompletedGamesChild(null)}
-      />
+      <CompletedGamesScreen children={children} games={games} onBack={() => setPanel("settings")} />
     );
   }
 
@@ -136,6 +131,7 @@ export function ParentHomeScreen({
         onOpenAccount={() => setPanel("account")}
         onOpenPassword={() => setPanel("password")}
         onOpenChildren={() => setPanel("children")}
+        onOpenCompletedGames={() => setPanel("completed-games")}
         onOpenPermissions={() => setPanel("permissions")}
         onOpenPin={() => setPanel("pin")}
       />
@@ -186,9 +182,6 @@ export function ParentHomeScreen({
             <View style={styles.childActions}>
               <Pressable onPress={() => setSummaryChild(child)} style={styles.summaryButton}>
                 <Text style={styles.summaryButtonText}>Özet</Text>
-              </Pressable>
-              <Pressable onPress={() => setCompletedGamesChild(child)} style={styles.summaryButton}>
-                <Text style={styles.summaryButtonText}>Tamamlananlar</Text>
               </Pressable>
               <Pressable
                 disabled={!canStart || startingChildId !== null}

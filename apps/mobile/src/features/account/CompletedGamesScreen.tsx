@@ -10,20 +10,22 @@ import {
 import { AccountShell } from "./AccountShell";
 
 export function CompletedGamesScreen({
-  child,
+  children,
   games,
   onBack,
 }: {
-  child: ChildProfile;
+  children: ChildProfile[];
   games: Game[];
   onBack: () => void;
 }) {
+  const [child, setChild] = useState<ChildProfile | null>(null);
   const [progress, setProgress] = useState<GameProgressMap | null>(null);
   const [restoringId, setRestoringId] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
+    if (!child) return;
     void loadGameProgress(child.id).then(setProgress);
-  }, [child.id]);
+  }, [child]);
 
   useEffect(() => {
     refresh();
@@ -31,35 +33,56 @@ export function CompletedGamesScreen({
 
   const completed = games.filter((game) => progress?.[game.id]?.completed);
   return (
-    <AccountShell subtitle={`${child.nickname} için bitirilen oyunlar.`} title="Tamamlanan oyunlar">
-      {progress === null ? <ActivityIndicator color="#2D8C7C" /> : null}
-      {progress !== null && completed.length === 0 ? (
+    <AccountShell
+      subtitle={child ? `${child.nickname} için bitirilen oyunlar.` : "Bir çocuk profili seçin."}
+      title="Tamamlanan oyunlar"
+    >
+      {!child ? (
+        <View style={styles.profileList}>
+          {children.map((profile) => (
+            <Pressable
+              key={profile.id}
+              onPress={() => {
+                setProgress(null);
+                setChild(profile);
+              }}
+              style={styles.profile}
+            >
+              <Text style={styles.profileName}>{profile.nickname}</Text>
+              <Text style={styles.profileHint}>Tamamlanan oyunları görüntüle</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+      {child && progress === null ? <ActivityIndicator color="#2D8C7C" /> : null}
+      {child && progress !== null && completed.length === 0 ? (
         <Text style={styles.empty}>Henüz tamamlanan bir oyun yok.</Text>
       ) : null}
-      {completed.map((game) => (
-        <View key={game.id} style={styles.card}>
-          <View style={styles.copy}>
-            <Text style={styles.title}>{game.title}</Text>
-            <Text style={styles.detail}>Çocuk ekranında gizli</Text>
+      {child &&
+        completed.map((game) => (
+          <View key={game.id} style={styles.card}>
+            <View style={styles.copy}>
+              <Text style={styles.title}>{game.title}</Text>
+              <Text style={styles.detail}>Çocuk ekranında gizli</Text>
+            </View>
+            <Pressable
+              disabled={restoringId !== null}
+              onPress={() => {
+                setRestoringId(game.id);
+                void restartCompletedGame(child.id, game.id)
+                  .then(setProgress)
+                  .finally(() => setRestoringId(null));
+              }}
+              style={[styles.restore, restoringId !== null && styles.disabled]}
+            >
+              <Text style={styles.restoreText}>
+                {restoringId === game.id ? "Yükleniyor..." : "Yeniden etkinleştir"}
+              </Text>
+            </Pressable>
           </View>
-          <Pressable
-            disabled={restoringId !== null}
-            onPress={() => {
-              setRestoringId(game.id);
-              void restartCompletedGame(child.id, game.id)
-                .then(setProgress)
-                .finally(() => setRestoringId(null));
-            }}
-            style={[styles.restore, restoringId !== null && styles.disabled]}
-          >
-            <Text style={styles.restoreText}>
-              {restoringId === game.id ? "Yükleniyor..." : "Yeniden etkinleştir"}
-            </Text>
-          </Pressable>
-        </View>
-      ))}
-      <Pressable onPress={onBack} style={styles.back}>
-        <Text style={styles.backText}>Geri dön</Text>
+        ))}
+      <Pressable onPress={child ? () => setChild(null) : onBack} style={styles.back}>
+        <Text style={styles.backText}>{child ? "Çocuk seçimine dön" : "Ayarlara dön"}</Text>
       </Pressable>
     </AccountShell>
   );
@@ -67,6 +90,10 @@ export function CompletedGamesScreen({
 
 const styles = StyleSheet.create({
   empty: { color: "#75685E", fontSize: 16, textAlign: "center" },
+  profileList: { gap: 11 },
+  profile: { padding: 15, borderRadius: 16, backgroundColor: "#FFFCF7" },
+  profileName: { color: "#3F352E", fontSize: 17, fontWeight: "900" },
+  profileHint: { marginTop: 4, color: "#75685E", fontSize: 13 },
   card: {
     flexDirection: "row",
     alignItems: "center",

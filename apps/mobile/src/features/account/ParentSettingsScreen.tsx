@@ -7,7 +7,7 @@ import { formStyles } from "./formStyles";
 type IconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
 
 const settingsItems: Array<{
-  id: "pin" | "account" | "password" | "permissions" | "children";
+  id: "pin" | "account" | "password" | "permissions" | "children" | "completed-games";
   title: string;
   description: string;
   icon: IconName;
@@ -47,6 +47,14 @@ const settingsItems: Array<{
     background: "#FCE9DE",
   },
   {
+    id: "completed-games",
+    title: "Tamamlanan oyunlar",
+    description: "Bitirilen oyunları görüntüleyin ve yeniden etkinleştirin",
+    icon: "gamepad-variant-outline",
+    color: "#3379A1",
+    background: "#E3F1F8",
+  },
+  {
     id: "permissions",
     title: "İzinler",
     description: "Çocuk profillerinin veri ve kişiselleştirme tercihleri",
@@ -61,6 +69,7 @@ export function ParentSettingsScreen({
   onOpenAccount,
   onOpenPassword,
   onOpenChildren,
+  onOpenCompletedGames,
   onOpenPermissions,
   onOpenPin,
 }: {
@@ -68,12 +77,14 @@ export function ParentSettingsScreen({
   onOpenAccount: () => void;
   onOpenPassword: () => void;
   onOpenChildren: () => void;
+  onOpenCompletedGames: () => void;
   onOpenPermissions: () => void;
   onOpenPin: () => void;
 }) {
   const actions = {
     account: onOpenAccount,
     children: onOpenChildren,
+    "completed-games": onOpenCompletedGames,
     password: onOpenPassword,
     permissions: onOpenPermissions,
     pin: onOpenPin,
