@@ -808,6 +808,8 @@ const miniIconSchema = z.enum([
   "riko-inside",
   "riko-under",
   "riko-on",
+  "riko-left",
+  "riko-right",
   "zuzu-circle",
   "zuzu-square",
   "zuzu-triangle",
