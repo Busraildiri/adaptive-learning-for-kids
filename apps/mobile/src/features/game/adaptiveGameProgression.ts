@@ -12,6 +12,19 @@ const balloonColorNames = {
   cyan: "turkuaz",
 } as const;
 
+const turkishObjectCounts: Record<number, string> = {
+  1: "bir",
+  2: "iki",
+  3: "üç",
+  4: "dört",
+  5: "beş",
+  6: "altı",
+  7: "yedi",
+  8: "sekiz",
+  9: "dokuz",
+  10: "on",
+};
+
 // These are the additional illustrated Pati objects. They stay outside the
 // five starter rounds, but join the adaptive pool as distinct visuals.
 const patiVisualObjects: SortObject[] = [
@@ -503,9 +516,20 @@ export function adaptGameComplexity(
       ],
       challengeIndex,
     );
+    const instruction = sourceRound.instruction.replace(
+      /Şimdi dört nesne var\./,
+      `Şimdi ${turkishObjectCounts[objects.length] ?? objects.length} nesne var.`,
+    );
     return {
       ...game,
-      rounds: [{ ...sourceRound, id: `${sourceRound.id}-adaptive-${challengeIndex}`, objects }],
+      rounds: [
+        {
+          ...sourceRound,
+          id: `${sourceRound.id}-adaptive-${challengeIndex}`,
+          instruction,
+          objects,
+        },
+      ],
     };
   }
 

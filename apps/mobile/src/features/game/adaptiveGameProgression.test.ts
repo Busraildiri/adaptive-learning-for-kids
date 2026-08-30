@@ -189,6 +189,17 @@ describe("adaptive game progression", () => {
     }
   });
 
+  it("states the number of Pati objects that are actually shown", () => {
+    const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
+    if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
+
+    const adapted = adaptGameComplexity(pati, 2, 3);
+    if (adapted.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
+
+    expect(adapted.rounds[0]?.objects).toHaveLength(2);
+    expect(adapted.rounds[0]?.instruction).toContain("Şimdi iki nesne var.");
+  });
+
   it("audits every level of every published game for bounded adaptive content", () => {
     for (const game of publishedGames) {
       const maximumLevel = maxAdaptiveLevelForGame(game);
