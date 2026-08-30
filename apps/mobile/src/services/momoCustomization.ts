@@ -1,5 +1,5 @@
 import type { MomoPartVisual } from "@adaptive/content-schema";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 import { supabase } from "../lib/supabase";
 
 export type MomoCustomization = {
@@ -29,13 +29,13 @@ function normalizeCustomization(value: Partial<MomoCustomization> | null): MomoC
 }
 
 export async function loadMomoCustomization(childId: string): Promise<MomoCustomization> {
-  const localValue = await AsyncStorage.getItem(storageKey(childId));
+  const localValue = await SecureStore.getItemAsync(storageKey(childId));
   let local = emptyCustomization();
   if (localValue) {
     try {
       local = normalizeCustomization(JSON.parse(localValue) as Partial<MomoCustomization>);
     } catch {
-      await AsyncStorage.removeItem(storageKey(childId));
+      await SecureStore.deleteItemAsync(storageKey(childId));
     }
   }
   if (!supabase) return local;
@@ -49,7 +49,9 @@ export async function loadMomoCustomization(childId: string): Promise<MomoCustom
     selectedPart: data.selected_part_id,
     unlockedMilestones: data.unlocked_milestones,
   });
-  await AsyncStorage.setItem(storageKey(childId), JSON.stringify(remote));
+  await SecureStore.setItemAsync(storageKey(childId), JSON.stringify(remote), {
+    keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+  });
   return remote;
 }
 
@@ -63,7 +65,9 @@ export async function saveMomoCustomization(
     selectedPart: selectedPartId,
     unlockedMilestones: [...current.unlockedMilestones, milestoneLevel],
   });
-  await AsyncStorage.setItem(storageKey(childId), JSON.stringify(next));
+  await SecureStore.setItemAsync(storageKey(childId), JSON.stringify(next), {
+    keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+  });
   if (!supabase) return;
   const { error } = await supabase.from("child_momo_customizations").upsert(
     {
