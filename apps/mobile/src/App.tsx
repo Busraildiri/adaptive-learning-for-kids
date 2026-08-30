@@ -44,6 +44,7 @@ import {
   loadGameProgress,
   restartCompletedGame,
   saveGameProgress,
+  shouldRestartGameOnLaunch,
 } from "./services/gameProgress";
 import { initializeInteractionEventSync } from "./services/interactionEvents";
 import { loadPublishedStoryExperiences } from "./services/storyExperiences";
@@ -498,7 +499,7 @@ export default function App() {
           onSelectGame={(gameId) => {
             setDiscoveryTab("games");
             setSelectedStoryId(null);
-            if (gameProgress[gameId]?.completed) {
+            if (shouldRestartGameOnLaunch(gameId, gameProgress[gameId])) {
               void restartCompletedGame(activeChild.id, gameId).then((next) => {
                 setGameProgress(next);
                 setSelectedGameId(gameId);

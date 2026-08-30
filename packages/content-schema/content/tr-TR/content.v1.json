@@ -1719,7 +1719,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "maya-morning-order-001",
-      "version": 2,
+      "version": 3,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "mini_challenge",
@@ -1744,6 +1744,17 @@
           "correctSequence": ["brush", "dress"]
         },
         {
+          "id": "wash-comb",
+          "kind": "sequence",
+          "prompt": "Önce yüzünü yıka, sonra saçını tara.",
+          "choices": [
+            { "id": "wash", "label": "Yüzünü yıka", "icon": "maya-wash-face" },
+            { "id": "comb", "label": "Saçını tara", "icon": "maya-comb-hair" },
+            { "id": "brush", "label": "Diş fırçala", "icon": "maya-brush" }
+          ],
+          "correctSequence": ["wash", "comb"]
+        },
+        {
           "id": "dress-breakfast",
           "kind": "sequence",
           "prompt": "Önce giyin, sonra kahvaltı yap.",
@@ -1754,6 +1765,17 @@
           "correctSequence": ["dress", "eat"]
         },
         {
+          "id": "dress-shoes",
+          "kind": "sequence",
+          "prompt": "Önce giyin, sonra ayakkabılarını giy.",
+          "choices": [
+            { "id": "dress", "label": "Giyin", "icon": "maya-shirt" },
+            { "id": "shoes", "label": "Ayakkabılarını giy", "icon": "maya-shoes" },
+            { "id": "eat", "label": "Kahvaltı", "icon": "maya-breakfast" }
+          ],
+          "correctSequence": ["dress", "shoes"]
+        },
+        {
           "id": "brush-breakfast",
           "kind": "sequence",
           "prompt": "Önce dişlerini fırçala, sonra kahvaltı yap.",
@@ -1762,6 +1784,17 @@
             { "id": "eat", "label": "Kahvaltı", "icon": "maya-breakfast" }
           ],
           "correctSequence": ["brush", "eat"]
+        },
+        {
+          "id": "wash-brush-comb",
+          "kind": "sequence",
+          "prompt": "Önce yüzünü yıka, sonra dişlerini fırçala, en son saçını tara.",
+          "choices": [
+            { "id": "wash", "label": "Yüzünü yıka", "icon": "maya-wash-face" },
+            { "id": "brush", "label": "Diş fırçala", "icon": "maya-brush" },
+            { "id": "comb", "label": "Saçını tara", "icon": "maya-comb-hair" }
+          ],
+          "correctSequence": ["wash", "brush", "comb"]
         },
         {
           "id": "brush-dress-breakfast",
@@ -1775,6 +1808,17 @@
           "correctSequence": ["brush", "dress", "eat"]
         },
         {
+          "id": "comb-dress-shoes",
+          "kind": "sequence",
+          "prompt": "Önce saçını tara, sonra giyin, en son ayakkabılarını giy.",
+          "choices": [
+            { "id": "comb", "label": "Saçını tara", "icon": "maya-comb-hair" },
+            { "id": "dress", "label": "Giyin", "icon": "maya-shirt" },
+            { "id": "shoes", "label": "Ayakkabılarını giy", "icon": "maya-shoes" }
+          ],
+          "correctSequence": ["comb", "dress", "shoes"]
+        },
+        {
           "id": "brush-breakfast-dress",
           "kind": "sequence",
           "prompt": "Son üç adım: önce dişlerini fırçala, sonra kahvaltı yap, en son giyin.",
@@ -1784,6 +1828,18 @@
             { "id": "dress", "label": "Giyin", "icon": "maya-shirt" }
           ],
           "correctSequence": ["brush", "eat", "dress"]
+        },
+        {
+          "id": "wash-comb-dress-shoes",
+          "kind": "sequence",
+          "prompt": "Dört adımı sırala: yüzünü yıka, saçını tara, giyin ve ayakkabılarını giy.",
+          "choices": [
+            { "id": "wash", "label": "Yüzünü yıka", "icon": "maya-wash-face" },
+            { "id": "comb", "label": "Saçını tara", "icon": "maya-comb-hair" },
+            { "id": "dress", "label": "Giyin", "icon": "maya-shirt" },
+            { "id": "shoes", "label": "Ayakkabılarını giy", "icon": "maya-shoes" }
+          ],
+          "correctSequence": ["wash", "comb", "dress", "shoes"]
         }
       ],
       "feedback": { "matched": "Doğru sıra!", "retry": "Sırayı yeniden düşünelim." },

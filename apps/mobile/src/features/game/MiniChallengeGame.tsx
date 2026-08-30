@@ -21,7 +21,23 @@ const rhythm: Record<string, ImageSourcePropType> = {
   clap: require("../../../assets/game/rhythm/rhythm-clap-v1.png"),
   bell: require("../../../assets/game/rhythm/rhythm-bell-v1.png"),
   drum: require("../../../assets/game/rhythm/rhythm-drum-v1.png"),
+  maracas: require("../../../assets/game/rhythm/rhythm-maracas-v1.png"),
+  tambourine: require("../../../assets/game/rhythm/rhythm-tambourine-v1.png"),
+  "triangle-instrument": require("../../../assets/game/rhythm/rhythm-triangle-v1.png"),
+  xylophone: require("../../../assets/game/rhythm/rhythm-xylophone-v1.png"),
+  cymbals: require("../../../assets/game/rhythm/rhythm-cymbals-v1.png"),
+  trumpet: require("../../../assets/game/rhythm/rhythm-trumpet-v1.png"),
+  guitar: require("../../../assets/game/rhythm/rhythm-guitar-v1.png"),
+  "wood-block": require("../../../assets/game/rhythm/rhythm-wood-block-v1.png"),
 };
+
+void Promise.all(
+  Object.values(rhythm).map((source) => {
+    const uri = Image.resolveAssetSource(source).uri;
+    return Image.prefetch(uri);
+  }),
+).catch(() => undefined);
+
 const lumiSounds: Record<string, number> = {
   "cat-sound": require("../../../assets/audio/lumi/cat.mp3"),
   "dog-sound": require("../../../assets/audio/lumi/dog.mp3"),
@@ -33,6 +49,9 @@ const illustratedIcons: Record<string, ImageSourcePropType> = {
   "maya-brush": require("../../../assets/game/mini/maya-brush.png"),
   "maya-shirt": require("../../../assets/game/mini/maya-shirt.png"),
   "maya-breakfast": require("../../../assets/game/mini/maya-breakfast.png"),
+  "maya-wash-face": require("../../../assets/game/mini/maya-wash-face.png"),
+  "maya-comb-hair": require("../../../assets/game/mini/maya-comb-hair.png"),
+  "maya-shoes": require("../../../assets/game/mini/maya-shoes.png"),
   "riko-inside": require("../../../assets/game/mini/riko-inside.png"),
   "riko-under": require("../../../assets/game/mini/riko-under.png"),
   "riko-on": require("../../../assets/game/mini/riko-on.png"),
@@ -112,9 +131,12 @@ function MiniVisual({
       <Image
         source={image}
         style={[
-          illustratedIcons[icon] ? styles.illustratedImage : styles.rhythmImage,
+          illustratedIcons[icon]
+            ? styles.illustratedImage
+            : [styles.rhythmImage, { width: size * 1.5, height: size * 1.25 }],
           { transform: [{ rotate: `${rotationDegrees}deg` }] },
         ]}
+        resizeMode="contain"
       />
     );
   }
@@ -341,6 +363,7 @@ export function MiniChallengeGame({
   const isLumi = game.id === "lumi-sound-hunt-001";
   const isZuzu = game.id === "zuzu-missing-piece-001";
   const isZuzuFourChoices = isZuzu && round.choices.length === 4;
+  const isExpandedRhythm = round.kind === "rhythm" && round.choices.length > 3;
   const correctChoice = round.choices.find((choice) => choice.id === round.correctSequence[0]);
   const speak = useCallback(
     (text: string, done?: () => void) => {
@@ -509,7 +532,6 @@ export function MiniChallengeGame({
         speak(message);
       } else {
         setWrong(1);
-        report({ type: "retry", stepId: round.id });
         setFeedback(game.feedback.retry);
         if (game.id === "toko-little-map-001") setLocked(true);
         const replay =
@@ -625,6 +647,7 @@ export function MiniChallengeGame({
             (round.previewIcon || round.soundCue || game.id === "toko-little-map-001" || isRiko) &&
               styles.compactChoices,
             isToko && styles.tokoChoices,
+            isExpandedRhythm && styles.expandedRhythmChoices,
           ]}
         >
           {round.choices.map((choice) => (
@@ -638,6 +661,7 @@ export function MiniChallengeGame({
                 isZuzuFourChoices && styles.zuzuFourChoice,
                 (round.previewIcon || round.soundCue || isToko || isRiko) && styles.compactChoice,
                 isToko && styles.tokoChoice,
+                isExpandedRhythm && styles.expandedRhythmChoice,
                 highlight === choice.id && styles.highlight,
                 tappedChoice === choice.id && styles.tappedChoice,
                 pressed && styles.choicePressed,
@@ -674,10 +698,16 @@ export function MiniChallengeGame({
                   icon={choice.icon}
                   rotationDegrees={choice.rotationDegrees}
                   silhouette={choice.silhouette}
-                  size={isToko ? 54 : 72}
+                  size={isToko || isExpandedRhythm ? 54 : 72}
                 />
               )}
-              <Text style={[styles.label, isZuzuFourChoices && styles.zuzuFourLabel]}>
+              <Text
+                style={[
+                  styles.label,
+                  isZuzuFourChoices && styles.zuzuFourLabel,
+                  isExpandedRhythm && styles.expandedRhythmLabel,
+                ]}
+              >
                 {choice.label}
               </Text>
             </Pressable>
@@ -888,6 +918,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   compactChoices: { marginTop: 18 },
+  expandedRhythmChoices: { gap: 8, marginTop: 20 },
+  expandedRhythmChoice: { width: "30%", minHeight: 128, paddingHorizontal: 4 },
   compactChoice: { minHeight: 118 },
   tokoChoices: { marginTop: 12, gap: 8 },
   tokoChoice: { width: "47%", minHeight: 96, paddingVertical: 6, paddingHorizontal: 5 },
@@ -930,6 +962,7 @@ const styles = StyleSheet.create({
   },
   compactPieceCell: { width: 19, height: 19, borderRadius: 5 },
   label: { marginTop: 7, color: "#493C38", fontSize: 18, fontWeight: "900", textAlign: "center" },
+  expandedRhythmLabel: { minHeight: 32, marginTop: 3, fontSize: 14, lineHeight: 16 },
   zuzuFourLabel: { minHeight: 34, marginTop: 4, fontSize: 14, lineHeight: 17 },
   feedback: {
     minHeight: 30,
