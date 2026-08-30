@@ -274,7 +274,10 @@ export default function App() {
   useEffect(() => {
     if (!activeChild) return;
     const eligibleGames = availableGames.filter(
-      (game) => game.status === "published" && game.ageBand === activeChild.ageBand,
+      (game) =>
+        game.status === "published" &&
+        game.ageBand === activeChild.ageBand &&
+        !gameProgress[game.id]?.completed,
     );
     const currentGame =
       eligibleGames.find(
@@ -324,7 +327,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [activeChild, availableGames, gameRecommendationRevision, lastPlayedBktGameId]);
+  }, [activeChild, availableGames, gameProgress, gameRecommendationRevision, lastPlayedBktGameId]);
 
   useEffect(() => {
     if (!activeChild) {
@@ -431,6 +434,7 @@ export default function App() {
     const eligibleGames = availableGames.filter(
       (game) => game.status === "published" && game.ageBand === activeChild.ageBand,
     );
+    const playableGames = eligibleGames.filter((game) => !gameProgress[game.id]?.completed);
     const selectedGame = eligibleGames.find((game) => game.id === selectedGameId);
     const eligiblePublishedStories = publishedStories.filter((experience) =>
       experience.ageBands.includes(activeChild.ageBand),
@@ -446,7 +450,7 @@ export default function App() {
         <TrackedGame
           child={activeChild}
           game={selectedGame}
-          games={eligibleGames.filter((game) => !gameProgress[game.id]?.completed)}
+          games={playableGames}
           initialProgress={gameProgress[selectedGame.id]}
           onExit={() => {
             if (
@@ -486,7 +490,7 @@ export default function App() {
           catalogSessionSeed={catalogSessionSeed}
           childName={activeChild.nickname}
           gameRecommendationExplanation={gameRecommendationExplanation}
-          games={eligibleGames}
+          games={playableGames}
           initialTab={discoveryTab}
           gameProgress={gameProgress}
           onRequestParentArea={() => setShowParentPinGate(true)}
