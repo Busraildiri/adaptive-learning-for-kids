@@ -153,5 +153,12 @@ describe("momoWorkshopEngine", () => {
     expect(new Set(firstCycle)).toHaveLength(5);
     expect(momoRoundsForLevel(baseRounds, 6)[0]?.kind).toBe("crystal_count");
     expect(momoRoundsForLevel(baseRounds, 7)[0]?.kind).toBe("pattern_shape");
+
+    const cablePairCounts = [5, 10, 15, 20].map((level) => {
+      const round = momoRoundsForLevel(baseRounds, level)[0];
+      if (round?.kind !== "cable_match") throw new Error(`Expected cables at level ${level}`);
+      return round.endpoints.length / 2;
+    });
+    expect(cablePairCounts).toEqual([2, 3, 4, 5]);
   });
 });

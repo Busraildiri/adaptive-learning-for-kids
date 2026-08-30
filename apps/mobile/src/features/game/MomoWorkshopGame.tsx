@@ -37,6 +37,8 @@ const cableColors = {
   coral: "#F37970",
   blue: "#4B8FE8",
   yellow: "#F3BF3D",
+  green: "#4BAF78",
+  purple: "#8B6DDB",
 } as const;
 
 const shapeColors: Record<MomoShape, string> = {

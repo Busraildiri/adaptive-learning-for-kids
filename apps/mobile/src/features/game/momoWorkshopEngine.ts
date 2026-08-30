@@ -42,6 +42,7 @@ export function momoRoundsForLevel(
   adaptiveLevel: number,
 ): MomoPlayableRound[] {
   const level = Math.max(1, Math.min(150, Math.floor(adaptiveLevel)));
+  const occurrence = Math.floor((level - 1) / 5) + 1;
   const leveledBase = baseRounds.map((round): MomoWorkshopRound => {
     if (round.kind === "cable_match" && level >= 31) {
       return { ...round, prompt: "Enerji devresindeki eş renkli bağlantıları tamamla." };
@@ -57,27 +58,90 @@ export function momoRoundsForLevel(
     }
     return round;
   });
+  const gearChoiceCount = Math.min(5, 2 + occurrence);
   const gearRound: MomoBonusRound = {
     id: `momo-gear-${level}`,
     kind: "gear_match",
     prompt: "Boşluğa uyan büyüklükteki dişliyi seç.",
-    targetSize: 1 + (level % 3),
-    choices: [1, 2, 3],
+    targetSize: 1 + ((occurrence - 1) % gearChoiceCount),
+    choices: Array.from({ length: gearChoiceCount }, (_, index) => index + 1),
   };
-  const oddIndex = level % 5;
+  const oddChoiceCount = Math.min(25, 4 + occurrence);
+  const oddIndex = level % oddChoiceCount;
   const commonShape: MomoShape = level % 2 === 0 ? "circle" : "square";
   const oddShape: MomoShape = commonShape === "circle" ? "triangle" : "circle";
   const oddRound: MomoBonusRound = {
     id: `momo-odd-${level}`,
     kind: "odd_part",
     prompt: "Diğerlerinden farklı olan arızalı parçayı bul.",
-    choices: Array.from({ length: 5 }, (_, index) => (index === oddIndex ? oddShape : commonShape)),
+    choices: Array.from({ length: oddChoiceCount }, (_, index) =>
+      index === oddIndex ? oddShape : commonShape,
+    ),
     correctIndex: oddIndex,
   };
   const [cables, crystals, pattern] = leveledBase;
-  const levelCycle = [crystals, pattern, gearRound, oddRound, cables].filter(
-    (round): round is MomoPlayableRound => Boolean(round),
+  const colors = ["coral", "blue", "yellow", "green", "purple"] as const;
+  const pairCount = Math.min(5, 1 + occurrence);
+  const expandedCables =
+    cables?.kind === "cable_match"
+      ? {
+          ...cables,
+          id: `${cables.id}-encounter-${occurrence}`,
+          endpoints: colors.slice(0, pairCount).flatMap((color, index) => [
+            {
+              id: `${color}-left-${occurrence}`,
+              label: `Sol ${color} kablo ucu`,
+              color,
+              matchKey: `${color}-${index}`,
+              side: "left" as const,
+            },
+            {
+              id: `${color}-right-${occurrence}`,
+              label: `Sağ ${color} kablo ucu`,
+              color,
+              matchKey: `${color}-${index}`,
+              side: "right" as const,
+            },
+          ]),
+        }
+      : cables;
+  const crystalCount = Math.min(
+    25,
+    Math.max(crystals?.kind === "crystal_count" ? crystals.crystalCount : 2, 2 + occurrence),
   );
+  const expandedCrystals =
+    crystals?.kind === "crystal_count"
+      ? {
+          ...crystals,
+          id: `${crystals.id}-encounter-${occurrence}`,
+          crystalCount,
+          targetCount: 1 + ((occurrence - 1) % crystalCount),
+        }
+      : crystals;
+  const patternLength = Math.min(
+    24,
+    Math.max(pattern?.kind === "pattern_shape" ? pattern.sequence.length : 2, 2 + occurrence),
+  );
+  const expandedPattern =
+    pattern?.kind === "pattern_shape"
+      ? {
+          ...pattern,
+          id: `${pattern.id}-encounter-${occurrence}`,
+          sequence: Array.from(
+            { length: patternLength },
+            (_, index) => pattern.sequence[index % pattern.sequence.length] as MomoShape,
+          ),
+          correctShape:
+            pattern.sequence[patternLength % pattern.sequence.length] ?? pattern.correctShape,
+        }
+      : pattern;
+  const levelCycle = [
+    expandedCrystals,
+    expandedPattern,
+    gearRound,
+    oddRound,
+    expandedCables,
+  ].filter((round): round is MomoPlayableRound => Boolean(round));
   return [levelCycle[(level - 1) % levelCycle.length] as MomoPlayableRound];
 }
 
