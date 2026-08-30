@@ -13,8 +13,10 @@ import {
   PanResponder,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   Vibration,
   View,
 } from "react-native";
@@ -438,16 +440,31 @@ function PatternShapeRound({
   reveal: boolean;
   onChoose: (shape: MomoShape) => void;
 }) {
+  const { width } = useWindowDimensions();
+  const tileSize = Math.max(48, Math.min(64, Math.floor((width - 58) / 5)));
+  const choiceSize = Math.max(82, Math.min(104, Math.floor((width - 72) / 3)));
   return (
     <View style={styles.patternRound}>
       <View style={styles.patternSequence}>
         {sequence.map((shape, index) => (
-          <View key={`${shape}-${index}`} style={styles.patternTile}>
-            <ShapeArt shape={shape} size={44} />
+          <View
+            key={`${shape}-${index}`}
+            style={[
+              styles.patternTile,
+              { borderRadius: tileSize * 0.28, height: tileSize, width: tileSize },
+            ]}
+          >
+            <ShapeArt shape={shape} size={Math.floor(tileSize * 0.62)} />
           </View>
         ))}
-        <View style={[styles.patternTile, styles.missingTile]}>
-          <Text style={styles.questionMark}>?</Text>
+        <View
+          style={[
+            styles.patternTile,
+            styles.missingTile,
+            { borderRadius: tileSize * 0.28, height: tileSize, width: tileSize },
+          ]}
+        >
+          <Text style={[styles.questionMark, { fontSize: Math.floor(tileSize * 0.58) }]}>?</Text>
         </View>
       </View>
       <View style={styles.shapeChoices}>
@@ -459,11 +476,12 @@ function PatternShapeRound({
             onPress={() => onChoose(shape)}
             style={({ pressed }) => [
               styles.shapeChoice,
+              { borderRadius: choiceSize * 0.25, height: choiceSize, width: choiceSize },
               reveal && shape === correctShape && styles.highlighted,
               pressed && styles.pressed,
             ]}
           >
-            <ShapeArt shape={shape} />
+            <ShapeArt shape={shape} size={Math.floor(choiceSize * 0.52)} />
           </Pressable>
         ))}
       </View>
@@ -867,49 +885,54 @@ export function MomoWorkshopGame({
         <Text style={styles.instruction}>{roundPrompt}</Text>
       </View>
       <View style={styles.roundArea}>
-        {round.kind === "cable_match" ? (
-          <CableMatchRound
-            endpoints={round.endpoints}
-            locked={locked}
-            onAttempt={(correct) => {
-              if (correct) report({ type: "attempt", stepId: round.id, correct: true });
-              else handleAttempt(false);
-            }}
-            onComplete={finishRound}
-            reveal={revealed}
-          />
-        ) : round.kind === "crystal_count" ? (
-          <CrystalCountRound
-            crystalCount={round.crystalCount}
-            key={round.id}
-            locked={locked}
-            onSubmit={(count) => handleAttempt(crystalCountMatches(count, round.targetCount))}
-            reveal={revealed}
-            targetCount={round.targetCount}
-          />
-        ) : round.kind === "pattern_shape" ? (
-          <PatternShapeRound
-            choices={round.choices}
-            correctShape={round.correctShape}
-            locked={locked}
-            onChoose={(shape) => handleAttempt(patternShapeMatches(shape, round.correctShape))}
-            reveal={revealed}
-            sequence={round.sequence}
-          />
-        ) : round.kind === "part_match" ? (
-          <PartMatchRound
-            choices={round.choices}
-            locked={locked}
-            onChoose={(part) => handleAttempt(part === round.targetPart)}
-            targetPart={round.targetPart}
-          />
-        ) : (
-          <OddPartRound
-            choices={round.choices}
-            locked={locked}
-            onChoose={(index) => handleAttempt(index === round.correctIndex)}
-          />
-        )}
+        <ScrollView
+          contentContainerStyle={styles.roundScrollContent}
+          showsVerticalScrollIndicator={round.kind === "pattern_shape"}
+        >
+          {round.kind === "cable_match" ? (
+            <CableMatchRound
+              endpoints={round.endpoints}
+              locked={locked}
+              onAttempt={(correct) => {
+                if (correct) report({ type: "attempt", stepId: round.id, correct: true });
+                else handleAttempt(false);
+              }}
+              onComplete={finishRound}
+              reveal={revealed}
+            />
+          ) : round.kind === "crystal_count" ? (
+            <CrystalCountRound
+              crystalCount={round.crystalCount}
+              key={round.id}
+              locked={locked}
+              onSubmit={(count) => handleAttempt(crystalCountMatches(count, round.targetCount))}
+              reveal={revealed}
+              targetCount={round.targetCount}
+            />
+          ) : round.kind === "pattern_shape" ? (
+            <PatternShapeRound
+              choices={round.choices}
+              correctShape={round.correctShape}
+              locked={locked}
+              onChoose={(shape) => handleAttempt(patternShapeMatches(shape, round.correctShape))}
+              reveal={revealed}
+              sequence={round.sequence}
+            />
+          ) : round.kind === "part_match" ? (
+            <PartMatchRound
+              choices={round.choices}
+              locked={locked}
+              onChoose={(part) => handleAttempt(part === round.targetPart)}
+              targetPart={round.targetPart}
+            />
+          ) : (
+            <OddPartRound
+              choices={round.choices}
+              locked={locked}
+              onChoose={(index) => handleAttempt(index === round.correctIndex)}
+            />
+          )}
+        </ScrollView>
       </View>
       <Animated.Text style={[styles.feedback, { transform: [{ translateX: feedbackShake }] }]}>
         {locked && !feedback ? "Momo anlatıyor…" : feedback}
@@ -998,7 +1021,13 @@ const styles = StyleSheet.create({
     lineHeight: 27,
     textAlign: "center",
   },
-  roundArea: { flex: 1, alignItems: "center", justifyContent: "center" },
+  roundArea: { flex: 1, minHeight: 0, width: "100%" },
+  roundScrollContent: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+  },
   feedback: {
     minHeight: 48,
     maxWidth: 520,
@@ -1180,7 +1209,7 @@ const styles = StyleSheet.create({
     borderRadius: 29,
     backgroundColor: "#4BAFA5",
   },
-  patternRound: { width: "100%", maxWidth: 360, alignItems: "center" },
+  patternRound: { width: "100%", maxWidth: 390, alignItems: "center", paddingHorizontal: 2 },
   bonusRound: { width: "100%", alignItems: "center", justifyContent: "center", gap: 24 },
   bonusChoices: {
     maxWidth: 420,
@@ -1219,26 +1248,20 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   patternTile: {
-    width: 64,
-    height: 64,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 3,
     borderColor: "#FFFFFF",
-    borderRadius: 20,
     backgroundColor: "#E6EFF2",
   },
   missingTile: { borderStyle: "dashed", borderColor: "#7A98A4", backgroundColor: "#FFFFFF" },
   questionMark: { color: "#607D89", fontSize: 40, fontWeight: "900" },
-  shapeChoices: { flexDirection: "row", gap: 18, marginTop: 28 },
+  shapeChoices: { flexDirection: "row", justifyContent: "center", gap: 12, marginTop: 18 },
   shapeChoice: {
-    width: 112,
-    height: 118,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 4,
     borderColor: "#FFFFFF",
-    borderRadius: 28,
     backgroundColor: "#F8FBFC",
   },
   pressed: { opacity: 0.72, transform: [{ scale: 0.96 }] },

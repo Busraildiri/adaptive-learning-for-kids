@@ -80,19 +80,12 @@ export function momoTaskForLevel(adaptiveLevel: number): {
   return { kind: "crystals", encounter: 1 };
 }
 
-const shapeLabels: Record<MomoShape, string> = {
-  circle: "daire",
-  square: "kare",
-  triangle: "üçgen",
-};
-
 export function momoRoundPrompt(round: MomoPlayableRound): string {
   if (round.kind === "crystal_count") {
     return `${round.targetCount} enerji kristalini Momo'nun piline koy.`;
   }
   if (round.kind === "pattern_shape") {
-    const sequence = round.sequence.map((shape) => shapeLabels[shape]).join(", ");
-    return `${sequence}; sıradaki şekli seç.`;
+    return "Deseni incele, sıradaki şekli seç.";
   }
   return round.prompt;
 }

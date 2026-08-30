@@ -100,7 +100,7 @@ describe("momoWorkshopEngine", () => {
         choices: ["circle", "square", "triangle"],
         correctShape: "circle",
       }),
-    ).toBe("daire, üçgen, kare; sıradaki şekli seç.");
+    ).toBe("Deseni incele, sıradaki şekli seç.");
   });
 
   it("awards one permanent Momo part every ten levels", () => {
