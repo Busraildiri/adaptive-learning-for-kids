@@ -24,6 +24,7 @@ import { useGameObservation } from "./GameObservationContext";
 const minoHappy = require("../../../assets/characters/mino-happy.png");
 const happyDog = require("../../../assets/game/sort/happy-dog-v1.png");
 const toyBasket = require("../../../assets/game/sort/toy-basket-v1.png");
+const blueBlock = require("../../../assets/game/sort/blue-block-v1.png");
 const playBall = require("../../../assets/game/sort/play-ball-v1.png");
 const redBalloon = require("../../../assets/game/sort/red-balloon-v1.png");
 const iceCream = require("../../../assets/game/sort/ice-cream-v1.png");
@@ -54,6 +55,7 @@ const colors = {
 } as const;
 
 const sortImageByObjectId: Record<string, ImageSourcePropType> = {
+  "blue-block": blueBlock,
   "red-balloon": redBalloon,
   "purple-soap": soap,
   "green-toothbrush": toothbrush,
