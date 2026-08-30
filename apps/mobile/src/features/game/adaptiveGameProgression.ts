@@ -176,6 +176,15 @@ export function nextDifficultyAfterCompletion(
   maximumLevel = MAX_ADAPTIVE_LEVEL,
   requiredRuns = requiredRunsToAdvance(ageBand),
 ): AdaptiveProgressionState {
+  // A finite game's last available combination is its real finish line. It
+  // must not be repeated merely to satisfy the slower 2–4 progression pace.
+  if (state.adaptiveLevel >= maximumLevel) {
+    return {
+      ...state,
+      completedRunsAtLevel: 0,
+      challengeIndex: state.challengeIndex + 1,
+    };
+  }
   const completedRunsAtLevel = state.completedRunsAtLevel + 1;
   if (completedRunsAtLevel < requiredRuns) {
     return { ...state, completedRunsAtLevel, challengeIndex: state.challengeIndex + 1 };

@@ -103,6 +103,22 @@ describe("adaptive game progression", () => {
     });
   });
 
+  it("does not require a repeat after a finite game's final combination", () => {
+    expect(
+      nextDifficultyAfterCompletion(
+        {
+          difficulty: "starter",
+          completedRunsAtLevel: 0,
+          itemCount: 2,
+          challengeIndex: 9,
+          adaptiveLevel: 10,
+        },
+        "2-4",
+        10,
+      ),
+    ).toMatchObject({ adaptiveLevel: 10, completedRunsAtLevel: 0, challengeIndex: 10 });
+  });
+
   it("finishes Riko's distinct spatial prompts without repeating each one", () => {
     const riko = publishedGames.find((game) => game.id === "riko-where-001");
     if (!riko) throw new Error("Expected Riko game");
