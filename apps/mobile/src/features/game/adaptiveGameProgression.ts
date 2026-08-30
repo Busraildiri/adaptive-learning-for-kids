@@ -167,7 +167,11 @@ export function requiredRunsToAdvance(ageBand: AgeBand): number {
 export function requiredRunsForGame(game: Game, ageBand: AgeBand): number {
   // Riko has five fixed, distinct spatial concepts. Repeating each one just
   // to satisfy the slower 2–4 cadence would make a completed curriculum loop.
-  return game.id === "riko-where-001" ? 1 : requiredRunsToAdvance(ageBand);
+  // Pati also has a finite sequence of unique sorting combinations; each
+  // completed combination should advance to the next visible level.
+  return game.id === "riko-where-001" || game.id === "rule-changed-garden-001"
+    ? 1
+    : requiredRunsToAdvance(ageBand);
 }
 
 export function nextDifficultyAfterCompletion(

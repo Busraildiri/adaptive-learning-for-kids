@@ -209,6 +209,8 @@ describe("adaptive game progression", () => {
     const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
     if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
 
+    expect(requiredRunsForGame(pati, "2-4")).toBe(1);
+
     const adapted = adaptGameComplexity(pati, 2, 2);
     if (adapted.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
 
