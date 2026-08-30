@@ -200,6 +200,7 @@ describe("adaptive game progression", () => {
     expect(adapted.rounds[0]?.instruction).toContain("Şimdi iki nesne var.");
 
     const finalRound = adaptGameComplexity(pati, 2, 4);
+    if (finalRound.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
     expect(finalRound.rounds[0]?.objects).toHaveLength(2);
     expect(finalRound.rounds[0]?.instruction).toContain("İki nesnenin içinden");
   });
@@ -209,6 +210,7 @@ describe("adaptive game progression", () => {
     if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
 
     const adapted = adaptGameComplexity(pati, 2, 10);
+    if (adapted.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
     const target = adapted.rounds[0]?.objects.find((object) =>
       object.id.endsWith("-adaptive-target"),
     );
