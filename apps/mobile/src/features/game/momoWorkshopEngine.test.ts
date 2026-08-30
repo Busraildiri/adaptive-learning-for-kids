@@ -151,14 +151,38 @@ describe("momoWorkshopEngine", () => {
       "cable_match",
     ]);
     expect(new Set(firstCycle)).toHaveLength(5);
-    expect(momoRoundsForLevel(baseRounds, 6)[0]?.kind).toBe("crystal_count");
-    expect(momoRoundsForLevel(baseRounds, 7)[0]?.kind).toBe("pattern_shape");
+    const firstFifteen = Array.from(
+      { length: 15 },
+      (_, index) => momoRoundsForLevel(baseRounds, index + 1)[0]?.kind,
+    );
+    expect(firstFifteen.slice(0, 5)).not.toEqual(firstFifteen.slice(5, 10));
+    expect(firstFifteen.slice(5, 10)).not.toEqual(firstFifteen.slice(10, 15));
+    for (let index = 1; index < firstFifteen.length; index += 1) {
+      expect(firstFifteen[index]).not.toBe(firstFifteen[index - 1]);
+    }
 
-    const cablePairCounts = [5, 10, 15, 20].map((level) => {
-      const round = momoRoundsForLevel(baseRounds, level)[0];
-      if (round?.kind !== "cable_match") throw new Error(`Expected cables at level ${level}`);
-      return round.endpoints.length / 2;
-    });
-    expect(cablePairCounts).toEqual([2, 3, 4, 5]);
+    const allLevels = Array.from(
+      { length: 150 },
+      (_, index) => momoRoundsForLevel(baseRounds, index + 1)[0]?.kind,
+    );
+    for (let index = 1; index < allLevels.length; index += 1) {
+      expect(allLevels[index], `level ${index + 1}`).not.toBe(allLevels[index - 1]);
+    }
+    for (let start = 0; start < allLevels.length; start += 5) {
+      expect(
+        new Set(allLevels.slice(start, start + 5)),
+        `levels ${start + 1}-${start + 5}`,
+      ).toHaveLength(5);
+    }
+
+    const cablePairCounts = firstFifteen
+      .map((kind, index) => ({ kind, level: index + 1 }))
+      .filter(({ kind }) => kind === "cable_match")
+      .map(({ level }) => {
+        const round = momoRoundsForLevel(baseRounds, level)[0];
+        if (round?.kind !== "cable_match") throw new Error(`Expected cables at level ${level}`);
+        return round.endpoints.length / 2;
+      });
+    expect(cablePairCounts).toEqual([2, 3, 4]);
   });
 });

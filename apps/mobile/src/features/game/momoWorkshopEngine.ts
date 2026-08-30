@@ -20,6 +20,15 @@ export type MomoBonusRound =
     };
 export type MomoPlayableRound = MomoWorkshopRound | MomoBonusRound;
 
+function shuffledMomoTaskIndex(level: number, taskCount: number): number {
+  const zeroBasedLevel = level - 1;
+  const bag = Math.floor(zeroBasedLevel / taskCount);
+  const position = zeroBasedLevel % taskCount;
+  const direction = bag % 2 === 0 ? 1 : -1;
+  const offset = (bag * 2 + Math.floor(bag / 2)) % taskCount;
+  return (((offset + direction * position) % taskCount) + taskCount) % taskCount;
+}
+
 const shapeLabels: Record<MomoShape, string> = {
   circle: "daire",
   square: "kare",
@@ -142,7 +151,7 @@ export function momoRoundsForLevel(
     oddRound,
     expandedCables,
   ].filter((round): round is MomoPlayableRound => Boolean(round));
-  return [levelCycle[(level - 1) % levelCycle.length] as MomoPlayableRound];
+  return [levelCycle[shuffledMomoTaskIndex(level, levelCycle.length)] as MomoPlayableRound];
 }
 
 export function boundedMomoItemCount(itemCount: number): number {
