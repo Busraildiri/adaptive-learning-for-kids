@@ -195,11 +195,13 @@ function DraggableObject({
 
 export function ClassifyAndSortGame({
   announceIntro = true,
+  adaptiveLevel,
   game,
   onExit,
   onRestart,
 }: {
   announceIntro?: boolean;
+  adaptiveLevel: number;
   game: ClassifyAndSortGameContent;
   onExit: () => void;
   onRestart: () => void;
@@ -425,6 +427,7 @@ export function ClassifyAndSortGame({
           source={minoHappy}
           style={[styles.mascot, { transform: [{ scale: mascotScale }] }]}
         />
+        <Text style={styles.levelLabel}>SEVİYE {adaptiveLevel}</Text>
         <Text style={styles.title}>{game.title}</Text>
         <View style={styles.ruleCard}>
           {roundIndex > 0 ? <Text style={styles.ruleChanged}>KURAL DEĞİŞTİ!</Text> : null}
@@ -521,6 +524,7 @@ const styles = StyleSheet.create({
   progressText: { color: "#DB8F42", fontSize: 20, fontWeight: "900" },
   mascot: { width: 76, height: 76, resizeMode: "contain" },
   mascotLarge: { width: 150, height: 150, resizeMode: "contain" },
+  levelLabel: { color: "#55776B", fontSize: 14, fontWeight: "900", letterSpacing: 1.4 },
   title: { color: "#473A31", fontSize: 25, fontWeight: "900" },
   ruleCard: {
     minWidth: 280,

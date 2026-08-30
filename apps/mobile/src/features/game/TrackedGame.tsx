@@ -202,6 +202,7 @@ export function TrackedGame({
     activeGame.mechanic === "classify_and_sort" ? (
       <ClassifyAndSortGame
         announceIntro={shouldAnnounceGameIntro(runKey)}
+        adaptiveLevel={progression.adaptiveLevel}
         game={activeGame}
         key={runKey}
         onExit={exit}
