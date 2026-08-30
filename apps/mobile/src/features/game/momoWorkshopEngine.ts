@@ -34,6 +34,13 @@ export type MomoBonusRound =
     };
 export type MomoPlayableRound = MomoWorkshopRound | MomoBonusRound;
 
+type MomoTaskKind = "crystals" | "pattern" | "part" | "odd" | "cables";
+
+const momoTaskOrder: readonly MomoTaskKind[] = ["crystals", "pattern", "part", "odd", "cables"];
+const momoTaskMaximumEncounters: Partial<Record<MomoTaskKind, number>> = {
+  cables: 4,
+};
+
 function shuffledMomoTaskIndex(level: number, taskCount: number): number {
   const zeroBasedLevel = level - 1;
   const bag = Math.floor(zeroBasedLevel / taskCount);
@@ -41,6 +48,32 @@ function shuffledMomoTaskIndex(level: number, taskCount: number): number {
   const direction = bag % 2 === 0 ? 1 : -1;
   const offset = (bag * 2 + Math.floor(bag / 2)) % taskCount;
   return (((offset + direction * position) % taskCount) + taskCount) % taskCount;
+}
+
+export function momoTaskForLevel(adaptiveLevel: number): {
+  kind: MomoTaskKind;
+  encounter: number;
+} {
+  const finalLevel = Math.max(1, Math.min(150, Math.floor(adaptiveLevel)));
+  const encounters: Partial<Record<MomoTaskKind, number>> = {};
+  let previousKind: MomoTaskKind | undefined;
+
+  for (let level = 1; level <= finalLevel; level += 1) {
+    const available = momoTaskOrder.filter(
+      (kind) => (encounters[kind] ?? 0) < (momoTaskMaximumEncounters[kind] ?? Infinity),
+    );
+    const preferredIndex = shuffledMomoTaskIndex(level, available.length);
+    let kind = available[preferredIndex] as MomoTaskKind;
+    if (kind === previousKind && available.length > 1) {
+      kind = available[(preferredIndex + 1) % available.length] as MomoTaskKind;
+    }
+    const encounter = (encounters[kind] ?? 0) + 1;
+    encounters[kind] = encounter;
+    previousKind = kind;
+    if (level === finalLevel) return { kind, encounter };
+  }
+
+  return { kind: "crystals", encounter: 1 };
 }
 
 const shapeLabels: Record<MomoShape, string> = {
@@ -73,7 +106,8 @@ export function momoRoundsForLevel(
   adaptiveLevel: number,
 ): MomoPlayableRound[] {
   const level = Math.max(1, Math.min(150, Math.floor(adaptiveLevel)));
-  const occurrence = Math.floor((level - 1) / 5) + 1;
+  const task = momoTaskForLevel(level);
+  const occurrence = task.encounter;
   const leveledBase = baseRounds.map((round): MomoWorkshopRound => {
     if (round.kind === "cable_match" && level >= 31) {
       return { ...round, prompt: "Enerji devresindeki eş renkli bağlantıları tamamla." };
@@ -206,14 +240,14 @@ export function momoRoundsForLevel(
           })(),
         }
       : pattern;
-  const levelCycle = [
-    expandedCrystals,
-    expandedPattern,
-    partRound,
-    oddRound,
-    expandedCables,
-  ].filter((round): round is MomoPlayableRound => Boolean(round));
-  return [levelCycle[shuffledMomoTaskIndex(level, levelCycle.length)] as MomoPlayableRound];
+  const roundsByTask: Record<MomoTaskKind, MomoPlayableRound | undefined> = {
+    crystals: expandedCrystals,
+    pattern: expandedPattern,
+    part: partRound,
+    odd: oddRound,
+    cables: expandedCables,
+  };
+  return [roundsByTask[task.kind] as MomoPlayableRound];
 }
 
 export function boundedMomoItemCount(itemCount: number): number {

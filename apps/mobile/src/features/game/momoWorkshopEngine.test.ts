@@ -9,6 +9,7 @@ import {
   momoFaultStageForLevel,
   momoRoundPrompt,
   momoRoundsForLevel,
+  momoTaskForLevel,
   outcomeForGuidedAttempt,
   patternShapeMatches,
 } from "./momoWorkshopEngine";
@@ -169,22 +170,20 @@ describe("momoWorkshopEngine", () => {
     for (let index = 1; index < allLevels.length; index += 1) {
       expect(allLevels[index], `level ${index + 1}`).not.toBe(allLevels[index - 1]);
     }
-    for (let start = 0; start < allLevels.length; start += 5) {
-      expect(
-        new Set(allLevels.slice(start, start + 5)),
-        `levels ${start + 1}-${start + 5}`,
-      ).toHaveLength(5);
-    }
+    expect(new Set(allLevels.slice(0, 15))).toHaveLength(5);
 
-    const cablePairCounts = firstFifteen
-      .map((kind, index) => ({ kind, level: index + 1 }))
-      .filter(({ kind }) => kind === "cable_match")
-      .map(({ level }) => {
-        const round = momoRoundsForLevel(baseRounds, level)[0];
-        if (round?.kind !== "cable_match") throw new Error(`Expected cables at level ${level}`);
-        return round.endpoints.length / 2;
-      });
-    expect(cablePairCounts).toEqual([2, 3, 4]);
+    const cableLevels = Array.from({ length: 150 }, (_, index) => index + 1).filter(
+      (level) => momoTaskForLevel(level).kind === "cables",
+    );
+    expect(cableLevels).toHaveLength(4);
+    const cablePairCounts = cableLevels.map((level) => {
+      const round = momoRoundsForLevel(baseRounds, level)[0];
+      if (round?.kind !== "cable_match") throw new Error(`Expected cables at level ${level}`);
+      return round.endpoints.length / 2;
+    });
+    expect(cablePairCounts).toEqual([2, 3, 4, 5]);
+    const finalCableLevel = cableLevels.at(-1) as number;
+    expect(allLevels.slice(finalCableLevel)).not.toContain("cable_match");
   });
 
   it("moves faulty-part challenges through bounded visual difficulty stages", () => {
