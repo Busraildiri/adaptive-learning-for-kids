@@ -952,7 +952,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "color-lights-001",
-      "version": 3,
+      "version": 4,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "tap_or_wait",
@@ -1042,7 +1042,7 @@
       "productionSource": "manual",
       "mechanic": "classify_and_sort",
       "title": "Pati’nin Kural Sepeti",
-      "description": "Renk, tür ve büyüklük kurallarına göre doğru nesneyi sepete taşıma oyunu.",
+      "description": "Renk, nesne türü ve şekil kurallarına göre doğru nesneyi sepete taşıma oyunu.",
       "ageBand": "2-4",
       "skillTags": ["bilişsel-esneklik", "yönerge-takibi", "sınıflandırma"],
       "presentation": {
@@ -1158,18 +1158,18 @@
           ]
         },
         {
-          "id": "find-green-final",
-          "dimension": "color",
-          "targetValue": "green",
-          "instruction": "Şimdi yeşil olanı sepete sürükle ve bırak.",
+          "id": "find-star",
+          "dimension": "shape",
+          "targetValue": "star",
+          "instruction": "Yıldızı sepete sürükle ve bırak.",
           "objects": [
             {
-              "id": "large-green-car",
-              "label": "büyük yeşil araba",
-              "shape": "car",
-              "color": "green",
+              "id": "small-yellow-star",
+              "label": "küçük sarı yıldız",
+              "shape": "star",
+              "color": "yellow",
               "category": "toy",
-              "size": "large"
+              "size": "small"
             },
             {
               "id": "small-red-ball",
@@ -1180,18 +1180,58 @@
               "size": "small"
             },
             {
-              "id": "small-yellow-star",
-              "label": "küçük sarı yıldız",
-              "shape": "star",
-              "color": "yellow",
+              "id": "large-green-car",
+              "label": "büyük yeşil araba",
+              "shape": "car",
+              "color": "green",
               "category": "toy",
-              "size": "small"
+              "size": "large"
             },
             {
               "id": "small-purple-block",
               "label": "küçük mor blok",
               "shape": "block",
               "color": "purple",
+              "category": "toy",
+              "size": "small"
+            }
+          ]
+        },
+        {
+          "id": "find-car",
+          "dimension": "shape",
+          "targetValue": "car",
+          "instruction": "Arabayı sepete sürükle ve bırak.",
+          "objects": [
+            {
+              "id": "purple-car",
+              "label": "mor araba",
+              "shape": "car",
+              "color": "purple",
+              "category": "toy",
+              "size": "small"
+            },
+            {
+              "id": "red-balloon",
+              "label": "kırmızı balon",
+              "shape": "ball",
+              "color": "red",
+              "category": "toy",
+              "size": "small"
+            },
+            {
+              "id": "yellow-star",
+              "label": "sarı yıldız",
+              "shape": "star",
+              "color": "yellow",
+              "category": "toy",
+              "size": "small"
+            },
+            {
+              "id": "green-toothbrush",
+              "label": "yeşil diş fırçası",
+              "shape": "block",
+              "color": "green",
               "category": "toy",
               "size": "small"
             }

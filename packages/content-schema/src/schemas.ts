@@ -347,7 +347,7 @@ export const sortObjectSchema = z.strictObject({
 
 export const sortRoundSchema = z.strictObject({
   id: z.string().trim().min(1).max(100),
-  dimension: z.enum(["color", "category", "size"]),
+  dimension: z.enum(["color", "category", "shape", "size"]),
   targetValue: z.string().trim().min(1).max(40),
   instruction: z.string().trim().min(1).max(160),
   objects: z.array(sortObjectSchema).min(3).max(6),

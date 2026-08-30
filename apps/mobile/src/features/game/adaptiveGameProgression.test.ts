@@ -217,10 +217,10 @@ describe("adaptive game progression", () => {
     expect(adapted.rounds[0]?.objects).toHaveLength(2);
     expect(adapted.rounds[0]?.instruction).toContain("Şimdi iki nesne var.");
 
-    const finalRound = adaptGameComplexity(pati, 2, 3);
-    if (finalRound.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
-    expect(finalRound.rounds[0]?.objects).toHaveLength(2);
-    expect(finalRound.rounds[0]?.instruction).toContain("Şimdi yeşil olanı");
+    const shapeRound = adaptGameComplexity(pati, 2, 3);
+    if (shapeRound.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
+    expect(shapeRound.rounds[0]?.objects).toHaveLength(2);
+    expect(shapeRound.rounds[0]?.instruction).toContain("Yıldızı");
     expect(pati.rounds.every((round) => round.dimension !== "size")).toBe(true);
   });
 
@@ -228,7 +228,7 @@ describe("adaptive game progression", () => {
     const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
     if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
 
-    const adapted = adaptGameComplexity(pati, 2, 8);
+    const adapted = adaptGameComplexity(pati, 2, 5);
     if (adapted.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
     const target = adapted.rounds[0]?.objects.find((object) =>
       object.id.endsWith("-adaptive-target"),

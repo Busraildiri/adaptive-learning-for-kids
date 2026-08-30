@@ -125,7 +125,7 @@ describe("Turkish content v1", () => {
     }
     expect(sortGame?.mechanic).toBe("classify_and_sort");
     if (sortGame?.mechanic === "classify_and_sort") {
-      expect(sortGame.rounds.map((round) => round.objects.length)).toEqual([3, 3, 3, 4, 4]);
+      expect(sortGame.rounds.map((round) => round.objects.length)).toEqual([3, 3, 4, 4, 4]);
     }
     expect(kikiGame?.mechanic).toBe("mini_challenge");
     if (kikiGame?.mechanic === "mini_challenge") {
