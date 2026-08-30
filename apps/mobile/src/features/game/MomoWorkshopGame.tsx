@@ -458,15 +458,19 @@ function RewardChoice({
 }
 
 export function MomoWorkshopGame({
+  announceIntro = true,
   childId,
   childName,
   game,
   onExit,
+  onRestart,
 }: {
+  announceIntro?: boolean;
   childId: string;
   childName: string;
   game: MomoWorkshopGameContent;
   onExit: () => void;
+  onRestart: () => void;
 }) {
   const report = useGameObservation();
   const [roundIndex, setRoundIndex] = useState(0);
@@ -482,8 +486,9 @@ export function MomoWorkshopGame({
   const speak = useCallback(
     (text: string, done?: () => void) => {
       if (!game.presentation.playAudioInstructions) return done?.();
-      void Speech.stop();
-      Speech.speak(text, { language: "tr-TR", rate: 0.84, onDone: done, onStopped: done });
+      void Speech.stop().then(() =>
+        Speech.speak(text, { language: "tr-TR", rate: 0.84, onDone: done, onStopped: done }),
+      );
     },
     [game.presentation.playAudioInstructions],
   );
@@ -501,10 +506,11 @@ export function MomoWorkshopGame({
     setRevealed(false);
     setLocked(true);
     const unlockWithPrompt = () => speak(round.prompt, () => setLocked(false));
-    if (roundIndex === 0) speak(game.presentation.introNarration, unlockWithPrompt);
+    if (roundIndex === 0 && announceIntro)
+      speak(game.presentation.introNarration, unlockWithPrompt);
     else unlockWithPrompt();
     return () => void Speech.stop();
-  }, [game.presentation.introNarration, phase, round, roundIndex, speak]);
+  }, [announceIntro, game.presentation.introNarration, phase, round, roundIndex, speak]);
 
   useEffect(() => {
     if (phase !== "reward") return;
@@ -615,8 +621,11 @@ export function MomoWorkshopGame({
           <Text style={styles.finishCopy}>
             {game.presentation.closingNarration.replace("{childName}", childName)}
           </Text>
-          <Pressable accessibilityRole="button" onPress={onExit} style={styles.exitButton}>
-            <Text style={styles.exitButtonText}>Oyunlara dön</Text>
+          <Pressable accessibilityRole="button" onPress={onRestart} style={styles.exitButton}>
+            <Text style={styles.exitButtonText}>Tekrar başlamak için dokun</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={onExit}>
+            <Text style={styles.finishCopy}>Oyunlara dön</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -756,7 +765,7 @@ const styles = StyleSheet.create({
   close: {
     position: "absolute",
     zIndex: 10,
-    top: 12,
+    top: 28,
     left: 16,
     width: 52,
     height: 52,
@@ -920,7 +929,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     backgroundColor: "#7892A4",
   },
-  crystalRound: { width: "100%", maxWidth: 590, alignItems: "center" },
+  crystalRound: { width: "100%", maxWidth: 480, alignItems: "center" },
   crystalShelf: {
     minHeight: 150,
     flexDirection: "row",
@@ -961,8 +970,14 @@ const styles = StyleSheet.create({
     borderRadius: 29,
     backgroundColor: "#4BAFA5",
   },
-  patternRound: { width: "100%", maxWidth: 620, alignItems: "center" },
-  patternSequence: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+  patternRound: { width: "100%", maxWidth: 382, alignItems: "center" },
+  patternSequence: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
   patternTile: {
     width: 70,
     height: 82,

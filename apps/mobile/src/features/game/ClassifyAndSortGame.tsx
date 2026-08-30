@@ -50,15 +50,17 @@ function ObjectArt({
   object,
   imageSource,
   compareSize,
+  compact,
 }: {
   object: SortObject;
   imageSource?: ImageSourcePropType;
   compareSize: boolean;
+  compact: boolean;
 }) {
   const report = useGameObservation();
   const color = colors[object.color];
   if (imageSource) {
-    const size = compareSize ? (object.size === "large" ? 108 : 52) : 78;
+    const size = compact ? 38 : compareSize ? (object.size === "large" ? 108 : 52) : 78;
     return (
       <Image source={imageSource} style={{ width: size, height: size, resizeMode: "contain" }} />
     );
@@ -74,7 +76,7 @@ function ObjectArt({
     fish: "fish",
     bear: "teddy-bear",
   }[object.shape] as "basketball";
-  const size = object.size === "large" ? 104 : 38;
+  const size = compact ? 34 : object.size === "large" ? 104 : 38;
   return (
     <View style={[styles.iconBadge, { backgroundColor: `${color}24` }]}>
       <MaterialCommunityIcons color={color} name={iconName} size={size} />
@@ -92,6 +94,7 @@ function DraggableObject({
   compareSize,
   basketBounds,
   onDrop,
+  itemCount,
 }: {
   object: SortObject;
   enabled: boolean;
@@ -100,6 +103,7 @@ function DraggableObject({
   compareSize: boolean;
   basketBounds: BasketBounds | null;
   onDrop: (object: SortObject) => void;
+  itemCount: number;
 }) {
   const position = useRef(new Animated.ValueXY()).current;
   const responder = PanResponder.create({
@@ -131,23 +135,33 @@ function DraggableObject({
       {...responder.panHandlers}
       style={[
         styles.objectCard,
-        compareSize && object.size === "large" && styles.largeObjectCard,
+        itemCount > 10 && styles.compactObjectCard,
+        compareSize && object.size === "large" && itemCount <= 10 && styles.largeObjectCard,
         highlighted && styles.objectHighlighted,
         { transform: position.getTranslateTransform() },
       ]}
     >
-      <ObjectArt compareSize={compareSize} imageSource={imageSource} object={object} />
+      <ObjectArt
+        compact={itemCount > 10}
+        compareSize={compareSize}
+        imageSource={imageSource}
+        object={object}
+      />
       <Text style={styles.dragHint}>Tut ve sürükle</Text>
     </Animated.View>
   );
 }
 
 export function ClassifyAndSortGame({
+  announceIntro = true,
   game,
   onExit,
+  onRestart,
 }: {
+  announceIntro?: boolean;
   game: ClassifyAndSortGameContent;
   onExit: () => void;
+  onRestart: () => void;
 }) {
   const report = useGameObservation();
   const [roundIndex, setRoundIndex] = useState(0);
@@ -182,21 +196,27 @@ export function ClassifyAndSortGame({
         onDone?.();
         return;
       }
-      Speech.stop();
-      Speech.speak(text, { language: "tr-TR", rate: 0.84, onDone, onStopped: onDone });
+      void Speech.stop().then(() =>
+        Speech.speak(text, { language: "tr-TR", rate: 0.84, onDone, onStopped: onDone }),
+      );
     },
     [game.presentation.playAudioInstructions],
   );
 
   useEffect(() => {
     const text =
-      roundIndex === 0 ? game.presentation.introNarration : game.presentation.ruleChangeNarration;
+      roundIndex === 0
+        ? announceIntro
+          ? game.presentation.introNarration
+          : shownInstruction
+        : game.presentation.ruleChangeNarration;
     setLocked(true);
     setHighlightedObjectId(null);
     setFeedback(roundIndex === 0 ? "" : "Kural değişti!");
     roundStartedAt.current = Date.now();
     speak(text, () => {
-      speak(shownInstruction, () => setLocked(false));
+      if (roundIndex === 0 && !announceIntro) setLocked(false);
+      else speak(shownInstruction, () => setLocked(false));
     });
     Animated.sequence([
       Animated.timing(mascotScale, { toValue: 1.1, duration: 220, useNativeDriver: true }),
@@ -207,6 +227,7 @@ export function ClassifyAndSortGame({
     };
   }, [
     shownInstruction,
+    announceIntro,
     game.presentation.introNarration,
     game.presentation.ruleChangeNarration,
     mascotScale,
@@ -217,6 +238,7 @@ export function ClassifyAndSortGame({
   const choose = (object: SortObject) => {
     if (locked || completed) return;
     const correct = objectMatchesRound(object, currentRound);
+    report({ type: "attempt", stepId: currentRound.id, correct });
     if (!correct) {
       Vibration.vibrate(18);
       if (game.difficulty.secondTryEnabled && attempt === 0) {
@@ -297,8 +319,11 @@ export function ClassifyAndSortGame({
               <Image key={`garden-flower-${index}`} source={flower} style={styles.finalFlower} />
             ))}
           </View>
-          <Pressable accessibilityRole="button" onPress={onExit} style={styles.exitButton}>
-            <Text style={styles.exitButtonText}>Oyunlara dön</Text>
+          <Pressable accessibilityRole="button" onPress={onRestart} style={styles.exitButton}>
+            <Text style={styles.exitButtonText}>Tekrar başlamak için dokun</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={onExit}>
+            <Text style={styles.completedCopy}>Oyunlara dön</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -347,7 +372,9 @@ export function ClassifyAndSortGame({
           {roundIndex > 0 ? <Text style={styles.ruleChanged}>KURAL DEĞİŞTİ!</Text> : null}
           <Text style={styles.instruction}>{shownInstruction}</Text>
         </View>
-        <View style={styles.objectGrid}>
+        <View
+          style={[styles.objectGrid, currentRound.objects.length > 10 && styles.compactObjectGrid]}
+        >
           {currentRound.objects.map((object, index) => (
             <DraggableObject
               basketBounds={basketBounds}
@@ -355,6 +382,7 @@ export function ClassifyAndSortGame({
               enabled={!locked}
               highlighted={highlightedObjectId === object.id}
               imageSource={roundImages[index]}
+              itemCount={currentRound.objects.length}
               key={object.id}
               object={object}
               onDrop={choose}
@@ -403,7 +431,7 @@ const styles = StyleSheet.create({
   parentButton: {
     position: "absolute",
     zIndex: 3,
-    top: 12,
+    top: 28,
     left: 16,
     width: 52,
     height: 52,
@@ -455,14 +483,17 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   objectGrid: {
-    maxWidth: 340,
+    width: "100%",
+    maxWidth: 530,
     minHeight: 126,
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
     marginTop: 12,
   },
+  compactObjectGrid: { maxWidth: 330 },
   objectCard: {
     width: 98,
     height: 124,
@@ -478,6 +509,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     zIndex: 4,
   },
+  compactObjectCard: { width: 58, height: 66, borderRadius: 15, borderWidth: 2 },
   largeObjectCard: { width: 130, height: 154, borderColor: "#F3B51B", borderWidth: 5 },
   objectPressed: { transform: [{ scale: 0.92 }], backgroundColor: "#FFF1C9" },
   objectHighlighted: {

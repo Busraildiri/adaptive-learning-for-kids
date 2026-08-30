@@ -15,6 +15,10 @@ export const gameEvidenceSignalSchema = z.enum([
   "retried",
   "waited_longer",
   "left_early",
+  "progressed",
+  "replayed",
+  "completed_without_replay",
+  "left_at_higher_difficulty",
 ]);
 
 export const retrievedStoryEvidenceSchema = z.strictObject({
@@ -29,7 +33,9 @@ export const retrievedGameEvidenceSchema = z.strictObject({
   gameId: z.string().trim().min(1).max(100),
   outcome: z.enum(["completed", "left_early", "in_progress"]),
   occurredAt: z.iso.datetime({ offset: true }),
-  signals: z.array(gameEvidenceSignalSchema).min(1).max(5),
+  signals: z.array(gameEvidenceSignalSchema).min(1).max(9),
+  adaptiveLevel: z.number().int().min(1).max(150).nullable().default(null),
+  difficulty: z.enum(["starter", "growing", "advanced"]).nullable().default(null),
 });
 
 const profilePreferenceSchema = z.string().trim().min(1).max(100);
@@ -73,6 +79,10 @@ export const gameInsightSchema = z.strictObject({
     "tried_again",
     "took_more_time",
     "paused_and_left",
+    "progressed_without_finishing",
+    "returned_to_game",
+    "completed_and_moved_on",
+    "difficulty_related_dropout",
   ]),
   title: z.string().trim().min(1).max(80),
   text: z.string().trim().min(1).max(240),
@@ -108,6 +118,15 @@ export const activityDetailSummarySchema = z.strictObject({
   mostRepeatedGame: repeatedActivitySchema.nullable(),
 });
 
+export const ongoingGameSummarySchema = z.strictObject({
+  gameId: z.string().trim().min(1).max(100),
+  lastPlayedAt: z.iso.datetime({ offset: true }),
+  outcome: z.enum(["left_early", "in_progress"]),
+  sessionCount: z.number().int().positive(),
+  adaptiveLevel: z.number().int().min(1).max(150).nullable(),
+  difficulty: z.enum(["starter", "growing", "advanced"]).nullable(),
+});
+
 export const parentGuidanceSchema = z.strictObject({
   personalized: z.boolean(),
   grounding: z.enum(["profile_and_session_evidence", "session_evidence_only", "general"]),
@@ -127,7 +146,8 @@ export const parentSessionSummarySchema = z.strictObject({
   eligibleGameSessionCount: z.number().int().nonnegative(),
   eligibleGameDayCount: z.number().int().nonnegative(),
   recentGameSessions: z.array(recentGameSessionSchema).max(5),
-  gameInsights: z.array(gameInsightSchema).max(5),
+  gameInsights: z.array(gameInsightSchema).max(10),
+  ongoingGames: z.array(ongoingGameSummarySchema).max(20),
   activityDetails: activityDetailSummarySchema,
   profileContext: parentInsightProfileContextSchema,
   parentGuidance: parentGuidanceSchema,
@@ -191,6 +211,14 @@ const parentIdeaByGameInsight: Record<
   took_more_time: "Bir soru sorduktan sonra yanıt vermesi için sessizce biraz daha bekleyin.",
   paused_and_left:
     "Kısa bir oyun seçeneği sunun; ara vermek isterse daha sonra devam edebileceğini hatırlatın.",
+  progressed_without_finishing:
+    "Tamamlamasa bile ilerlediği adımları fark ettiğinizi söyleyin ve isterse kaldığı yerden yeniden deneyin.",
+  returned_to_game:
+    "Yeniden seçtiği oyunda en sevdiği bölümü sorun; tekrar etme isteğini kendi hızında sürdürmesine alan açın.",
+  completed_and_moved_on:
+    "Tamamladığı oyunlardan hangisini yeniden oynamak, hangisini geride bırakmak istediğini sorun.",
+  difficulty_related_dropout:
+    "Zorlaşan bir oyunda kısa bir ara verip daha kolay bir seviyeden devam edebileceğini hatırlatın.",
 };
 
 function ageAwareIdea(
@@ -375,6 +403,46 @@ export function buildParentSessionSummary(
     title: "Oyuna ara verdi",
     text: "Birden fazla oturumda oyunu tamamlamadan kapattı; bu tek başına bir güçlük göstergesi değildir.",
   });
+  addInsight("progressed", {
+    code: "progressed_without_finishing",
+    title: "İlerlemeyi sürdürdü",
+    text: "Oyunu tamamlamadığı oturumlarda da doğru adımlarla ilerledi.",
+  });
+  addInsight("replayed", {
+    code: "returned_to_game",
+    title: "Oyuna yeniden döndü",
+    text: "Aynı oyunu farklı oturumlarda yeniden seçti; tekrar ve bağlılık etkileşimi yüksekti.",
+  });
+  addInsight("completed_without_replay", {
+    code: "completed_and_moved_on",
+    title: "Tamamladı ve yeni oyuna geçti",
+    text: "Tamamladığı oyunlara yeniden dönmek yerine farklı etkinlikleri seçme eğilimi gösterdi.",
+  });
+  addInsight("left_at_higher_difficulty", {
+    code: "difficulty_related_dropout",
+    title: "Zorluk artınca ara verdi",
+    text: "Birden fazla oturumda büyüyen veya ileri seviyeye geldiğinde oyundan ayrılma eğilimi görüldü.",
+  });
+
+  const ongoingByGame = new Map<string, ParentSessionSummary["ongoingGames"][number]>();
+  for (const item of gameEvidence
+    .filter((candidate) => candidate.outcome !== "completed")
+    .sort((left, right) => right.occurredAt.localeCompare(left.occurredAt))) {
+    const existing = ongoingByGame.get(item.gameId);
+    if (existing) {
+      existing.sessionCount += 1;
+      continue;
+    }
+    ongoingByGame.set(item.gameId, {
+      gameId: item.gameId,
+      lastPlayedAt: item.occurredAt,
+      outcome: item.outcome === "in_progress" ? "in_progress" : "left_early",
+      sessionCount: 1,
+      adaptiveLevel: item.adaptiveLevel,
+      difficulty: item.difficulty,
+    });
+  }
+  const ongoingGames = [...ongoingByGame.values()].slice(0, 20);
 
   return parentSessionSummarySchema.parse({
     schemaVersion: PARENT_INSIGHT_SCHEMA_VERSION,
@@ -391,6 +459,7 @@ export function buildParentSessionSummary(
     eligibleGameDayCount: gameDayCount,
     recentGameSessions: gameEvidence.slice(0, 5).map(({ signals: _signals, ...item }) => item),
     gameInsights,
+    ongoingGames,
     activityDetails: {
       totalSessionCount: storyEvidence.length + gameEvidence.length,
       activeDayCount: countActiveDays({ ...evidence, storyEvidence, gameEvidence }),

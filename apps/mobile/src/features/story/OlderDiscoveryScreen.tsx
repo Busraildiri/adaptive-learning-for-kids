@@ -11,9 +11,11 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { supabase } from "../../lib/supabase";
+import type { GameProgressMap } from "../../services/gameProgress";
 import { createPublishedMediaResolver } from "../storyPlayer/mediaResolver";
 import {
   CONTENT_PAGE_SIZE,
@@ -323,11 +325,13 @@ function FeaturedGameCard({
 
 function SmallGameCard({
   game,
+  progress,
   theme,
   recommended,
   onPlay,
 }: {
   game: Game;
+  progress?: GameProgressMap[string];
   theme: WorldTheme;
   recommended: boolean;
   onPlay: () => void;
@@ -348,6 +352,12 @@ function SmallGameCard({
           <MaterialCommunityIcons color="#FFFFFF" name="star" size={14} />
         </View>
       ) : null}
+      {progress?.completed ? (
+        <View style={styles.completedPill}>
+          <MaterialCommunityIcons color="#FFFFFF" name="check" size={14} />
+          <Text style={styles.completedPillText}>Tamamlandı</Text>
+        </View>
+      ) : null}
       <View style={[styles.smallGameArt, { backgroundColor: theme.background }]}>
         <GameArtwork game={game} />
       </View>
@@ -356,7 +366,7 @@ function SmallGameCard({
       </Text>
       <View style={[styles.smallPlayButton, { backgroundColor: theme.accent }]}>
         <MaterialCommunityIcons color="#FFFFFF" name="play" size={20} />
-        <Text style={styles.smallPlayText}>Oyna</Text>
+        <Text style={styles.smallPlayText}>{progress?.completed ? "Yeniden başlat" : "Oyna"}</Text>
       </View>
     </Pressable>
   );
@@ -425,61 +435,63 @@ function MoreContentButton({
 
 function GameWorldSection({
   games,
+  gameProgress,
   theme,
   recommendedGameId,
   onSelectGame,
 }: {
   games: Game[];
+  gameProgress: GameProgressMap;
   theme: WorldTheme;
   recommendedGameId: string | null;
   onSelectGame: (gameId: string) => void;
 }) {
+  const { width } = useWindowDimensions();
   const [page, setPage] = useState(0);
   const pageCount = getContentPageCount(games.length);
-  const visibleGames = getContentPage(games, page);
-  const featured = visibleGames[0];
-  if (!featured) return null;
-  const remaining = visibleGames.slice(1);
-  const trailingGame = remaining.length % 2 === 1 ? remaining.at(-1) : undefined;
-  const pairedGames = trailingGame ? remaining.slice(0, -1) : remaining;
+  const pageWidth = Math.max(width - 32, 1);
+  if (games.length === 0) return null;
   return (
     <View style={styles.worldSection}>
       <WorldBanner theme={theme} />
-      <FeaturedGameCard
-        game={featured}
-        onPlay={() => onSelectGame(featured.id)}
-        recommended={featured.id === recommendedGameId}
-        theme={theme}
-      />
-      {pairedGames.length > 0 ? (
-        <View style={styles.smallGameGrid}>
-          {pairedGames.map((game) => (
-            <SmallGameCard
-              game={game}
-              key={game.id}
-              onPlay={() => onSelectGame(game.id)}
-              recommended={game.id === recommendedGameId}
-              theme={theme}
+      <ScrollView
+        accessibilityLabel={`${theme.title} oyunları`}
+        decelerationRate="fast"
+        horizontal
+        onMomentumScrollEnd={(event) => {
+          setPage(Math.round(event.nativeEvent.contentOffset.x / pageWidth));
+        }}
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+      >
+        {Array.from({ length: pageCount }, (_, pageIndex) => (
+          <View key={pageIndex} style={[styles.gamePage, { width: pageWidth }]}>
+            {getContentPage(games, pageIndex).map((game) => (
+              <SmallGameCard
+                game={game}
+                progress={gameProgress[game.id]}
+                key={game.id}
+                onPlay={() => onSelectGame(game.id)}
+                recommended={game.id === recommendedGameId}
+                theme={theme}
+              />
+            ))}
+          </View>
+        ))}
+      </ScrollView>
+      {pageCount > 1 ? (
+        <View accessibilityLabel={`${page + 1}. sayfa`} style={styles.pageDots}>
+          {Array.from({ length: pageCount }, (_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.pageDot,
+                { backgroundColor: index === page ? theme.accent : `${theme.accent}35` },
+              ]}
             />
           ))}
         </View>
       ) : null}
-      {trailingGame ? (
-        <FeaturedGameCard
-          game={trailingGame}
-          onPlay={() => onSelectGame(trailingGame.id)}
-          recommended={trailingGame.id === recommendedGameId}
-          theme={theme}
-        />
-      ) : null}
-      <MoreContentButton
-        accent={theme.accent}
-        label="Başka oyunlar"
-        narration="Başka oyunlar geliyor!"
-        onPress={() => setPage((current) => (current + 1) % pageCount)}
-        page={page}
-        pageCount={pageCount}
-      />
     </View>
   );
 }
@@ -655,6 +667,7 @@ export function DiscoveryScreen({
   childName,
   games,
   initialTab = "games",
+  gameProgress,
   onRequestParentArea,
   onSelectGame,
   onSelectStory,
@@ -669,6 +682,7 @@ export function DiscoveryScreen({
   childName: string;
   games: Game[];
   initialTab?: "games" | "stories";
+  gameProgress: GameProgressMap;
   onRequestParentArea: () => void;
   onSelectGame: (gameId: string) => void;
   onSelectStory: (storyId: string) => void;
@@ -793,7 +807,7 @@ export function DiscoveryScreen({
             onPress={onRequestParentArea}
             style={styles.parentButton}
           >
-            <MaterialCommunityIcons color="#5C554F" name="account-lock" size={24} />
+            <MaterialCommunityIcons color="#5C554F" name="arrow-left" size={27} />
           </Pressable>
         </View>
 
@@ -806,6 +820,7 @@ export function DiscoveryScreen({
                   ? [
                       <GameWorldSection
                         games={worldGames}
+                        gameProgress={gameProgress}
                         key={`${theme.id}:${catalogSessionSeed}`}
                         onSelectGame={handleSelectGame}
                         recommendedGameId={recommendedGameId}
@@ -824,6 +839,7 @@ export function DiscoveryScreen({
                   return (
                     <SmallGameCard
                       game={game}
+                      progress={gameProgress[game.id]}
                       key={game.id}
                       onPlay={() => handleSelectGame(game.id)}
                       recommended={game.id === recommendedGameId}
@@ -1023,6 +1039,7 @@ const styles = StyleSheet.create({
   },
   playButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "900" },
   smallGameGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  gamePage: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   youngerContent: { gap: 16, marginTop: 20 },
   youngerStoryIntro: { marginTop: 20 },
   guidedContextCard: {
@@ -1081,6 +1098,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 14,
   },
+  completedPill: {
+    position: "absolute",
+    zIndex: 4,
+    top: 9,
+    left: 9,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: "#2D8C7C",
+  },
+  completedPillText: { color: "#FFFFFF", fontSize: 9, fontWeight: "900" },
   smallGameArt: { height: 126, alignItems: "center", justifyContent: "center" },
   smallGameTitle: {
     minHeight: 48,

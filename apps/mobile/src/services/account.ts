@@ -214,3 +214,27 @@ export async function createChildProfile(
   if (error) throw error;
   return mapChildProfile(data);
 }
+
+export async function updateChildProfile(
+  childId: string,
+  input: Pick<ChildProfileInput, "nickname" | "birthMonth" | "birthYear">,
+): Promise<ChildProfile> {
+  const { data, error } = await requireSupabase()
+    .from("child_profiles")
+    .update({
+      nickname: input.nickname.trim(),
+      birth_month: input.birthMonth,
+      birth_year: input.birthYear,
+    })
+    .eq("id", childId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return mapChildProfile(data);
+}
+
+export async function deleteChildProfile(childId: string): Promise<void> {
+  const { error } = await requireSupabase().from("child_profiles").delete().eq("id", childId);
+  if (error) throw error;
+}

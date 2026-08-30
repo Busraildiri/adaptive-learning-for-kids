@@ -42,12 +42,14 @@ function FloatingBalloon({
   index,
   disabled,
   highlighted,
+  itemCount,
   onPress,
 }: {
   color: string;
   index: number;
   disabled: boolean;
   highlighted: boolean;
+  itemCount: number;
   onPress: () => void;
 }) {
   const report = useGameObservation();
@@ -64,20 +66,22 @@ function FloatingBalloon({
     animation.start();
     return () => animation.stop();
   }, [float, index]);
+  const size = itemCount > 16 ? 52 : itemCount > 9 ? 72 : itemCount > 5 ? 100 : 145;
+  const height = Math.round(size * 1.24);
   return (
     <Animated.View style={{ transform: [{ translateY: float }] }}>
       <Pressable
         disabled={disabled}
         onPress={onPress}
-        style={[styles.balloonButton, highlighted && styles.highlight]}
+        style={[styles.balloonButton, { width: size, height }, highlighted && styles.highlight]}
       >
-        <Image source={assets[color]} style={styles.balloon} />
+        <Image source={assets[color]} style={[styles.balloon, { width: size, height }]} />
       </Pressable>
     </Animated.View>
   );
 }
 
-function PopBurst() {
+function PopBurst({ itemCount }: { itemCount: number }) {
   const burst = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     Animated.timing(burst, { toValue: 1, duration: 520, useNativeDriver: true }).start();
@@ -86,6 +90,7 @@ function PopBurst() {
     <Animated.View
       style={[
         styles.pop,
+        itemCount > 9 && styles.compactPop,
         {
           opacity: burst.interpolate({ inputRange: [0, 0.75, 1], outputRange: [1, 1, 0] }),
           transform: [
@@ -105,10 +110,14 @@ function PopBurst() {
 
 export function BalloonCountingGame({
   game,
+  announceIntro = true,
   onExit,
+  onRestart,
 }: {
   game: BalloonGameContent;
+  announceIntro?: boolean;
   onExit: () => void;
+  onRestart: () => void;
 }) {
   const report = useGameObservation();
   const [roundIndex, setRoundIndex] = useState(0);
@@ -123,8 +132,9 @@ export function BalloonCountingGame({
   const speak = useCallback(
     (text: string, done?: () => void) => {
       if (!game.presentation.playAudioInstructions) return done?.();
-      void Speech.stop();
-      Speech.speak(text, { language: "tr-TR", rate: 0.84, onDone: done, onStopped: done });
+      void Speech.stop().then(() =>
+        Speech.speak(text, { language: "tr-TR", rate: 0.84, onDone: done, onStopped: done }),
+      );
     },
     [game.presentation.playAudioInstructions],
   );
@@ -136,10 +146,12 @@ export function BalloonCountingGame({
     setFeedback("");
     setLocked(true);
     const text =
-      roundIndex === 0 ? `${game.presentation.introNarration} ${round.prompt}` : round.prompt;
+      roundIndex === 0 && announceIntro
+        ? `${game.presentation.introNarration} ${round.prompt}`
+        : round.prompt;
     speak(text, () => setLocked(false));
     return () => void Speech.stop();
-  }, [game.presentation.introNarration, round, roundIndex, speak]);
+  }, [announceIntro, game.presentation.introNarration, round, roundIndex, speak]);
 
   useEffect(() => {
     if (locked || completed) return;
@@ -180,6 +192,7 @@ export function BalloonCountingGame({
         : round.kind === "order"
           ? round.targetOrder?.[popped.length]
           : color;
+    report({ type: "attempt", stepId: round.id, correct: color === expected });
     if (color !== expected) {
       if (wrong >= 1) {
         const answer = expected ? names[expected] : "parlayan balon";
@@ -212,8 +225,11 @@ export function BalloonCountingGame({
             <Text style={styles.confetti}>✦ ✦ ✦</Text>
             <Text style={styles.finishTitle}>Balon parkı tamamlandı!</Text>
             <Text style={styles.finishCopy}>{game.presentation.closingNarration}</Text>
-            <Pressable onPress={onExit} style={styles.exit}>
-              <Text style={styles.exitText}>Oyunlara dön</Text>
+            <Pressable onPress={onRestart} style={styles.exit}>
+              <Text style={styles.exitText}>Tekrar başlamak için dokun</Text>
+            </Pressable>
+            <Pressable onPress={onExit}>
+              <Text style={styles.finishCopy}>Oyunlara dön</Text>
             </Pressable>
           </View>
         </ImageBackground>
@@ -247,7 +263,7 @@ export function BalloonCountingGame({
         <View style={styles.balloonGrid}>
           {round.balloons.map((color, index) =>
             popped.includes(index) ? (
-              <PopBurst key={`${color}-${index}`} />
+              <PopBurst itemCount={round.balloons.length} key={`${color}-${index}`} />
             ) : (
               <FloatingBalloon
                 color={color}
@@ -256,6 +272,7 @@ export function BalloonCountingGame({
                 disabled={locked}
                 onPress={() => choose(color, index)}
                 highlighted={highlight === color}
+                itemCount={round.balloons.length}
               />
             ),
           )}
@@ -273,7 +290,7 @@ const styles = StyleSheet.create({
   tint: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(221,246,255,0.68)" },
   close: {
     position: "absolute",
-    top: 12,
+    top: 28,
     left: 16,
     zIndex: 3,
     width: 52,
@@ -301,7 +318,7 @@ const styles = StyleSheet.create({
   counter: { marginTop: 5, color: "#E5722A", fontSize: 20, fontWeight: "900" },
   balloonGrid: {
     width: "100%",
-    maxWidth: 460,
+    maxWidth: 308,
     minHeight: 430,
     flexDirection: "row",
     flexWrap: "wrap",
@@ -319,6 +336,7 @@ const styles = StyleSheet.create({
   balloon: { width: 140, height: 175, resizeMode: "contain" },
   highlight: { backgroundColor: "#FFF29B", transform: [{ scale: 1.08 }] },
   pop: { width: 145, height: 180, alignItems: "center", justifyContent: "center" },
+  compactPop: { width: 52, height: 64 },
   popText: { color: "#FFD13D", fontSize: 50 },
   fragment: { position: "absolute", fontSize: 22 },
   fragmentOne: { left: 18, top: 24, color: "#F45B69" },

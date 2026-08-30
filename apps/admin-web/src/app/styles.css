@@ -564,6 +564,7 @@ textarea:focus {
   gap: 3px;
   border: 1px solid rgb(43 91 83 / 10%);
   padding: 14px 16px;
+  color: #315b54;
   background: rgb(255 255 255 / 82%);
   box-shadow: 0 7px 18px rgb(45 80 73 / 7%);
   text-align: left;

@@ -38,11 +38,15 @@ const clueChoices = [
 ] as const;
 
 export function EmotionCluesGame({
+  announceIntro = true,
   game,
   onExit,
+  onRestart,
 }: {
+  announceIntro?: boolean;
   game: EmotionGameContent;
   onExit: () => void;
+  onRestart: () => void;
 }) {
   const report = useGameObservation();
   const [roundIndex, setRoundIndex] = useState(0);
@@ -56,8 +60,9 @@ export function EmotionCluesGame({
   const speak = useCallback(
     (text: string, onDone?: () => void) => {
       if (!game.presentation.playAudioInstructions) return onDone?.();
-      void Speech.stop();
-      Speech.speak(text, { language: "tr-TR", rate: 0.83, onDone, onStopped: onDone });
+      void Speech.stop().then(() =>
+        Speech.speak(text, { language: "tr-TR", rate: 0.83, onDone, onStopped: onDone }),
+      );
     },
     [game.presentation.playAudioInstructions],
   );
@@ -67,12 +72,12 @@ export function EmotionCluesGame({
     setFeedback("");
     setAttempt(0);
     const narration =
-      roundIndex === 0
+      roundIndex === 0 && announceIntro
         ? `${game.presentation.introNarration} ${round.storyPrompt} ${round.emotionPrompt}`
         : `${round.storyPrompt} ${round.emotionPrompt}`;
     speak(narration, () => setLocked(false));
     return () => void Speech.stop();
-  }, [game.presentation.introNarration, round, roundIndex, speak]);
+  }, [announceIntro, game.presentation.introNarration, round, roundIndex, speak]);
 
   const finishRound = () => {
     if (roundIndex === game.rounds.length - 1) {
@@ -132,13 +137,17 @@ export function EmotionCluesGame({
 
   const chooseEmotion = (choice: EmotionClueRound["correctEmotion"]) => {
     if (locked) return;
-    if (!isEmotionChoiceCorrect(round, choice)) return retry();
+    const correct = isEmotionChoiceCorrect(round, choice);
+    report({ type: "attempt", stepId: round.id, correct });
+    if (!correct) return retry();
     acceptEmotion();
   };
 
   const chooseClue = (choice: EmotionClueRound["correctClue"]) => {
     if (locked) return;
-    if (!isClueChoiceCorrect(round, choice)) return retry();
+    const correct = isClueChoiceCorrect(round, choice);
+    report({ type: "attempt", stepId: round.id, correct });
+    if (!correct) return retry();
     acceptClue();
   };
 
@@ -158,8 +167,11 @@ export function EmotionCluesGame({
           <MaterialCommunityIcons color="#7A55B3" name="magnify-scan" size={92} />
           <Text style={styles.finishTitle}>Duygu dedektifi oldun!</Text>
           <Text style={styles.finishText}>{game.presentation.closingNarration}</Text>
-          <Pressable onPress={onExit} style={styles.exitButton}>
-            <Text style={styles.exitText}>Oyunlara dön</Text>
+          <Pressable onPress={onRestart} style={styles.exitButton}>
+            <Text style={styles.exitText}>Tekrar başlamak için dokun</Text>
+          </Pressable>
+          <Pressable onPress={onExit}>
+            <Text style={styles.finishText}>Oyunlara dön</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -235,7 +247,7 @@ const styles = StyleSheet.create({
   closeButton: {
     position: "absolute",
     zIndex: 2,
-    top: 12,
+    top: 28,
     left: 16,
     width: 52,
     height: 52,

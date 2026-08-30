@@ -33,6 +33,8 @@ const gameEvidence: ParentInsightEvidenceBundle["gameEvidence"] = [
     outcome: "completed",
     occurredAt: "2026-08-27T12:30:00.000Z",
     signals: ["completed", "retried"],
+    adaptiveLevel: null,
+    difficulty: null,
   },
   {
     sessionId: "66666666-6666-4666-8666-666666666662",
@@ -40,6 +42,8 @@ const gameEvidence: ParentInsightEvidenceBundle["gameEvidence"] = [
     outcome: "completed",
     occurredAt: "2026-08-28T12:30:00.000Z",
     signals: ["completed", "retried", "help_shown"],
+    adaptiveLevel: null,
+    difficulty: null,
   },
   {
     sessionId: "66666666-6666-4666-8666-666666666663",
@@ -47,6 +51,8 @@ const gameEvidence: ParentInsightEvidenceBundle["gameEvidence"] = [
     outcome: "left_early",
     occurredAt: "2026-08-28T13:30:00.000Z",
     signals: ["left_early", "help_shown"],
+    adaptiveLevel: null,
+    difficulty: null,
   },
 ];
 const base: ParentInsightEvidenceBundle = {
@@ -141,6 +147,56 @@ describe("RAG-grounded parent session insights", () => {
       gameEvidence[1]?.sessionId,
       gameEvidence[2]?.sessionId,
     ]);
+  });
+
+  it("recognizes partial progress and returning to the same game", () => {
+    const evidence: ParentInsightEvidenceBundle["gameEvidence"] = gameEvidence.map(
+      (item, index) => ({
+        ...item,
+        outcome: "left_early",
+        signals: index < 2 ? ["left_early", "progressed", "replayed"] : ["left_early", "replayed"],
+      }),
+    );
+    const summary = buildParentSessionSummary({ ...base, gameEvidence: evidence });
+
+    expect(summary.gameInsights.map((insight) => insight.code)).toContain(
+      "progressed_without_finishing",
+    );
+    expect(summary.gameInsights.map((insight) => insight.code)).toContain("returned_to_game");
+    expect(summary.ongoingGames).toEqual([
+      expect.objectContaining({
+        gameId: "fish-patterns-001",
+        outcome: "left_early",
+        sessionCount: 3,
+      }),
+    ]);
+  });
+
+  it("separates moving on after completion from leaving at higher difficulty", () => {
+    const evidence: ParentInsightEvidenceBundle["gameEvidence"] = gameEvidence.map(
+      (item, index) => ({
+        ...item,
+        outcome: index === 2 ? "in_progress" : "left_early",
+        adaptiveLevel: 58 + index,
+        difficulty: "growing",
+        signals:
+          index < 2
+            ? ["left_early", "completed_without_replay", "left_at_higher_difficulty"]
+            : ["left_early", "left_at_higher_difficulty"],
+      }),
+    );
+    const summary = buildParentSessionSummary({ ...base, gameEvidence: evidence });
+
+    expect(summary.gameInsights.map((insight) => insight.code)).toContain("completed_and_moved_on");
+    expect(summary.gameInsights.map((insight) => insight.code)).toContain(
+      "difficulty_related_dropout",
+    );
+    expect(summary.ongoingGames[0]).toMatchObject({
+      gameId: "fish-patterns-001",
+      adaptiveLevel: 60,
+      difficulty: "growing",
+      sessionCount: 3,
+    });
   });
 
   it("builds detailed activity counts from the complete evidence window", () => {

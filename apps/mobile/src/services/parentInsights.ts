@@ -64,7 +64,13 @@ async function loadLegacyEvidenceWithProfileContext(childId: string): Promise<un
 }
 
 export async function loadParentSessionSummary(childId: string): Promise<ParentSessionSummary> {
-  await synchronizePendingInteractionEvents();
+  try {
+    await synchronizePendingInteractionEvents();
+  } catch (error) {
+    // A temporary upload failure must not hide a summary that is already
+    // stored. Pending events stay on-device and will be retried later.
+    console.warn("[ParentInsights] Pending activity sync failed; loading stored summary", error);
+  }
   const { data, error } = await requireSupabase().rpc("get_personalized_parent_insight_evidence", {
     child_profile_id: childId,
   });

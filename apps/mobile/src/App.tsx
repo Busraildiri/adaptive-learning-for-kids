@@ -8,6 +8,7 @@ import {
   resolveAgeBand,
 } from "@adaptive/shared-types";
 import type { Session } from "@supabase/supabase-js";
+import { setAudioModeAsync } from "expo-audio";
 import * as Linking from "expo-linking";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, SafeAreaView, StyleSheet } from "react-native";
@@ -38,6 +39,12 @@ import {
 import { loadChildConsentSettings } from "./services/consents";
 import { loadPublishedGames } from "./services/gameCatalog";
 import { loadGameVariantPreference } from "./services/gamePersonalization";
+import {
+  type GameProgressMap,
+  loadGameProgress,
+  restartCompletedGame,
+  saveGameProgress,
+} from "./services/gameProgress";
 import { initializeInteractionEventSync } from "./services/interactionEvents";
 import { loadPublishedStoryExperiences } from "./services/storyExperiences";
 
@@ -78,6 +85,7 @@ export default function App() {
   const [discoveryTab, setDiscoveryTab] = useState<DiscoveryTab>("games");
   const [lastPlayedBktGameId, setLastPlayedBktGameId] = useState<string | null>(null);
   const [gameRecommendationRevision, setGameRecommendationRevision] = useState(0);
+  const [gameProgress, setGameProgress] = useState<GameProgressMap>({});
   const [availableGames, setAvailableGames] = useState(content.games ?? []);
   const [publishedStories, setPublishedStories] = useState<PublishedStoryExperience[]>([]);
   const [recommendedStoryId, setRecommendedStoryId] = useState<string | null>(null);
@@ -91,6 +99,13 @@ export default function App() {
   const handledRecoveryUrl = useRef<string | null>(null);
 
   useEffect(() => initializeInteractionEventSync(), []);
+  useEffect(() => {
+    void setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: false,
+      interruptionMode: "doNotMix",
+    }).catch(() => undefined);
+  }, []);
 
   const refreshAccount = useCallback(async (userId: string) => {
     setLoadingAccount(true);
@@ -105,7 +120,11 @@ export default function App() {
       const activeChildId = onboardingComplete ? await getPersistedActiveChildId() : null;
       const persistedChild = childProfiles.find((child) => child.id === activeChildId);
       if (persistedChild && resolveAgeBand(persistedChild.birthMonth, persistedChild.birthYear)) {
-        const consentSettings = await withTimeout(loadChildConsentSettings(persistedChild.id));
+        const [consentSettings, storedGameProgress] = await Promise.all([
+          withTimeout(loadChildConsentSettings(persistedChild.id)),
+          loadGameProgress(persistedChild.id),
+        ]);
+        setGameProgress(storedGameProgress);
         setCatalogSessionSeed(createCatalogSessionSeed());
         setActiveChild(
           createChildSessionProfile(persistedChild, {
@@ -114,6 +133,7 @@ export default function App() {
           }),
         );
       } else {
+        setGameProgress({});
         setActiveChild(null);
         if (activeChildId) await clearPersistedActiveChildId();
       }
@@ -431,6 +451,8 @@ export default function App() {
         <TrackedGame
           child={activeChild}
           game={selectedGame}
+          games={eligibleGames}
+          initialProgress={gameProgress[selectedGame.id]}
           onExit={() => {
             if (
               selectedGame.mechanic === "sequence_and_place" &&
@@ -440,6 +462,22 @@ export default function App() {
             }
             setSelectedGameId(null);
             setGameRecommendationRevision((current) => current + 1);
+          }}
+          onProgress={(adaptiveProgress, completed = false) => {
+            const previous = gameProgress[selectedGame.id];
+            const progress = {
+              gameId: selectedGame.id,
+              maxItemCount: adaptiveProgress.itemCount,
+              completed,
+              replayCount: previous?.replayCount ?? 0,
+              adaptiveLevel: adaptiveProgress.adaptiveLevel,
+              challengeIndex: adaptiveProgress.challengeIndex,
+              completedRunsAtLevel: adaptiveProgress.completedRunsAtLevel,
+              currentDifficulty: adaptiveProgress.difficulty,
+              updatedAt: new Date().toISOString(),
+            };
+            setGameProgress((current) => ({ ...current, [selectedGame.id]: progress }));
+            void saveGameProgress(activeChild.id, progress);
           }}
         />
       );
@@ -455,11 +493,19 @@ export default function App() {
           gameRecommendationExplanation={gameRecommendationExplanation}
           games={eligibleGames}
           initialTab={discoveryTab}
+          gameProgress={gameProgress}
           onRequestParentArea={() => setShowParentPinGate(true)}
           onSelectGame={(gameId) => {
             setDiscoveryTab("games");
             setSelectedStoryId(null);
-            setSelectedGameId(gameId);
+            if (gameProgress[gameId]?.completed) {
+              void restartCompletedGame(activeChild.id, gameId).then((next) => {
+                setGameProgress(next);
+                setSelectedGameId(gameId);
+              });
+            } else {
+              setSelectedGameId(gameId);
+            }
           }}
           onSelectStory={(storyId) => {
             setDiscoveryTab("stories");
@@ -503,18 +549,25 @@ export default function App() {
     <ParentHomeScreen
       children={children}
       onChildCreated={(profile) => setChildren((current) => [...current, profile])}
+      onChildDeleted={(childId) =>
+        setChildren((current) => current.filter((child) => child.id !== childId))
+      }
       onChildUpdated={(profile) =>
         setChildren((current) =>
           current.map((child) => (child.id === profile.id ? profile : child)),
         )
       }
       onStartChildMode={async (profile) => {
-        const consentSettings = await loadChildConsentSettings(profile.id);
+        const [consentSettings, storedGameProgress] = await Promise.all([
+          loadChildConsentSettings(profile.id),
+          loadGameProgress(profile.id),
+        ]);
         await persistActiveChildId(profile.id);
         setSelectedStoryId(null);
         setSelectedGameId(null);
         setDiscoveryTab("games");
         setCatalogSessionSeed(createCatalogSessionSeed());
+        setGameProgress(storedGameProgress);
         setActiveChild(
           createChildSessionProfile(profile, {
             personalizationEnabled: consentSettings.personalization,
