@@ -173,16 +173,13 @@ export function ClassifyAndSortGame({
   const [basketBounds, setBasketBounds] = useState<BasketBounds | null>(null);
   const [highlightedObjectId, setHighlightedObjectId] = useState<string | null>(null);
   const roundStartedAt = useRef(Date.now());
+  const speechToken = useRef(0);
+  const isMounted = useRef(true);
   const basketRef = useRef<View>(null);
   const mascotScale = useRef(new Animated.Value(1)).current;
   const basketBounce = useRef(new Animated.Value(1)).current;
   const currentRound = game.rounds[roundIndex];
-  const shownInstruction =
-    currentRound.dimension === "color"
-      ? "Kırmızı olanı sepete sürükle ve bırak."
-      : currentRound.dimension === "category"
-        ? "Hayvanı sepete sürükle ve bırak."
-        : "En büyük olanı sepete sürükle ve bırak.";
+  const shownInstruction = currentRound.instruction;
   const roundImages =
     currentRound.dimension === "color"
       ? [redBalloon, soap, toothbrush]
@@ -196,11 +193,37 @@ export function ClassifyAndSortGame({
         onDone?.();
         return;
       }
-      void Speech.stop().then(() =>
-        Speech.speak(text, { language: "tr-TR", rate: 0.84, onDone, onStopped: onDone }),
-      );
+      const token = speechToken.current + 1;
+      speechToken.current = token;
+      void Speech.stop().then(() => {
+        if (!isMounted.current || speechToken.current !== token) return;
+        const complete = () => {
+          if (isMounted.current && speechToken.current === token) onDone?.();
+        };
+        Speech.speak(text, {
+          language: "tr-TR",
+          rate: 0.84,
+          onDone: complete,
+          onStopped: complete,
+        });
+      });
     },
     [game.presentation.playAudioInstructions],
+  );
+
+  const exitGame = useCallback(() => {
+    speechToken.current += 1;
+    void Speech.stop();
+    onExit();
+  }, [onExit]);
+
+  useEffect(
+    () => () => {
+      isMounted.current = false;
+      speechToken.current += 1;
+      void Speech.stop();
+    },
+    [],
   );
 
   useEffect(() => {
@@ -322,7 +345,7 @@ export function ClassifyAndSortGame({
           <Pressable accessibilityRole="button" onPress={onRestart} style={styles.exitButton}>
             <Text style={styles.exitButtonText}>Tekrar başlamak için dokun</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" onPress={onExit}>
+          <Pressable accessibilityRole="button" onPress={exitGame}>
             <Text style={styles.completedCopy}>Oyunlara dön</Text>
           </Pressable>
         </View>
@@ -340,7 +363,7 @@ export function ClassifyAndSortGame({
         accessibilityLabel="Oyundan çık"
         accessibilityRole="button"
         hitSlop={10}
-        onPress={onExit}
+        onPress={exitGame}
         style={styles.parentButton}
       >
         <Text style={styles.parentButtonText}>×</Text>
