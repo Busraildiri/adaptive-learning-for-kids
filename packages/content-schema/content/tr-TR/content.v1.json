@@ -1199,7 +1199,7 @@
         }
       ],
       "feedback": {
-        "matched": "Hop! Doğru nesne sepette, bir filiz uyandı!",
+        "matched": "Doğru nesne sepette, bir filiz uyandı!",
         "retry": "Bu başka bir gruba ait. Birlikte yeniden bakalım.",
         "transition": "Hazır ol, yeni bir kural geliyor!"
       },
