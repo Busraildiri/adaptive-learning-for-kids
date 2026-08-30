@@ -22,9 +22,11 @@ import { loadMomoCustomization, saveMomoCustomization } from "../../services/mom
 import { useGameObservation } from "./GameObservationContext";
 import {
   type Bounds,
+  boundedMomoItemCount,
   cableEndpointsMatch,
   crystalCountMatches,
   findCableDropTarget,
+  momoRoundPrompt,
   outcomeForGuidedAttempt,
   patternShapeMatches,
 } from "./momoWorkshopEngine";
@@ -343,6 +345,7 @@ function CrystalCountRound({
   onSubmit: (selectedCount: number) => void;
 }) {
   const [selected, setSelected] = useState<number[]>([]);
+  const visibleCrystalCount = boundedMomoItemCount(crystalCount);
   useEffect(() => {
     if (reveal) setSelected(Array.from({ length: targetCount }, (_, index) => index));
   }, [reveal, targetCount]);
@@ -353,7 +356,7 @@ function CrystalCountRound({
   return (
     <View style={styles.crystalRound}>
       <View style={styles.crystalShelf}>
-        {Array.from({ length: crystalCount }, (_, index) => (
+        {Array.from({ length: visibleCrystalCount }, (_, index) => (
           <Pressable
             accessibilityLabel={`${index + 1}. enerji kristali`}
             disabled={locked}
@@ -482,6 +485,7 @@ export function MomoWorkshopGame({
   const [selectedPart, setSelectedPart] = useState<MomoPartVisual | null>(null);
   const feedbackShake = useRef(new Animated.Value(0)).current;
   const round = game.rounds[roundIndex];
+  const roundPrompt = momoRoundPrompt(round);
 
   const speak = useCallback(
     (text: string, done?: () => void) => {
@@ -505,12 +509,12 @@ export function MomoWorkshopGame({
     setFeedback("");
     setRevealed(false);
     setLocked(true);
-    const unlockWithPrompt = () => speak(round.prompt, () => setLocked(false));
+    const unlockWithPrompt = () => speak(roundPrompt, () => setLocked(false));
     if (roundIndex === 0 && announceIntro)
       speak(game.presentation.introNarration, unlockWithPrompt);
     else unlockWithPrompt();
     return () => void Speech.stop();
-  }, [announceIntro, game.presentation.introNarration, phase, round, roundIndex, speak]);
+  }, [announceIntro, game.presentation.introNarration, phase, roundPrompt, roundIndex, speak]);
 
   useEffect(() => {
     if (phase !== "reward") return;
@@ -677,7 +681,7 @@ export function MomoWorkshopGame({
         <Text style={styles.closeText}>×</Text>
       </Pressable>
       <View style={styles.progressRow}>
-        {Array.from({ length: 5 }, (_, index) => (
+        {Array.from({ length: game.rounds.length }, (_, index) => (
           <View
             key={`step-${index}`}
             style={[styles.progressDot, index <= roundIndex && styles.progressDotOn]}
@@ -687,20 +691,22 @@ export function MomoWorkshopGame({
       <View style={styles.gameHeader}>
         <MomoAvatar selectedPart={selectedPart} />
         <View style={styles.headerCopy}>
-          <Text style={styles.stepEyebrow}>MOMO’YU UYANDIR · {roundIndex + 1}/3</Text>
+          <Text style={styles.stepEyebrow}>
+            MOMO’YU UYANDIR · {roundIndex + 1}/{game.rounds.length}
+          </Text>
           <Text style={styles.gameTitle}>{game.title}</Text>
         </View>
         <Pressable
           accessibilityLabel="Yönergeyi yeniden dinle"
           disabled={locked}
-          onPress={() => speak(round.prompt)}
+          onPress={() => speak(roundPrompt)}
           style={styles.listenButton}
         >
           <MaterialCommunityIcons color="#3C6E92" name="volume-high" size={28} />
         </Pressable>
       </View>
       <View style={styles.instructionCard}>
-        <Text style={styles.instruction}>{round.prompt}</Text>
+        <Text style={styles.instruction}>{roundPrompt}</Text>
       </View>
       <View style={styles.roundArea}>
         {round.kind === "cable_match" ? (
@@ -929,7 +935,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     backgroundColor: "#7892A4",
   },
-  crystalRound: { width: "100%", maxWidth: 480, alignItems: "center" },
+  crystalRound: { width: "100%", maxWidth: 420, alignItems: "center" },
   crystalShelf: {
     minHeight: 150,
     flexDirection: "row",
@@ -939,8 +945,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   crystalButton: {
-    width: 88,
-    height: 102,
+    width: 72,
+    height: 72,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 4,
@@ -970,7 +976,7 @@ const styles = StyleSheet.create({
     borderRadius: 29,
     backgroundColor: "#4BAFA5",
   },
-  patternRound: { width: "100%", maxWidth: 382, alignItems: "center" },
+  patternRound: { width: "100%", maxWidth: 360, alignItems: "center" },
   patternSequence: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -979,8 +985,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   patternTile: {
-    width: 70,
-    height: 82,
+    width: 64,
+    height: 64,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 3,

@@ -1,9 +1,11 @@
 import type { MomoCableEndpoint } from "@adaptive/content-schema";
 import { describe, expect, it } from "vitest";
 import {
+  boundedMomoItemCount,
   cableEndpointsMatch,
   crystalCountMatches,
   findCableDropTarget,
+  momoRoundPrompt,
   outcomeForGuidedAttempt,
   patternShapeMatches,
 } from "./momoWorkshopEngine";
@@ -65,5 +67,34 @@ describe("momoWorkshopEngine", () => {
     expect(outcomeForGuidedAttempt(false, 0, true)).toBe("retry");
     expect(outcomeForGuidedAttempt(false, 1, true)).toBe("reveal");
     expect(outcomeForGuidedAttempt(true, 1, true)).toBe("matched");
+  });
+
+  it("keeps adaptive Momo item counts inside the 5 by 5 board", () => {
+    expect(boundedMomoItemCount(0)).toBe(1);
+    expect(boundedMomoItemCount(12.8)).toBe(12);
+    expect(boundedMomoItemCount(26)).toBe(25);
+  });
+
+  it("builds instructions from the generated adaptive round", () => {
+    expect(
+      momoRoundPrompt({
+        id: "crystals",
+        kind: "crystal_count",
+        prompt: "Eski sabit yönerge",
+        crystalCount: 8,
+        targetCount: 6,
+      }),
+    ).toBe("6 enerji kristalini Momo'nun piline koy.");
+
+    expect(
+      momoRoundPrompt({
+        id: "pattern",
+        kind: "pattern_shape",
+        prompt: "Eski sabit yönerge",
+        sequence: ["circle", "triangle", "square"],
+        choices: ["circle", "square", "triangle"],
+        correctShape: "circle",
+      }),
+    ).toBe("daire, üçgen, kare; sıradaki şekli seç.");
   });
 });

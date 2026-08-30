@@ -1,4 +1,4 @@
-import type { MomoCableEndpoint, MomoShape } from "@adaptive/content-schema";
+import type { MomoCableEndpoint, MomoShape, MomoWorkshopRound } from "@adaptive/content-schema";
 
 export type Point = { x: number; y: number };
 export type Bounds = { x: number; y: number; width: number; height: number };
@@ -9,6 +9,27 @@ export type CableDropTarget = {
 };
 
 export type GuidedAttemptOutcome = "matched" | "retry" | "reveal";
+
+const shapeLabels: Record<MomoShape, string> = {
+  circle: "daire",
+  square: "kare",
+  triangle: "üçgen",
+};
+
+export function momoRoundPrompt(round: MomoWorkshopRound): string {
+  if (round.kind === "crystal_count") {
+    return `${round.targetCount} enerji kristalini Momo'nun piline koy.`;
+  }
+  if (round.kind === "pattern_shape") {
+    const sequence = round.sequence.map((shape) => shapeLabels[shape]).join(", ");
+    return `${sequence}; sıradaki şekli seç.`;
+  }
+  return round.prompt;
+}
+
+export function boundedMomoItemCount(itemCount: number): number {
+  return Math.max(1, Math.min(25, Math.floor(itemCount)));
+}
 
 export function cableEndpointsMatch(first: MomoCableEndpoint, second: MomoCableEndpoint): boolean {
   return first.id !== second.id && first.side !== second.side && first.matchKey === second.matchKey;
