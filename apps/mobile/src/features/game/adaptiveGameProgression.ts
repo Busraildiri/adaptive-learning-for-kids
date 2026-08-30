@@ -28,6 +28,14 @@ const turkishObjectCounts: Record<number, string> = {
   10: "on",
 };
 
+const patiAnimalAccusatives: Record<string, string> = {
+  "happy-dog": "Köpeği",
+  cat: "Kediyi",
+  fox: "Tilkiyi",
+  rabbit: "Tavşanı",
+  bear: "Ayıcığı",
+};
+
 // These are the additional illustrated Pati objects. They stay outside the
 // five starter rounds, but join the adaptive pool as distinct visuals.
 const patiVisualObjects: SortObject[] = [
@@ -579,12 +587,17 @@ export function adaptGameComplexity(
       challengeIndex,
     );
     const objectCountWord = turkishObjectCounts[objects.length] ?? String(objects.length);
-    const instruction = sourceRound.instruction
-      .replace(/Şimdi dört nesne var\./, `Şimdi ${objectCountWord} nesne var.`)
-      .replace(
-        /Dört nesnenin içinden/,
-        `${objectCountWord.charAt(0).toLocaleUpperCase("tr-TR")}${objectCountWord.slice(1)} nesnenin içinden`,
-      );
+    const instruction =
+      game.id === "rule-changed-garden-001" &&
+      sourceRound.dimension === "category" &&
+      sourceRound.targetValue === "animal"
+        ? `${patiAnimalAccusatives[matching.id] ?? matching.label} sepete sürükle ve bırak.`
+        : sourceRound.instruction
+            .replace(/Şimdi dört nesne var\./, `Şimdi ${objectCountWord} nesne var.`)
+            .replace(
+              /Dört nesnenin içinden/,
+              `${objectCountWord.charAt(0).toLocaleUpperCase("tr-TR")}${objectCountWord.slice(1)} nesnenin içinden`,
+            );
     return {
       ...game,
       rounds: [
