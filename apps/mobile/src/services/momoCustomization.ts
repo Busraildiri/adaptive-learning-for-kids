@@ -5,12 +5,14 @@ import { supabase } from "../lib/supabase";
 export type MomoCustomization = {
   selectedPart: MomoPartVisual | null;
   unlockedMilestones: number[];
+  completedChapterIds: string[];
 };
 
 const storageKey = (childId: string) => `momo.customization.${childId}`;
 const emptyCustomization = (): MomoCustomization => ({
   selectedPart: null,
   unlockedMilestones: [],
+  completedChapterIds: [],
 });
 
 function normalizeCustomization(value: Partial<MomoCustomization> | null): MomoCustomization {
@@ -25,7 +27,15 @@ function normalizeCustomization(value: Partial<MomoCustomization> | null): MomoC
       ),
     ),
   ).sort((left, right) => left - right);
-  return { selectedPart, unlockedMilestones };
+  const completedChapterIds = Array.from(
+    new Set(
+      (value?.completedChapterIds ?? []).filter(
+        (chapterId) =>
+          typeof chapterId === "string" && chapterId.length > 0 && chapterId.length <= 160,
+      ),
+    ),
+  ).slice(-150);
+  return { selectedPart, unlockedMilestones, completedChapterIds };
 }
 
 export async function loadMomoCustomization(childId: string): Promise<MomoCustomization> {
@@ -52,7 +62,23 @@ export async function loadMomoCustomization(childId: string): Promise<MomoCustom
   await SecureStore.setItemAsync(storageKey(childId), JSON.stringify(remote), {
     keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
   });
-  return remote;
+  return {
+    ...remote,
+    completedChapterIds: Array.from(
+      new Set([...local.completedChapterIds, ...remote.completedChapterIds]),
+    ).slice(-150),
+  };
+}
+
+export async function markMomoChapterCompleted(childId: string, chapterId: string): Promise<void> {
+  const current = await loadMomoCustomization(childId);
+  const next = normalizeCustomization({
+    ...current,
+    completedChapterIds: [...current.completedChapterIds, chapterId],
+  });
+  await SecureStore.setItemAsync(storageKey(childId), JSON.stringify(next), {
+    keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+  });
 }
 
 export async function saveMomoCustomization(

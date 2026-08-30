@@ -10,6 +10,7 @@ import {
   momoRoundPrompt,
   momoRoundsForLevel,
   momoTaskForLevel,
+  nextUnseenMomoChapterIndex,
   outcomeForGuidedAttempt,
   patternShapeMatches,
 } from "./momoWorkshopEngine";
@@ -236,5 +237,72 @@ describe("momoWorkshopEngine", () => {
     const beforeSupport = momoTaskForLevel(39);
     const afterSupport = momoTaskForLevel(40);
     expect(afterSupport).not.toEqual(beforeSupport);
+  });
+
+  it("retires cable chapters once the child reaches the five-pair ceiling", () => {
+    const baseRounds = [
+      {
+        id: "cables",
+        kind: "cable_match" as const,
+        prompt: "Kabloları bağla.",
+        endpoints: [
+          coralLeft,
+          coralRight,
+          { ...coralLeft, id: "blue-left", matchKey: "blue" },
+          blueRight,
+        ],
+      },
+      {
+        id: "crystals",
+        kind: "crystal_count" as const,
+        prompt: "Kristalleri seç.",
+        crystalCount: 5,
+        targetCount: 3,
+      },
+      {
+        id: "pattern",
+        kind: "pattern_shape" as const,
+        prompt: "Deseni tamamla.",
+        sequence: ["circle", "square", "circle"] as const,
+        choices: ["circle", "square", "triangle"] as const,
+        correctShape: "square" as const,
+      },
+    ];
+    for (let chapter = 1; chapter <= 150; chapter += 1) {
+      expect(momoRoundsForLevel(baseRounds, chapter, 40)[0]?.kind).not.toBe("cable_match");
+    }
+  });
+
+  it("skips a chapter that was already completed by the child", () => {
+    const baseRounds = [
+      {
+        id: "cables",
+        kind: "cable_match" as const,
+        prompt: "Kabloları bağla.",
+        endpoints: [
+          coralLeft,
+          coralRight,
+          { ...coralLeft, id: "blue-left", matchKey: "blue" },
+          blueRight,
+        ],
+      },
+      {
+        id: "crystals",
+        kind: "crystal_count" as const,
+        prompt: "Kristalleri seç.",
+        crystalCount: 5,
+        targetCount: 3,
+      },
+      {
+        id: "pattern",
+        kind: "pattern_shape" as const,
+        prompt: "Deseni tamamla.",
+        sequence: ["circle", "square", "circle"] as const,
+        choices: ["circle", "square", "triangle"] as const,
+        correctShape: "square" as const,
+      },
+    ];
+    const completedId = momoRoundsForLevel(baseRounds, 10, 40)[0]?.id as string;
+    expect(nextUnseenMomoChapterIndex(baseRounds, 10, 40, [completedId])).not.toBe(10);
   });
 });

@@ -18,7 +18,11 @@ import {
   Vibration,
   View,
 } from "react-native";
-import { loadMomoCustomization, saveMomoCustomization } from "../../services/momoCustomization";
+import {
+  loadMomoCustomization,
+  markMomoChapterCompleted,
+  saveMomoCustomization,
+} from "../../services/momoCustomization";
 import { useGameObservation } from "./GameObservationContext";
 import {
   type Bounds,
@@ -31,6 +35,7 @@ import {
   type MomoPartKind,
   momoRoundPrompt,
   momoRoundsForLevel,
+  nextUnseenMomoChapterIndex,
   outcomeForGuidedAttempt,
   patternShapeMatches,
 } from "./momoWorkshopEngine";
@@ -603,10 +608,11 @@ export function MomoWorkshopGame({
   const [phase, setPhase] = useState<"rounds" | "reward" | "complete">("rounds");
   const [selectedPart, setSelectedPart] = useState<MomoPartVisual | null>(null);
   const [unlockedMilestones, setUnlockedMilestones] = useState<number[]>([]);
+  const [chapterCursor, setChapterCursor] = useState(chapterIndex + 1);
   const feedbackShake = useRef(new Animated.Value(0)).current;
   const playableRounds = useMemo(
-    () => momoRoundsForLevel(game.rounds, chapterIndex + 1),
-    [chapterIndex, game.rounds],
+    () => momoRoundsForLevel(game.rounds, chapterCursor, adaptiveLevel),
+    [adaptiveLevel, chapterCursor, game.rounds],
   );
   const round = playableRounds[roundIndex] as (typeof playableRounds)[number];
   const roundPrompt = momoRoundPrompt(round);
@@ -628,6 +634,14 @@ export function MomoWorkshopGame({
       .then((customization) => {
         setSelectedPart(customization.selectedPart);
         setUnlockedMilestones(customization.unlockedMilestones);
+        setChapterCursor(
+          nextUnseenMomoChapterIndex(
+            game.rounds,
+            chapterIndex + 1,
+            adaptiveLevel,
+            customization.completedChapterIds,
+          ),
+        );
       })
       .catch(() => undefined);
   }, [childId]);
@@ -657,6 +671,7 @@ export function MomoWorkshopGame({
     setFeedback(game.feedback.matched);
     Vibration.vibrate(35);
     speak(game.feedback.matched, () => {
+      void markMomoChapterCompleted(childId, round.id).catch(() => undefined);
       if (roundIndex === playableRounds.length - 1) {
         if (isRewardLevel && !unlockedMilestones.includes(adaptiveLevel)) setPhase("reward");
         else report({ type: "completed", stepId: round.id });

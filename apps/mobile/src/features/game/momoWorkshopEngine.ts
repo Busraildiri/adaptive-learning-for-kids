@@ -123,10 +123,21 @@ function patternCycleForEncounter(encounter: number): MomoShape[] {
 
 export function momoRoundsForLevel(
   baseRounds: readonly MomoWorkshopRound[],
-  adaptiveLevel: number,
+  chapterIndex: number,
+  adaptiveLevel = chapterIndex,
 ): MomoPlayableRound[] {
-  const level = Math.max(1, Math.min(150, Math.floor(adaptiveLevel)));
-  const task = momoTaskForLevel(level);
+  const level = Math.max(1, Math.min(150, Math.floor(chapterIndex)));
+  const progressLevel = Math.max(1, Math.min(150, Math.floor(adaptiveLevel)));
+  let task = momoTaskForLevel(level);
+  if (progressLevel >= 40 && task.kind === "cables") {
+    for (let candidate = level + 1; candidate <= 150; candidate += 1) {
+      const nextTask = momoTaskForLevel(candidate);
+      if (nextTask.kind !== "cables") {
+        task = nextTask;
+        break;
+      }
+    }
+  }
   const occurrence = task.encounter;
   const leveledBase = baseRounds.map((round): MomoWorkshopRound => {
     if (round.kind === "cable_match" && level >= 31) {
@@ -253,6 +264,21 @@ export function momoRoundsForLevel(
     cables: expandedCables,
   };
   return [roundsByTask[task.kind] as MomoPlayableRound];
+}
+
+export function nextUnseenMomoChapterIndex(
+  baseRounds: readonly MomoWorkshopRound[],
+  startChapterIndex: number,
+  adaptiveLevel: number,
+  completedChapterIds: readonly string[],
+): number {
+  const seen = new Set(completedChapterIds);
+  const start = Math.max(1, Math.min(150, Math.floor(startChapterIndex)));
+  for (let index = start; index <= 150; index += 1) {
+    const chapter = momoRoundsForLevel(baseRounds, index, adaptiveLevel)[0];
+    if (chapter && !seen.has(chapter.id)) return index;
+  }
+  return start;
 }
 
 export function boundedMomoItemCount(itemCount: number): number {
