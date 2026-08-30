@@ -13,6 +13,8 @@ import {
   Text,
   View,
 } from "react-native";
+import { supabase } from "../../lib/supabase";
+import { createPublishedMediaResolver } from "../storyPlayer/mediaResolver";
 import {
   CONTENT_PAGE_SIZE,
   createSessionOrder,
@@ -22,8 +24,12 @@ import {
   groupOlderGames,
   type OlderGameWorldId,
 } from "./olderGameCategories";
-import { createPublishedStorySelectionCards } from "./publishedStorySelection";
-import { createStorySelectionCards } from "./storySelection";
+import { PublishedStoryCover } from "./PublishedStoryCover";
+import {
+  createPublishedStorySelectionCards,
+  type PublishedStorySelectionCard,
+} from "./publishedStorySelection";
+import { createStorySelectionCards, type StorySelectionCard } from "./storySelection";
 
 const minoHappy = require("../../../assets/characters/mino-happy.png");
 const fishGameIcon = require("../../../assets/game/home/fish-patterns.png");
@@ -540,9 +546,11 @@ function GuidedContextCard({
 function StoryCard({
   card,
   index,
+  resolvePublishedMediaRef,
 }: {
-  card: ReturnType<typeof createStorySelectionCards>[number];
+  card: StorySelectionCard | PublishedStorySelectionCard;
   index: number;
+  resolvePublishedMediaRef?: (mediaRef: string) => Promise<string>;
 }) {
   const backgrounds = ["#FFE0CF", "#D6F0E9", "#E9DDFC", "#FFF0B8"];
   const accents = ["#DF6948", "#248D7B", "#7551AE", "#D28A18"];
@@ -564,7 +572,15 @@ function StoryCard({
             style={styles.storyImage}
           />
         ) : (
-          <Text style={styles.storySymbol}>{card.symbol}</Text>
+          <>
+            <Text style={styles.storySymbol}>{card.symbol}</Text>
+            {"coverMediaRef" in card && card.coverMediaRef && resolvePublishedMediaRef ? (
+              <PublishedStoryCover
+                mediaRef={card.coverMediaRef}
+                resolvePublishedMediaRef={resolvePublishedMediaRef}
+              />
+            ) : null}
+          </>
         )}
         {card.recommended ? (
           <View style={[styles.storyBadge, { backgroundColor: accent }]}>
@@ -638,6 +654,7 @@ export function DiscoveryScreen({
   catalogSessionSeed,
   childName,
   games,
+  initialTab = "games",
   onRequestParentArea,
   onSelectGame,
   onSelectStory,
@@ -651,6 +668,7 @@ export function DiscoveryScreen({
   catalogSessionSeed: string;
   childName: string;
   games: Game[];
+  initialTab?: "games" | "stories";
   onRequestParentArea: () => void;
   onSelectGame: (gameId: string) => void;
   onSelectStory: (storyId: string) => void;
@@ -659,9 +677,13 @@ export function DiscoveryScreen({
   recommendedStoryId: string | null;
   stories: Story[];
 }) {
-  const [tab, setTab] = useState<"games" | "stories">("games");
+  const [tab, setTab] = useState<"games" | "stories">(initialTab);
   const [youngerGamePage, setYoungerGamePage] = useState(0);
   const [storyPage, setStoryPage] = useState(0);
+  const publishedMediaResolver = useMemo(
+    () => (supabase ? createPublishedMediaResolver(supabase) : null),
+    [],
+  );
   const themes = useMemo(() => getWorldThemes(ageBand), [ageBand]);
   const themeById = useMemo(
     () => new Map(themes.map((theme) => [theme.id, theme] as const)),
@@ -842,7 +864,12 @@ export function DiscoveryScreen({
             )}
             <View style={styles.storyGrid}>
               {visibleStoryCards.map((card, index) => (
-                <StoryCard card={card} index={index} key={card.storyId} />
+                <StoryCard
+                  card={card}
+                  index={index}
+                  key={card.storyId}
+                  resolvePublishedMediaRef={publishedMediaResolver?.resolvePublishedMediaRef}
+                />
               ))}
             </View>
             <MoreContentButton

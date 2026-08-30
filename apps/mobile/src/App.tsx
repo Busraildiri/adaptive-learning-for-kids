@@ -42,6 +42,7 @@ import { initializeInteractionEventSync } from "./services/interactionEvents";
 import { loadPublishedStoryExperiences } from "./services/storyExperiences";
 
 type PasswordRecoveryStatus = "checking" | "idle" | "processing" | "ready" | "error";
+type DiscoveryTab = "games" | "stories";
 
 function withTimeout<T>(operation: Promise<T>, timeoutMs = 8000): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -74,6 +75,7 @@ export default function App() {
   const [showParentPinGate, setShowParentPinGate] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [discoveryTab, setDiscoveryTab] = useState<DiscoveryTab>("games");
   const [lastPlayedBktGameId, setLastPlayedBktGameId] = useState<string | null>(null);
   const [gameRecommendationRevision, setGameRecommendationRevision] = useState(0);
   const [availableGames, setAvailableGames] = useState(content.games ?? []);
@@ -156,6 +158,7 @@ export default function App() {
         setShowParentPinGate(false);
         setSelectedStoryId(null);
         setSelectedGameId(null);
+        setDiscoveryTab("games");
         void clearPersistedActiveChildId();
       }
     });
@@ -451,12 +454,15 @@ export default function App() {
           childName={activeChild.nickname}
           gameRecommendationExplanation={gameRecommendationExplanation}
           games={eligibleGames}
+          initialTab={discoveryTab}
           onRequestParentArea={() => setShowParentPinGate(true)}
           onSelectGame={(gameId) => {
+            setDiscoveryTab("games");
             setSelectedStoryId(null);
             setSelectedGameId(gameId);
           }}
           onSelectStory={(storyId) => {
+            setDiscoveryTab("stories");
             setSelectedGameId(null);
             setSelectedStoryId(storyId);
           }}
@@ -470,7 +476,13 @@ export default function App() {
 
     if (storyRoute.kind === "published") {
       return (
-        <StoryPlayer experience={storyRoute.experience} onExit={() => setSelectedStoryId(null)} />
+        <StoryPlayer
+          experience={storyRoute.experience}
+          onExit={() => {
+            setDiscoveryTab("stories");
+            setSelectedStoryId(null);
+          }}
+        />
       );
     }
 
@@ -478,7 +490,10 @@ export default function App() {
       <MinoStory
         child={activeChild}
         onRequestParentArea={() => setShowParentPinGate(true)}
-        onRequestStorySelection={() => setSelectedStoryId(null)}
+        onRequestStorySelection={() => {
+          setDiscoveryTab("stories");
+          setSelectedStoryId(null);
+        }}
         story={storyRoute.story}
       />
     );
@@ -498,6 +513,7 @@ export default function App() {
         await persistActiveChildId(profile.id);
         setSelectedStoryId(null);
         setSelectedGameId(null);
+        setDiscoveryTab("games");
         setCatalogSessionSeed(createCatalogSessionSeed());
         setActiveChild(
           createChildSessionProfile(profile, {

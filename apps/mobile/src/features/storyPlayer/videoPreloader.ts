@@ -28,6 +28,8 @@ interface PreloadedVideo {
 }
 
 const VIDEO_READY_TIMEOUT_MS = 20_000;
+const FIRST_FRAME_PREROLL_SECONDS = 0.06;
+const FIRST_FRAME_PREROLL_TIMEOUT_MS = 900;
 
 function waitUntilReady(player: VideoPlayer): {
   ready: Promise<void>;
@@ -92,6 +94,48 @@ function waitUntilReady(player: VideoPlayer): {
   };
 }
 
+/**
+ * readyToPlay means the native player can start, but it does not guarantee
+ * that a decoded frame is waiting for a newly mounted VideoView. Briefly
+ * advance the muted player and pause it on an early frame so the transition
+ * can reveal picture immediately instead of exposing the native black
+ * surface while its decoder starts.
+ */
+function primeFirstFrame(player: VideoPlayer): Promise<void> {
+  return new Promise((resolve) => {
+    let settled = false;
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    let subscription: { remove: () => void } | null = null;
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      subscription?.remove();
+      subscription = null;
+      if (timeout) clearTimeout(timeout);
+      timeout = null;
+      try {
+        player.pause();
+      } catch {
+        // A cancelled/released preload needs no further preparation.
+      }
+      resolve();
+    };
+
+    try {
+      player.muted = true;
+      player.timeUpdateEventInterval = 0.02;
+      subscription = player.addListener("timeUpdate", ({ currentTime }) => {
+        if (currentTime >= FIRST_FRAME_PREROLL_SECONDS) finish();
+      });
+      timeout = setTimeout(finish, FIRST_FRAME_PREROLL_TIMEOUT_MS);
+      player.play();
+    } catch {
+      finish();
+    }
+  });
+}
+
 export function createVideoPreloader(): VideoPreloader {
   const videos = new Map<string, PreloadedVideo>();
 
@@ -101,9 +145,10 @@ export function createVideoPreloader(): VideoPreloader {
     const player = createVideoPlayer(uri);
     player.loop = false;
     const readiness = waitUntilReady(player);
+    const prepared = readiness.ready.then(() => primeFirstFrame(player));
     const video: PreloadedVideo = {
       player,
-      ready: readiness.ready,
+      ready: prepared,
       cancelReadinessWait: readiness.cancel,
     };
     videos.set(clipId, video);
@@ -125,6 +170,7 @@ export function createVideoPreloader(): VideoPreloader {
     if (!video || video.player.status !== "readyToPlay") return null;
     videos.delete(clipId);
     video.cancelReadinessWait();
+    video.player.muted = false;
     return video.player;
   }
 

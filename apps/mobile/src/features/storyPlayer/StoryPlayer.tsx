@@ -8,9 +8,10 @@ import {
   type PublishedStoryExperience,
   validatePublishedExperienceGraph,
 } from "@adaptive/media-schema";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, SafeAreaView, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { supabase } from "../../lib/supabase";
 import { ChoiceStage } from "./ChoiceStage";
 import { FinishedStage } from "./FinishedStage";
@@ -169,7 +170,7 @@ export function StoryPlayer({
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <StatusBar hidden />
       {(stage.stage === "video" || stage.stage === "choice") && (
         <Pressable
@@ -179,7 +180,7 @@ export function StoryPlayer({
           onPress={onExit}
           style={styles.closeButton}
         >
-          <Text style={styles.closeButtonSymbol}>✕</Text>
+          <MaterialCommunityIcons color="#FFFFFF" name="close" size={30} />
         </Pressable>
       )}
       {stage.stage === "video" &&
@@ -225,7 +226,7 @@ export function StoryPlayer({
       {stage.stage === "finished" && (
         <FinishedStage onExit={onExit} onReplay={() => dispatch({ type: "REPLAY" })} />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -233,15 +234,21 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#FFF6E8" },
   closeButton: {
     position: "absolute",
-    top: 16,
-    left: 16,
+    top: 34,
+    left: 18,
     zIndex: 10,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    backgroundColor: "#E6534B",
+    borderWidth: 3,
+    borderColor: "rgba(255,255,255,0.88)",
+    shadowColor: "#7A2F2B",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 6,
+    elevation: 5,
   },
-  closeButtonSymbol: { color: "#FF6B6B", fontSize: 20, fontWeight: "900" },
 });
