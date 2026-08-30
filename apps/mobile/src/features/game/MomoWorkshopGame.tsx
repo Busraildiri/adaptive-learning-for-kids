@@ -27,6 +27,7 @@ import {
   crystalCountMatches,
   findCableDropTarget,
   isMomoRewardLevel,
+  type MomoPartKind,
   momoRoundPrompt,
   momoRoundsForLevel,
   outcomeForGuidedAttempt,
@@ -481,34 +482,48 @@ function RewardChoice({
   );
 }
 
-function GearMatchRound({
+const momoPartIcons: Record<MomoPartKind, keyof typeof MaterialCommunityIcons.glyphMap> = {
+  antenna: "antenna",
+  arm: "arm-flex",
+  battery: "battery-high",
+  wheel: "car-tire-alert",
+  sensor: "radar",
+};
+
+const momoPartLabels: Record<MomoPartKind, string> = {
+  antenna: "anten",
+  arm: "kol",
+  battery: "enerji pili",
+  wheel: "tekerlek",
+  sensor: "sensör",
+};
+
+function PartMatchRound({
   choices,
   locked,
-  targetSize,
+  targetPart,
   onChoose,
 }: {
-  choices: number[];
+  choices: MomoPartKind[];
   locked: boolean;
-  targetSize: number;
-  onChoose: (size: number) => void;
+  targetPart: MomoPartKind;
+  onChoose: (part: MomoPartKind) => void;
 }) {
   return (
     <View style={styles.bonusRound}>
-      <View
-        style={[styles.gearSocket, { width: 54 + targetSize * 18, height: 54 + targetSize * 18 }]}
-      >
-        <MaterialCommunityIcons color="#7892A4" name="cog-outline" size={38 + targetSize * 12} />
+      <View style={styles.partTarget}>
+        <MaterialCommunityIcons color="#7892A4" name={momoPartIcons[targetPart]} size={76} />
       </View>
       <View style={styles.bonusChoices}>
-        {choices.map((size) => (
+        {choices.map((part) => (
           <Pressable
-            accessibilityLabel={`${size}. büyüklükte dişli`}
+            accessibilityLabel={`${momoPartLabels[part]} parçası`}
             disabled={locked}
-            key={size}
-            onPress={() => onChoose(size)}
+            key={part}
+            onPress={() => onChoose(part)}
             style={({ pressed }) => [styles.bonusChoice, pressed && styles.pressed]}
           >
-            <MaterialCommunityIcons color="#4B8FE8" name="cog" size={30 + size * 12} />
+            <MaterialCommunityIcons color="#4B8FE8" name={momoPartIcons[part]} size={48} />
           </Pressable>
         ))}
       </View>
@@ -846,12 +861,12 @@ export function MomoWorkshopGame({
             reveal={revealed}
             sequence={round.sequence}
           />
-        ) : round.kind === "gear_match" ? (
-          <GearMatchRound
+        ) : round.kind === "part_match" ? (
+          <PartMatchRound
             choices={round.choices}
             locked={locked}
-            onChoose={(size) => handleAttempt(size === round.targetSize)}
-            targetSize={round.targetSize}
+            onChoose={(part) => handleAttempt(part === round.targetPart)}
+            targetPart={round.targetPart}
           />
         ) : (
           <OddPartRound
@@ -1150,13 +1165,14 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: "#E6EFF2",
   },
-  gearSocket: {
+  partTarget: {
+    width: 132,
+    height: 132,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 4,
-    borderStyle: "dashed",
     borderColor: "#7892A4",
-    borderRadius: 24,
+    borderRadius: 34,
     backgroundColor: "#FFFFFF",
   },
   patternSequence: {

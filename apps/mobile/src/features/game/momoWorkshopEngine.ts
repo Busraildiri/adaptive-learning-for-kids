@@ -9,8 +9,15 @@ export type CableDropTarget = {
 };
 
 export type GuidedAttemptOutcome = "matched" | "retry" | "reveal";
+export type MomoPartKind = "antenna" | "arm" | "battery" | "wheel" | "sensor";
 export type MomoBonusRound =
-  | { id: string; kind: "gear_match"; prompt: string; targetSize: number; choices: number[] }
+  | {
+      id: string;
+      kind: "part_match";
+      prompt: string;
+      targetPart: MomoPartKind;
+      choices: MomoPartKind[];
+    }
   | {
       id: string;
       kind: "odd_part";
@@ -67,13 +74,18 @@ export function momoRoundsForLevel(
     }
     return round;
   });
-  const gearChoiceCount = Math.min(5, 2 + occurrence);
-  const gearRound: MomoBonusRound = {
-    id: `momo-gear-${level}`,
-    kind: "gear_match",
-    prompt: "Boşluğa uyan büyüklükteki dişliyi seç.",
-    targetSize: 1 + ((occurrence - 1) % gearChoiceCount),
-    choices: Array.from({ length: gearChoiceCount }, (_, index) => index + 1),
+  const partKinds: MomoPartKind[] = ["antenna", "arm", "battery", "wheel", "sensor"];
+  const partChoiceCount = Math.min(5, 2 + occurrence);
+  const targetPart = partKinds[(occurrence - 1) % partKinds.length] as MomoPartKind;
+  const partRound: MomoBonusRound = {
+    id: `momo-part-${level}`,
+    kind: "part_match",
+    prompt: "Momo'nun eksik parçasının aynısını bul.",
+    targetPart,
+    choices: [targetPart, ...partKinds.filter((part) => part !== targetPart)].slice(
+      0,
+      partChoiceCount,
+    ),
   };
   const oddChoiceCount = Math.min(25, 4 + occurrence);
   const oddIndex = level % oddChoiceCount;
@@ -147,7 +159,7 @@ export function momoRoundsForLevel(
   const levelCycle = [
     expandedCrystals,
     expandedPattern,
-    gearRound,
+    partRound,
     oddRound,
     expandedCables,
   ].filter((round): round is MomoPlayableRound => Boolean(round));

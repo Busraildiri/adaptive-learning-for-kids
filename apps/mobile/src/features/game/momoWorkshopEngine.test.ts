@@ -146,7 +146,7 @@ describe("momoWorkshopEngine", () => {
     expect(firstCycle).toEqual([
       "crystal_count",
       "pattern_shape",
-      "gear_match",
+      "part_match",
       "odd_part",
       "cable_match",
     ]);
