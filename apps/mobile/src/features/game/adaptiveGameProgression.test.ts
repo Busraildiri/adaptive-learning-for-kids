@@ -193,23 +193,24 @@ describe("adaptive game progression", () => {
     const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
     if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
 
-    const adapted = adaptGameComplexity(pati, 2, 3);
+    const adapted = adaptGameComplexity(pati, 2, 2);
     if (adapted.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
 
     expect(adapted.rounds[0]?.objects).toHaveLength(2);
     expect(adapted.rounds[0]?.instruction).toContain("Şimdi iki nesne var.");
 
-    const finalRound = adaptGameComplexity(pati, 2, 4);
+    const finalRound = adaptGameComplexity(pati, 2, 3);
     if (finalRound.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
     expect(finalRound.rounds[0]?.objects).toHaveLength(2);
-    expect(finalRound.rounds[0]?.instruction).toContain("İki nesnenin içinden");
+    expect(finalRound.rounds[0]?.instruction).toContain("Yeşil olanı");
+    expect(pati.rounds.every((round) => round.dimension !== "size")).toBe(true);
   });
 
   it("uses Pati's clearly colored source asset as the color-rule target", () => {
     const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
     if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
 
-    const adapted = adaptGameComplexity(pati, 2, 10);
+    const adapted = adaptGameComplexity(pati, 2, 8);
     if (adapted.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
     const target = adapted.rounds[0]?.objects.find((object) =>
       object.id.endsWith("-adaptive-target"),

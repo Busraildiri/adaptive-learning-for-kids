@@ -1118,38 +1118,6 @@
           ]
         },
         {
-          "id": "find-large",
-          "dimension": "size",
-          "targetValue": "large",
-          "instruction": "Kural değişti! En büyük olanı sepete sürükle ve bırak.",
-          "objects": [
-            {
-              "id": "large-play-ball",
-              "label": "büyük renkli top",
-              "shape": "ball",
-              "color": "red",
-              "category": "toy",
-              "size": "large"
-            },
-            {
-              "id": "small-play-ball-a",
-              "label": "küçük renkli top",
-              "shape": "ball",
-              "color": "red",
-              "category": "toy",
-              "size": "small"
-            },
-            {
-              "id": "small-play-ball-b",
-              "label": "küçük renkli top",
-              "shape": "ball",
-              "color": "red",
-              "category": "toy",
-              "size": "small"
-            }
-          ]
-        },
-        {
           "id": "find-blue",
           "dimension": "color",
           "targetValue": "blue",
@@ -1190,10 +1158,10 @@
           ]
         },
         {
-          "id": "find-large-final",
-          "dimension": "size",
-          "targetValue": "large",
-          "instruction": "Son görev! Dört nesnenin içinden büyük olanı bul.",
+          "id": "find-green-final",
+          "dimension": "color",
+          "targetValue": "green",
+          "instruction": "Son görev! Yeşil olanı sepete sürükle ve bırak.",
           "objects": [
             {
               "id": "large-green-car",
