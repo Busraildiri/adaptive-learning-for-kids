@@ -200,6 +200,7 @@ describe("adaptive game progression", () => {
     expect(adapted.rounds[0]?.instruction).toContain("Şimdi iki nesne var.");
 
     const finalRound = adaptGameComplexity(pati, 2, 4);
+    if (finalRound.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
     expect(finalRound.rounds[0]?.objects).toHaveLength(2);
     expect(finalRound.rounds[0]?.instruction).toContain("İki nesnenin içinden");
   });
@@ -209,6 +210,7 @@ describe("adaptive game progression", () => {
     if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
 
     const adapted = adaptGameComplexity(pati, 2, 10);
+    if (adapted.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
     const target = adapted.rounds[0]?.objects.find((object) =>
       object.id.endsWith("-adaptive-target"),
     );
@@ -335,9 +337,9 @@ describe("adaptive game progression", () => {
   });
 
   it("generates rhythm sequences from two items up to the shared limit", () => {
-    const first = adaptGameComplexity(rhythmGame, 2);
-    const next = adaptGameComplexity(rhythmGame, 3);
-    const capped = adaptGameComplexity(rhythmGame, 99);
+    const first = adaptGameComplexity(rhythmGame, 2, 0);
+    const next = adaptGameComplexity(rhythmGame, 3, 2);
+    const capped = adaptGameComplexity(rhythmGame, 99, 5);
     if (
       first.mechanic !== "mini_challenge" ||
       next.mechanic !== "mini_challenge" ||
@@ -345,9 +347,12 @@ describe("adaptive game progression", () => {
     ) {
       throw new Error("Expected mini challenge games");
     }
-    expect(first.rounds[0]?.correctSequence).toEqual(["drum", "clap"]);
-    expect(next.rounds[0]?.correctSequence).toEqual(["drum", "clap", "drum"]);
-    expect(capped.rounds[0]?.correctSequence).toHaveLength(MAX_ADAPTIVE_ITEM_COUNT);
+    expect(first.rounds[0]?.correctSequence).toEqual(["drum", "tambourine"]);
+    expect(first.rounds[0]?.choices).toHaveLength(4);
+    expect(next.rounds[0]?.correctSequence).toEqual(["tambourine", "xylophone", "triangle"]);
+    expect(next.rounds[0]?.choices).toHaveLength(4);
+    expect(capped.rounds[0]?.correctSequence).toHaveLength(4);
+    expect(capped.rounds[0]?.choices).toHaveLength(4);
   });
 
   it("does not repeat the same rhythm combination on consecutive challenges", () => {
@@ -449,7 +454,10 @@ describe("adaptive game progression", () => {
           break;
         case "mini_challenge": {
           const round = adapted.rounds[0];
-          if (round?.kind !== "single") {
+          if (round?.kind === "rhythm") {
+            expect(round.correctSequence, adapted.id).toHaveLength(4);
+            expect(round.choices, adapted.id).toHaveLength(4);
+          } else if (round?.kind !== "single") {
             expect(round?.correctSequence, adapted.id).toHaveLength(MAX_ADAPTIVE_ITEM_COUNT);
           }
           break;
@@ -475,6 +483,9 @@ describe("adaptive game progression", () => {
     const visibleAcrossRounds = new Set<string>();
     for (let challengeIndex = 0; challengeIndex < game.rounds.length; challengeIndex += 1) {
       const adapted = adaptGameComplexity(game, MAX_ADAPTIVE_ITEM_COUNT, challengeIndex);
+      if (adapted.mechanic !== "classify_and_sort") {
+        throw new Error("Expected adapted Pati game");
+      }
       const objectIds = adapted.rounds[0]?.objects.map((object) => object.id) ?? [];
       const baseIds = objectIds.map((id) => id.replace(/-adaptive-(target|distractor)$/, ""));
       expect(new Set(baseIds).size).toBe(baseIds.length);

@@ -163,7 +163,8 @@ export function TrackedGame({
       findGameVariant(games, activeGame, "starter") ?? activeGame,
       "starter",
     );
-    const challengeIndex = progression.challengeIndex + 1;
+    const challengeIndex =
+      activeGame.id === "nino-sound-rhythm-001" ? 0 : progression.challengeIndex + 1;
     startRun(adaptGameComplexity(starter, 2, challengeIndex), {
       difficulty: starter.difficulty.level,
       completedRunsAtLevel: 0,

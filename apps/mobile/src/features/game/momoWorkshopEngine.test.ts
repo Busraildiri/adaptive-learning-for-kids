@@ -1,4 +1,4 @@
-import type { MomoCableEndpoint } from "@adaptive/content-schema";
+import type { MomoCableEndpoint, MomoWorkshopRound } from "@adaptive/content-schema";
 import { describe, expect, it } from "vitest";
 import {
   boundedMomoItemCount,
@@ -113,7 +113,7 @@ describe("momoWorkshopEngine", () => {
   });
 
   it("makes every Momo level one distinct workshop task", () => {
-    const baseRounds = [
+    const baseRounds: MomoWorkshopRound[] = [
       {
         id: "cables",
         kind: "cable_match" as const,
@@ -136,8 +136,8 @@ describe("momoWorkshopEngine", () => {
         id: "pattern",
         kind: "pattern_shape" as const,
         prompt: "Deseni tamamla.",
-        sequence: ["circle", "square", "circle"] as const,
-        choices: ["circle", "square", "triangle"] as const,
+        sequence: ["circle", "square", "circle"],
+        choices: ["circle", "square", "triangle"],
         correctShape: "square" as const,
       },
     ];
@@ -195,7 +195,7 @@ describe("momoWorkshopEngine", () => {
   });
 
   it("does not generate the same Momo chapter configuration twice", () => {
-    const baseRounds = [
+    const baseRounds: MomoWorkshopRound[] = [
       {
         id: "cables",
         kind: "cable_match" as const,
@@ -218,8 +218,8 @@ describe("momoWorkshopEngine", () => {
         id: "pattern",
         kind: "pattern_shape" as const,
         prompt: "Deseni tamamla.",
-        sequence: ["circle", "square", "circle"] as const,
-        choices: ["circle", "square", "triangle"] as const,
+        sequence: ["circle", "square", "circle"],
+        choices: ["circle", "square", "triangle"],
         correctShape: "square" as const,
       },
     ];
@@ -240,7 +240,7 @@ describe("momoWorkshopEngine", () => {
   });
 
   it("retires cable chapters once the child reaches the five-pair ceiling", () => {
-    const baseRounds = [
+    const baseRounds: MomoWorkshopRound[] = [
       {
         id: "cables",
         kind: "cable_match" as const,
@@ -263,8 +263,8 @@ describe("momoWorkshopEngine", () => {
         id: "pattern",
         kind: "pattern_shape" as const,
         prompt: "Deseni tamamla.",
-        sequence: ["circle", "square", "circle"] as const,
-        choices: ["circle", "square", "triangle"] as const,
+        sequence: ["circle", "square", "circle"],
+        choices: ["circle", "square", "triangle"],
         correctShape: "square" as const,
       },
     ];
@@ -274,7 +274,7 @@ describe("momoWorkshopEngine", () => {
   });
 
   it("skips a chapter that was already completed by the child", () => {
-    const baseRounds = [
+    const baseRounds: MomoWorkshopRound[] = [
       {
         id: "cables",
         kind: "cable_match" as const,
@@ -297,8 +297,8 @@ describe("momoWorkshopEngine", () => {
         id: "pattern",
         kind: "pattern_shape" as const,
         prompt: "Deseni tamamla.",
-        sequence: ["circle", "square", "circle"] as const,
-        choices: ["circle", "square", "triangle"] as const,
+        sequence: ["circle", "square", "circle"],
+        choices: ["circle", "square", "triangle"],
         correctShape: "square" as const,
       },
     ];

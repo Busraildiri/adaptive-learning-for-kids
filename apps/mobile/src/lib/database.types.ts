@@ -103,17 +103,20 @@ export interface Database {
         Row: {
           child_id: string;
           selected_part_id: "star-antenna" | "spring-antenna";
+          unlocked_milestones: number[];
           created_at: string;
           updated_at: string;
         };
         Insert: {
           child_id: string;
           selected_part_id: "star-antenna" | "spring-antenna";
+          unlocked_milestones?: number[];
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           selected_part_id?: "star-antenna" | "spring-antenna";
+          unlocked_milestones?: number[];
           updated_at?: string;
         };
         Relationships: [

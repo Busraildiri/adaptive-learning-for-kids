@@ -1,4 +1,7 @@
 import type { AgeBand, Game, GameDifficultyLevel, SortObject } from "@adaptive/content-schema";
+import { adaptRhythmRound } from "./miniChallengeEngine";
+
+type MiniChallengeContent = Extract<Game, { mechanic: "mini_challenge" }>;
 
 const levels: readonly GameDifficultyLevel[] = ["starter", "growing", "advanced"];
 const balloonColorNames = {
@@ -350,7 +353,7 @@ export function adaptGameComplexity(
   );
 
   if (game.mechanic === "mini_challenge") {
-    const rikoExtraRounds =
+    const rikoExtraRounds: MiniChallengeContent["rounds"] =
       game.id === "riko-where-001"
         ? [
             {
@@ -418,10 +421,13 @@ export function adaptGameComplexity(
         ],
       };
     }
-    const source =
-      adaptiveRound.kind === "rhythm"
-        ? ["drum", "clap", "drum", "bell"]
-        : adaptiveRound.correctSequence;
+    if (adaptiveRound.kind === "rhythm") {
+      return {
+        ...game,
+        rounds: [adaptRhythmRound(adaptiveRound, challengeIndex)],
+      };
+    }
+    const source = adaptiveRound.correctSequence;
     const correctSequence = repeatToLength(rotate(source, challengeIndex), itemCount);
     return {
       ...game,
@@ -429,9 +435,9 @@ export function adaptGameComplexity(
         {
           ...adaptiveRound,
           id: `${adaptiveRound.id}-adaptive-${itemCount}`,
-          prompt: adaptiveRound.kind === "rhythm" ? "Ritmi tahmin et." : adaptiveRound.prompt,
+          prompt: adaptiveRound.prompt,
           correctSequence,
-          demoSequence: adaptiveRound.kind === "rhythm" ? correctSequence : undefined,
+          demoSequence: undefined,
         },
       ],
     };

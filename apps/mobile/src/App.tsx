@@ -39,7 +39,13 @@ import {
 import { loadChildConsentSettings } from "./services/consents";
 import { loadPublishedGames } from "./services/gameCatalog";
 import { loadGameVariantPreference } from "./services/gamePersonalization";
-import { type GameProgressMap, loadGameProgress, saveGameProgress } from "./services/gameProgress";
+import {
+  type GameProgressMap,
+  loadGameProgress,
+  restartCompletedGame,
+  saveGameProgress,
+  shouldRestartGameOnLaunch,
+} from "./services/gameProgress";
 import { initializeInteractionEventSync } from "./services/interactionEvents";
 import { loadPublishedStoryExperiences } from "./services/storyExperiences";
 
@@ -497,7 +503,14 @@ export default function App() {
           onSelectGame={(gameId) => {
             setDiscoveryTab("games");
             setSelectedStoryId(null);
-            setSelectedGameId(gameId);
+            if (shouldRestartGameOnLaunch(gameId, gameProgress[gameId])) {
+              void restartCompletedGame(activeChild.id, gameId).then((next) => {
+                setGameProgress(next);
+                setSelectedGameId(gameId);
+              });
+            } else {
+              setSelectedGameId(gameId);
+            }
           }}
           onSelectStory={(storyId) => {
             setDiscoveryTab("stories");
