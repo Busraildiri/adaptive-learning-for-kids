@@ -1,5 +1,4 @@
 import type { PublishedPlaybackClip } from "@adaptive/media-schema";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { createAudioOwner } from "./audioOwner";
@@ -7,8 +6,19 @@ import { getChoiceVisual } from "./choiceVisual";
 
 type DecisionClip = Extract<PublishedPlaybackClip, { kind: "decision" }>;
 
+// expo-audio releases its native player synchronously from JavaScript, but
+// iOS can need one run-loop turn to relinquish the audio session. Starting an
+// audio-bearing expo-video player in that tiny window can leave the video
+// paused on its first frame. Keep this deliberately short: the child should
+// not perceive an extra pause after the reinforcement finishes.
+const AUDIO_SESSION_RELEASE_DELAY_MS = 100;
+
 function playAndWait(owner: ReturnType<typeof createAudioOwner>, uri: string): Promise<void> {
   return new Promise((resolve) => owner.play(uri, resolve));
+}
+
+function waitForAudioSessionRelease(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, AUDIO_SESSION_RELEASE_DELAY_MS));
 }
 
 export function ChoiceStage({
@@ -25,10 +35,12 @@ export function ChoiceStage({
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [questionFinished, setQuestionFinished] = useState(false);
   const audioOwnerRef = useRef(createAudioOwner());
+  const stageActiveRef = useRef(false);
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
 
   useEffect(() => {
+    stageActiveRef.current = true;
     setSelectedOptionId(null);
     setQuestionFinished(false);
     const owner = audioOwnerRef.current;
@@ -54,6 +66,7 @@ export function ChoiceStage({
     void narrateQuestion();
     return () => {
       cancelled = true;
+      stageActiveRef.current = false;
       owner.release();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by clip.id at the call site
@@ -75,8 +88,15 @@ export function ChoiceStage({
     try {
       const optionUri = await resolvePublishedMediaRef(option.audio.mediaRef);
       await playAndWait(owner, optionUri);
-      onSelect(optionId);
+      // The second decision goes straight from expo-audio reinforcement to
+      // an audio-bearing ending video. Release the completed audio player
+      // before dispatching that transition so the two native audio sessions
+      // cannot race each other.
+      owner.release();
+      await waitForAudioSessionRelease();
+      if (stageActiveRef.current) onSelect(optionId);
     } catch (error) {
+      if (!stageActiveRef.current) return;
       onErrorRef.current(
         error instanceof Error
           ? error.message
@@ -120,13 +140,13 @@ export function ChoiceStage({
               ]}
             >
               <View style={styles.optionIconCircle}>
-                <MaterialCommunityIcons
+                <Text
                   accessibilityElementsHidden
-                  color={visual.iconColor}
                   importantForAccessibility="no"
-                  name={visual.icon}
-                  size={82}
-                />
+                  style={[styles.optionSymbol, { fontSize: visual.symbolSize ?? 70 }]}
+                >
+                  {visual.symbol}
+                </Text>
               </View>
             </Pressable>
           );
@@ -183,4 +203,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  optionSymbol: { lineHeight: 88, textAlign: "center" },
 });

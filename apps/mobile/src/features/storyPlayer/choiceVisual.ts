@@ -1,89 +1,67 @@
-export type ChoiceVisualIcon =
-  | "account-heart-outline"
-  | "balloon"
-  | "emoticon-angry-outline"
-  | "emoticon-frown-outline"
-  | "emoticon-happy-outline"
-  | "emoticon-neutral-outline"
-  | "emoticon-sad-outline"
-  | "gesture-tap"
-  | "gift-outline"
-  | "hand-heart-outline"
-  | "head-heart-outline";
-
 export type ChoiceVisual = {
   backgroundColor: string;
   borderColor: string;
-  icon: ChoiceVisualIcon;
-  iconColor: string;
+  symbol: string;
+  symbolSize?: number;
 };
 
 const visuals = {
   angry: {
     backgroundColor: "#FFD1CA",
     borderColor: "#E85D4A",
-    icon: "emoticon-angry-outline",
-    iconColor: "#A93628",
+    symbol: "😠",
   },
   balloon: {
     backgroundColor: "#CDEBE4",
     borderColor: "#2D8C7C",
-    icon: "balloon",
-    iconColor: "#216D61",
+    symbol: "🎈",
   },
   fallback: {
     backgroundColor: "#EAF5F2",
     borderColor: "#5BAA9D",
-    icon: "hand-heart-outline",
-    iconColor: "#216D61",
+    symbol: "🤝",
   },
   gift: {
     backgroundColor: "#E7DDFC",
     borderColor: "#8D6AC8",
-    icon: "gift-outline",
-    iconColor: "#5E438D",
+    symbol: "🎁",
   },
   happy: {
     backgroundColor: "#FFF0A8",
     borderColor: "#F2B84B",
-    icon: "emoticon-happy-outline",
-    iconColor: "#9C6500",
+    symbol: "😊",
   },
   hug: {
     backgroundColor: "#FFD9C8",
     borderColor: "#E99070",
-    icon: "account-heart-outline",
-    iconColor: "#B34831",
+    symbol: "🤗",
   },
   love: {
     backgroundColor: "#F9D3E3",
     borderColor: "#D86B9C",
-    icon: "head-heart-outline",
-    iconColor: "#9A3564",
+    symbol: "💬❤️",
+    symbolSize: 50,
   },
   neutral: {
     backgroundColor: "#E8E4DC",
     borderColor: "#A69B8C",
-    icon: "emoticon-neutral-outline",
-    iconColor: "#665B50",
+    symbol: "😐",
   },
   pet: {
     backgroundColor: "#FFF0A8",
     borderColor: "#F2B84B",
-    icon: "gesture-tap",
-    iconColor: "#9C6500",
+    symbol: "🫳🐱",
+    symbolSize: 48,
   },
   sad: {
     backgroundColor: "#CFEAF6",
     borderColor: "#55A9D6",
-    icon: "emoticon-sad-outline",
-    iconColor: "#286A8E",
+    symbol: "😢",
   },
   scared: {
     backgroundColor: "#E4D7F5",
     borderColor: "#8D6AC8",
-    icon: "emoticon-frown-outline",
-    iconColor: "#5E438D",
+    symbol: "😨",
   },
 } satisfies Record<string, ChoiceVisual>;
 

@@ -8,6 +8,7 @@ interface StorySelectionScreenProps {
   ageBand: AgeBand;
   catalogSessionSeed: string;
   childName: string;
+  initialTab?: "games" | "stories";
   onSelectStory: (storyId: string) => void;
   onRequestParentArea: () => void;
   recommendedStoryId: string | null;
@@ -24,6 +25,7 @@ export function StorySelectionScreen({
   ageBand,
   catalogSessionSeed,
   childName,
+  initialTab = "games",
   onSelectStory,
   onRequestParentArea,
   recommendedStoryId,
@@ -39,6 +41,7 @@ export function StorySelectionScreen({
       catalogSessionSeed={catalogSessionSeed}
       childName={childName}
       games={games}
+      initialTab={initialTab}
       onRequestParentArea={onRequestParentArea}
       onSelectGame={onSelectGame}
       onSelectStory={onSelectStory}

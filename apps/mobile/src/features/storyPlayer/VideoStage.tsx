@@ -3,7 +3,7 @@ import { useEventListener } from "expo";
 import { createVideoPlayer, type VideoPlayer, VideoView } from "expo-video";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { hasReachedPlaybackEnd } from "./videoPlayback";
+import { hasReachedPlaybackEnd, hasStoppedAtFinalFrame } from "./videoPlayback";
 import type { VideoPreloader } from "./videoPreloader";
 
 type VideoClip = Extract<PublishedPlaybackClip, { kind: "linear" | "ending" }>;
@@ -12,6 +12,8 @@ interface VideoLayerState {
   clipId: string;
   player: VideoPlayer;
 }
+
+const PLAYBACK_RECOVERY_INTERVAL_MS = 400;
 
 function VideoLayer({
   active,
@@ -32,10 +34,18 @@ function VideoLayer({
 }) {
   const completedRef = useRef(false);
   const disposedRef = useRef(false);
+  const recoveryIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function stopRecoveryChecks() {
+    if (!recoveryIntervalRef.current) return;
+    clearInterval(recoveryIntervalRef.current);
+    recoveryIntervalRef.current = null;
+  }
 
   function completeOnce() {
     if (completedRef.current || disposedRef.current) return;
     completedRef.current = true;
+    stopRecoveryChecks();
     onComplete(clipId);
   }
 
@@ -49,12 +59,48 @@ function VideoLayer({
     }
   }
 
+  function playerStoppedAtFinalFrame(currentTime?: number): boolean {
+    try {
+      return hasStoppedAtFinalFrame(currentTime ?? player.currentTime, player.duration, durationMs);
+    } catch {
+      return false;
+    }
+  }
+
+  function recoverOrCompleteStoppedPlayer() {
+    if (completedRef.current || disposedRef.current) return;
+    try {
+      if (playerReachedEnd() || playerStoppedAtFinalFrame()) {
+        completeOnce();
+        return;
+      }
+      if (player.status === "readyToPlay" && !player.playing) {
+        // A stale pause from first-frame preloading or from the outgoing
+        // expo-audio session can arrive just after play(). This stage never
+        // intentionally pauses, so resuming here is always the right action.
+        player.muted = false;
+        player.audioMixingMode = "doNotMix";
+        player.play();
+      }
+    } catch {
+      // statusChange reports real native playback failures. Reads can also
+      // race release() during teardown, which requires no user-facing error.
+    }
+  }
+
   useEffect(() => {
     disposedRef.current = false;
     player.timeUpdateEventInterval = 0.1;
+    player.muted = false;
+    player.audioMixingMode = "doNotMix";
     player.play();
+    recoveryIntervalRef.current = setInterval(
+      recoverOrCompleteStoppedPlayer,
+      PLAYBACK_RECOVERY_INTERVAL_MS,
+    );
     return () => {
       disposedRef.current = true;
+      stopRecoveryChecks();
       try {
         player.release();
       } catch {
@@ -68,7 +114,7 @@ function VideoLayer({
     if (playerReachedEnd(currentTime)) completeOnce();
   });
   useEventListener(player, "playingChange", ({ isPlaying }) => {
-    if (!isPlaying && playerReachedEnd()) completeOnce();
+    if (!isPlaying) recoverOrCompleteStoppedPlayer();
   });
   useEventListener(player, "statusChange", ({ status, error }) => {
     if (status === "error") {
@@ -86,7 +132,7 @@ function VideoLayer({
   return (
     <VideoView
       allowsFullscreen={false}
-      contentFit="contain"
+      contentFit="cover"
       nativeControls={false}
       onFirstFrameRender={() => onFirstFrame(clipId)}
       player={player}
