@@ -230,4 +230,10 @@ describe("momoWorkshopEngine", () => {
       seen.add(signature);
     }
   });
+
+  it("keeps Momo chapter selection moving forward when difficulty falls", () => {
+    const beforeSupport = momoTaskForLevel(39);
+    const afterSupport = momoTaskForLevel(40);
+    expect(afterSupport).not.toEqual(beforeSupport);
+  });
 });

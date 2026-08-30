@@ -578,6 +578,7 @@ function OddPartRound({
 export function MomoWorkshopGame({
   adaptiveLevel,
   announceIntro = true,
+  chapterIndex,
   childId,
   childName,
   game,
@@ -586,6 +587,7 @@ export function MomoWorkshopGame({
 }: {
   adaptiveLevel: number;
   announceIntro?: boolean;
+  chapterIndex: number;
   childId: string;
   childName: string;
   game: MomoWorkshopGameContent;
@@ -603,8 +605,8 @@ export function MomoWorkshopGame({
   const [unlockedMilestones, setUnlockedMilestones] = useState<number[]>([]);
   const feedbackShake = useRef(new Animated.Value(0)).current;
   const playableRounds = useMemo(
-    () => momoRoundsForLevel(game.rounds, adaptiveLevel),
-    [adaptiveLevel, game.rounds],
+    () => momoRoundsForLevel(game.rounds, chapterIndex + 1),
+    [chapterIndex, game.rounds],
   );
   const round = playableRounds[roundIndex] as (typeof playableRounds)[number];
   const roundPrompt = momoRoundPrompt(round);

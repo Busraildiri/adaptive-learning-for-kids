@@ -249,6 +249,7 @@ export function TrackedGame({
         adaptiveLevel={progression.adaptiveLevel}
         childId={child.id}
         childName={child.nickname}
+        chapterIndex={progression.challengeIndex}
         announceIntro={shouldAnnounceGameIntro(runKey)}
         game={activeGame}
         key={runKey}
