@@ -25,7 +25,13 @@ const minoHappy = require("../../../assets/characters/mino-happy.png");
 const happyDog = require("../../../assets/game/sort/happy-dog-v1.png");
 const toyBasket = require("../../../assets/game/sort/toy-basket-v1.png");
 const blueBlock = require("../../../assets/game/sort/blue-block-v1.png");
+const purpleBlock = require("../../../assets/game/sort/purple-block-v1.png");
 const playBall = require("../../../assets/game/sort/play-ball-v1.png");
+const greenBall = require("../../../assets/game/sort/green-ball-v1.png");
+const redBall = require("../../../assets/game/sort/red-ball-v1.png");
+const yellowStar = require("../../../assets/game/sort/yellow-star-v1.png");
+const purpleCar = require("../../../assets/game/sort/purple-car-v1.png");
+const greenPickup = require("../../../assets/game/sort/green-pickup-v1.png");
 const redBalloon = require("../../../assets/game/sort/red-balloon-v1.png");
 const iceCream = require("../../../assets/game/sort/ice-cream-v1.png");
 const spinningTop = require("../../../assets/game/sort/spinning-top-v1.png");
@@ -56,6 +62,13 @@ const colors = {
 
 const sortImageByObjectId: Record<string, ImageSourcePropType> = {
   "blue-block": blueBlock,
+  "small-purple-block": purpleBlock,
+  "green-ball": greenBall,
+  "small-red-ball": redBall,
+  "yellow-star": yellowStar,
+  "small-yellow-star": yellowStar,
+  "purple-car": purpleCar,
+  "large-green-car": greenPickup,
   "red-balloon": redBalloon,
   "purple-soap": soap,
   "green-toothbrush": toothbrush,
