@@ -309,6 +309,22 @@ describe("adaptive game progression", () => {
     expect(first.rounds[0]?.correctSequence).not.toEqual(second.rounds[0]?.correctSequence);
   });
 
+  it("keeps Riko's simple spatial choices stable and includes left and right", () => {
+    const riko = publishedGames.find((game) => game.id === "riko-where-001");
+    if (!riko || riko.mechanic !== "mini_challenge") throw new Error("Expected Riko game");
+
+    const positionIds = riko.rounds.map((round) => round.correctSequence[0]);
+    expect(positionIds).toEqual(["inside", "under", "on", "left", "right"]);
+
+    const first = adaptGameComplexity(riko, 2, 3);
+    const next = adaptGameComplexity(riko, 2, 4);
+    if (first.mechanic !== "mini_challenge" || next.mechanic !== "mini_challenge") {
+      throw new Error("Expected Riko mini challenge");
+    }
+    expect(first.rounds[0]?.choices.map((choice) => choice.id)).toEqual(["left", "right"]);
+    expect(next.rounds[0]?.choices.map((choice) => choice.id)).toEqual(["left", "right"]);
+  });
+
   it("does not treat a different mini challenge as a difficulty variant", () => {
     const otherMiniGame = {
       ...rhythmGame,

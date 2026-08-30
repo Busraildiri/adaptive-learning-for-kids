@@ -211,6 +211,8 @@ function SpatialAnswerIcon({ position }: { position: string }) {
           position === "inside" && styles.spatialBoxInside,
           position === "under" && styles.spatialBoxAbove,
           position === "on" && styles.spatialBoxBelow,
+          position === "left" && styles.spatialBoxRight,
+          position === "right" && styles.spatialBoxLeft,
         ]}
       />
       <View
@@ -219,6 +221,8 @@ function SpatialAnswerIcon({ position }: { position: string }) {
           position === "inside" && styles.spatialBallInside,
           position === "under" && styles.spatialBallUnder,
           position === "on" && styles.spatialBallOn,
+          position === "left" && styles.spatialBallLeft,
+          position === "right" && styles.spatialBallRight,
         ]}
       />
     </View>
@@ -227,11 +231,24 @@ function SpatialAnswerIcon({ position }: { position: string }) {
 
 function RikoScene({ icon }: { icon: string }) {
   const image = illustratedIcons[icon];
-  if (!image) return null;
+  const position = icon.replace("riko-", "");
   return (
     <View style={styles.rikoScene}>
       <Text style={styles.rikoSceneLabel}>Resme dikkatlice bak</Text>
-      <Image source={image} style={styles.rikoSceneImage} />
+      {image ? (
+        <Image source={image} style={styles.rikoSceneImage} />
+      ) : (
+        <View style={styles.rikoSpatialScene}>
+          <View style={styles.rikoSceneBox} />
+          <View
+            style={[
+              styles.rikoSceneBall,
+              position === "left" && styles.rikoSceneBallLeft,
+              position === "right" && styles.rikoSceneBallRight,
+            ]}
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -791,6 +808,30 @@ const styles = StyleSheet.create({
   },
   rikoSceneLabel: { color: "#765532", fontSize: 16, fontWeight: "900" },
   rikoSceneImage: { width: 180, height: 145, resizeMode: "contain" },
+  rikoSpatialScene: { position: "relative", width: 180, height: 135, marginTop: 4 },
+  rikoSceneBox: {
+    position: "absolute",
+    top: 43,
+    left: 61,
+    width: 62,
+    height: 50,
+    borderWidth: 5,
+    borderColor: "#A86B3D",
+    borderRadius: 9,
+    backgroundColor: "#E6A55F",
+  },
+  rikoSceneBall: {
+    position: "absolute",
+    top: 60,
+    width: 27,
+    height: 27,
+    borderWidth: 3,
+    borderColor: "#287FA3",
+    borderRadius: 14,
+    backgroundColor: "#56C5E8",
+  },
+  rikoSceneBallLeft: { left: 22 },
+  rikoSceneBallRight: { right: 22 },
   spatialIcon: { position: "relative", width: 88, height: 72 },
   spatialBox: {
     position: "absolute",
@@ -805,6 +846,8 @@ const styles = StyleSheet.create({
   spatialBoxInside: { top: 20, backgroundColor: "#F3BD75" },
   spatialBoxAbove: { top: 4 },
   spatialBoxBelow: { bottom: 3 },
+  spatialBoxLeft: { top: 20, left: 36 },
+  spatialBoxRight: { top: 20, left: 2 },
   spatialBall: {
     position: "absolute",
     left: 34,
@@ -819,6 +862,8 @@ const styles = StyleSheet.create({
   spatialBallInside: { top: 27 },
   spatialBallUnder: { bottom: 2 },
   spatialBallOn: { top: 2 },
+  spatialBallLeft: { top: 27, left: 4 },
+  spatialBallRight: { top: 27, left: 63 },
   soundButton: {
     minWidth: 210,
     flexDirection: "row",

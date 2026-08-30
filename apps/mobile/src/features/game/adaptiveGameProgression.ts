@@ -275,7 +275,12 @@ export function adaptGameComplexity(
           {
             ...adaptiveRound,
             id: `${adaptiveRound.id}-adaptive-${challengeIndex}`,
-            choices: rotate(adaptiveRound.choices, challengeIndex),
+            // Riko is a 2–4 age spatial-language activity. Its answer order is
+            // deliberately stable; moving answers is not treated as difficulty.
+            choices:
+              game.id === "riko-where-001"
+                ? adaptiveRound.choices
+                : rotate(adaptiveRound.choices, challengeIndex),
           },
         ],
       };
