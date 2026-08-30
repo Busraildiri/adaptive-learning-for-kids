@@ -5,6 +5,7 @@ import {
   cableEndpointsMatch,
   crystalCountMatches,
   findCableDropTarget,
+  isMomoRewardLevel,
   momoRoundPrompt,
   outcomeForGuidedAttempt,
   patternShapeMatches,
@@ -96,5 +97,14 @@ describe("momoWorkshopEngine", () => {
         correctShape: "circle",
       }),
     ).toBe("daire, üçgen, kare; sıradaki şekli seç.");
+  });
+
+  it("awards one permanent Momo part every ten levels", () => {
+    expect(isMomoRewardLevel(1)).toBe(false);
+    expect(isMomoRewardLevel(9)).toBe(false);
+    expect(isMomoRewardLevel(10)).toBe(true);
+    expect(isMomoRewardLevel(140)).toBe(true);
+    expect(isMomoRewardLevel(150)).toBe(true);
+    expect(isMomoRewardLevel(160)).toBe(false);
   });
 });

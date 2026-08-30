@@ -26,6 +26,7 @@ import {
   cableEndpointsMatch,
   crystalCountMatches,
   findCableDropTarget,
+  isMomoRewardLevel,
   momoRoundPrompt,
   outcomeForGuidedAttempt,
   patternShapeMatches,
@@ -45,10 +46,12 @@ const shapeColors: Record<MomoShape, string> = {
 
 function MomoAvatar({
   selectedPart,
+  assemblyStage = 0,
   large = false,
   dancing = false,
 }: {
   selectedPart: MomoPartVisual | null;
+  assemblyStage?: number;
   large?: boolean;
   dancing?: boolean;
 }) {
@@ -83,18 +86,31 @@ function MomoAvatar({
       accessible
       style={[styles.momo, { width: size, height: size, transform: [{ translateY: bounce }] }]}
     >
-      <View style={[styles.momoAntennaStem, large && styles.momoAntennaStemLarge]} />
-      <View style={[styles.momoAntennaTop, large && styles.momoAntennaTopLarge]}>
-        {selectedPart === "star-antenna" ? (
-          <MaterialCommunityIcons color="#F4B83C" name="star-four-points" size={large ? 44 : 27} />
-        ) : selectedPart === "spring-antenna" ? (
-          <MaterialCommunityIcons color="#EF776C" name="heart" size={large ? 40 : 25} />
-        ) : (
-          <View style={[styles.momoAntennaDot, large && styles.momoAntennaDotLarge]} />
-        )}
-      </View>
-      <View style={[styles.momoEar, styles.momoEarLeft]} />
-      <View style={[styles.momoEar, styles.momoEarRight]} />
+      {assemblyStage >= 1 ? (
+        <>
+          <View style={[styles.momoAntennaStem, large && styles.momoAntennaStemLarge]} />
+          <View style={[styles.momoAntennaTop, large && styles.momoAntennaTopLarge]}>
+            {selectedPart === "star-antenna" ? (
+              <MaterialCommunityIcons
+                color="#F4B83C"
+                name="star-four-points"
+                size={large ? 44 : 27}
+              />
+            ) : selectedPart === "spring-antenna" ? (
+              <MaterialCommunityIcons color="#EF776C" name="heart" size={large ? 40 : 25} />
+            ) : (
+              <View style={[styles.momoAntennaDot, large && styles.momoAntennaDotLarge]} />
+            )}
+          </View>
+        </>
+      ) : null}
+      {assemblyStage >= 7 ? <View style={[styles.momoEar, styles.momoEarLeft]} /> : null}
+      {assemblyStage >= 7 ? <View style={[styles.momoEar, styles.momoEarRight]} /> : null}
+      {assemblyStage >= 9 ? <View style={styles.momoBody} /> : null}
+      {assemblyStage >= 2 ? <View style={[styles.momoArm, styles.momoArmLeft]} /> : null}
+      {assemblyStage >= 3 ? <View style={[styles.momoArm, styles.momoArmRight]} /> : null}
+      {assemblyStage >= 4 ? <View style={[styles.momoLeg, styles.momoLegLeft]} /> : null}
+      {assemblyStage >= 5 ? <View style={[styles.momoLeg, styles.momoLegRight]} /> : null}
       <View style={styles.momoFace}>
         <View style={styles.momoEyes}>
           <View style={styles.momoEye} />
@@ -102,7 +118,7 @@ function MomoAvatar({
         </View>
         <View style={styles.momoSmile} />
       </View>
-      <View style={styles.momoGlow} />
+      {assemblyStage >= 6 ? <View style={styles.momoGlow} /> : null}
     </Animated.View>
   );
 }
@@ -437,11 +453,13 @@ function PatternShapeRound({
 }
 
 function RewardChoice({
+  assemblyStage,
   visual,
   label,
   onPress,
 }: {
   visual: MomoPartVisual;
+  assemblyStage: number;
   label: string;
   onPress: () => void;
 }) {
@@ -451,7 +469,7 @@ function RewardChoice({
       onPress={onPress}
       style={({ pressed }) => [styles.rewardCard, pressed && styles.rewardCardPressed]}
     >
-      <MomoAvatar selectedPart={visual} />
+      <MomoAvatar assemblyStage={assemblyStage} selectedPart={visual} />
       <Text style={styles.rewardLabel}>{label}</Text>
       <View style={styles.choosePill}>
         <MaterialCommunityIcons color="#FFFFFF" name="hand-pointing-up" size={24} />
@@ -461,6 +479,7 @@ function RewardChoice({
 }
 
 export function MomoWorkshopGame({
+  adaptiveLevel,
   announceIntro = true,
   childId,
   childName,
@@ -468,6 +487,7 @@ export function MomoWorkshopGame({
   onExit,
   onRestart,
 }: {
+  adaptiveLevel: number;
   announceIntro?: boolean;
   childId: string;
   childName: string;
@@ -483,9 +503,12 @@ export function MomoWorkshopGame({
   const [revealed, setRevealed] = useState(false);
   const [phase, setPhase] = useState<"rounds" | "reward" | "complete">("rounds");
   const [selectedPart, setSelectedPart] = useState<MomoPartVisual | null>(null);
+  const [unlockedMilestones, setUnlockedMilestones] = useState<number[]>([]);
   const feedbackShake = useRef(new Animated.Value(0)).current;
   const round = game.rounds[roundIndex];
   const roundPrompt = momoRoundPrompt(round);
+  const assemblyStage = unlockedMilestones.length;
+  const isRewardLevel = isMomoRewardLevel(adaptiveLevel);
 
   const speak = useCallback(
     (text: string, done?: () => void) => {
@@ -499,7 +522,10 @@ export function MomoWorkshopGame({
 
   useEffect(() => {
     void loadMomoCustomization(childId)
-      .then(setSelectedPart)
+      .then((customization) => {
+        setSelectedPart(customization.selectedPart);
+        setUnlockedMilestones(customization.unlockedMilestones);
+      })
       .catch(() => undefined);
   }, [childId]);
 
@@ -528,10 +554,22 @@ export function MomoWorkshopGame({
     setFeedback(game.feedback.matched);
     Vibration.vibrate(35);
     speak(game.feedback.matched, () => {
-      if (roundIndex === game.rounds.length - 1) setPhase("reward");
-      else setRoundIndex((current) => current + 1);
+      if (roundIndex === game.rounds.length - 1) {
+        if (isRewardLevel && !unlockedMilestones.includes(adaptiveLevel)) setPhase("reward");
+        else report({ type: "completed", stepId: round.id });
+      } else setRoundIndex((current) => current + 1);
     });
-  }, [game.feedback.matched, game.rounds.length, roundIndex, speak]);
+  }, [
+    adaptiveLevel,
+    game.feedback.matched,
+    game.rounds.length,
+    isRewardLevel,
+    report,
+    round.id,
+    roundIndex,
+    speak,
+    unlockedMilestones,
+  ]);
 
   const handleAttempt = useCallback(
     (correct: boolean) => {
@@ -604,12 +642,12 @@ export function MomoWorkshopGame({
     if (locked) return;
     setLocked(true);
     setSelectedPart(part);
+    setUnlockedMilestones((current) => [...new Set([...current, adaptiveLevel])]);
     report({ type: "attempt", stepId, correct: true });
-    void saveMomoCustomization(childId, part).catch(() => undefined);
-    const closing = game.presentation.closingNarration.replace("{childName}", childName);
+    void saveMomoCustomization(childId, part, adaptiveLevel).catch(() => undefined);
+    const closing = `${childName}, Momo'nun yeni parçasını kazandın!`;
     speak(closing, () => {
       report({ type: "completed", stepId });
-      setPhase("complete");
     });
   };
 
@@ -620,7 +658,7 @@ export function MomoWorkshopGame({
         <View style={styles.sparkleTwo} />
         <View style={styles.finishCard}>
           <Text style={styles.finishEyebrow}>ATÖLYE IŞIL IŞIL!</Text>
-          <MomoAvatar dancing large selectedPart={selectedPart} />
+          <MomoAvatar assemblyStage={assemblyStage} dancing large selectedPart={selectedPart} />
           <Text style={styles.finishTitle}>Momo uyandı!</Text>
           <Text style={styles.finishCopy}>
             {game.presentation.closingNarration.replace("{childName}", childName)}
@@ -649,12 +687,14 @@ export function MomoWorkshopGame({
         </Pressable>
         <View style={styles.rewardScreen}>
           <Text style={styles.stepEyebrow}>SON DOKUNUŞ</Text>
-          <Text style={styles.rewardTitle}>Momo’nun parçasını seç</Text>
+          <Text style={styles.rewardTitle}>Momo’nun yeni parçasını seç</Text>
+          <Text style={styles.finishCopy}>Seviye {adaptiveLevel} ödülü</Text>
           <View style={styles.rewardChoices}>
             {game.rewardChoices.map((choice) => (
               <RewardChoice
+                assemblyStage={Math.min(15, assemblyStage + 1)}
                 key={choice.id}
-                label={choice.label}
+                label={choice.visual === "star-antenna" ? "Parlak parça" : "Kalpli parça"}
                 onPress={() => selectReward(choice.visual, choice.id)}
                 visual={choice.visual}
               />
@@ -689,10 +729,10 @@ export function MomoWorkshopGame({
         ))}
       </View>
       <View style={styles.gameHeader}>
-        <MomoAvatar selectedPart={selectedPart} />
+        <MomoAvatar assemblyStage={assemblyStage} selectedPart={selectedPart} />
         <View style={styles.headerCopy}>
           <Text style={styles.stepEyebrow}>
-            MOMO’YU UYANDIR · {roundIndex + 1}/{game.rounds.length}
+            SEVİYE {adaptiveLevel} · GÖREV {roundIndex + 1}/{game.rounds.length}
           </Text>
           <Text style={styles.gameTitle}>{game.title}</Text>
         </View>
@@ -849,6 +889,39 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     backgroundColor: "#56B9B0",
   },
+  momoBody: {
+    position: "absolute",
+    zIndex: 0,
+    bottom: "-18%",
+    width: "58%",
+    height: "42%",
+    borderWidth: 4,
+    borderColor: "#FFFFFF",
+    borderRadius: 18,
+    backgroundColor: "#3C8F8A",
+  },
+  momoArm: {
+    position: "absolute",
+    zIndex: 0,
+    bottom: "-8%",
+    width: "14%",
+    height: "38%",
+    borderRadius: 12,
+    backgroundColor: "#56B9B0",
+  },
+  momoArmLeft: { left: "5%", transform: [{ rotate: "18deg" }] },
+  momoArmRight: { right: "5%", transform: [{ rotate: "-18deg" }] },
+  momoLeg: {
+    position: "absolute",
+    zIndex: 0,
+    bottom: "-32%",
+    width: "15%",
+    height: "30%",
+    borderRadius: 10,
+    backgroundColor: "#397C78",
+  },
+  momoLegLeft: { left: "31%" },
+  momoLegRight: { right: "31%" },
   momoEyes: { flexDirection: "row", gap: 18 },
   momoEye: { width: 11, height: 17, borderRadius: 6, backgroundColor: "#24383F" },
   momoSmile: {

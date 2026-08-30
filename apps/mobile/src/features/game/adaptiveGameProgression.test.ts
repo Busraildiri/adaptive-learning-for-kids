@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   adaptGameComplexity,
   adaptiveGridDimensions,
+  continuesAfterMaximumLevel,
   createInitialAdaptiveState,
   findGameVariant,
   itemCountForLevel,
@@ -148,6 +149,14 @@ describe("adaptive game progression", () => {
     for (let runKey = 1; runKey <= MAX_ADAPTIVE_LEVEL; runKey += 1) {
       expect(shouldAnnounceGameIntro(runKey)).toBe(false);
     }
+  });
+
+  it("keeps Momo playable after mastery while finite games may complete", () => {
+    const momo = publishedGames.find((game) => game.mechanic === "momo_workshop");
+    const finite = publishedGames.find((game) => game.mechanic !== "momo_workshop");
+    if (!momo || !finite) throw new Error("Expected Momo and a finite game");
+    expect(continuesAfterMaximumLevel(momo)).toBe(true);
+    expect(continuesAfterMaximumLevel(finite)).toBe(false);
   });
 
   it("keeps the shared adaptive layout inside a five by five grid", () => {

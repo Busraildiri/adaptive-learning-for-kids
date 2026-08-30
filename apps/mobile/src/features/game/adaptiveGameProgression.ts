@@ -28,6 +28,10 @@ export function shouldAnnounceGameIntro(runKey: number): boolean {
   return runKey === 0;
 }
 
+export function continuesAfterMaximumLevel(game: Game): boolean {
+  return game.mechanic === "momo_workshop";
+}
+
 export function adaptiveGridDimensions(itemCount: number): { columns: number; rows: number } {
   const boundedCount = Math.max(1, Math.min(MAX_ADAPTIVE_ITEM_COUNT, Math.floor(itemCount)));
   const columns = Math.min(MAX_ADAPTIVE_GRID_AXIS, boundedCount);

@@ -31,6 +31,10 @@ export function boundedMomoItemCount(itemCount: number): number {
   return Math.max(1, Math.min(25, Math.floor(itemCount)));
 }
 
+export function isMomoRewardLevel(adaptiveLevel: number): boolean {
+  return adaptiveLevel >= 10 && adaptiveLevel <= 150 && adaptiveLevel % 10 === 0;
+}
+
 export function cableEndpointsMatch(first: MomoCableEndpoint, second: MomoCableEndpoint): boolean {
   return first.id !== second.id && first.side !== second.side && first.matchKey === second.matchKey;
 }
