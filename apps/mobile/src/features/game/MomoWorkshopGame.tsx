@@ -628,6 +628,8 @@ export function MomoWorkshopGame({
   const [unlockedMilestones, setUnlockedMilestones] = useState<number[]>([]);
   const [chapterCursor, setChapterCursor] = useState(chapterIndex + 1);
   const feedbackShake = useRef(new Animated.Value(0)).current;
+  const speechToken = useRef(0);
+  const isMounted = useRef(true);
   const playableRounds = useMemo(
     () => momoRoundsForLevel(game.rounds, chapterCursor, adaptiveLevel),
     [adaptiveLevel, chapterCursor, game.rounds],
@@ -640,11 +642,37 @@ export function MomoWorkshopGame({
   const speak = useCallback(
     (text: string, done?: () => void) => {
       if (!game.presentation.playAudioInstructions) return done?.();
-      void Speech.stop().then(() =>
-        Speech.speak(text, { language: "tr-TR", rate: 0.84, onDone: done, onStopped: done }),
-      );
+      const token = speechToken.current + 1;
+      speechToken.current = token;
+      void Speech.stop().then(() => {
+        if (!isMounted.current || speechToken.current !== token) return;
+        const complete = () => {
+          if (isMounted.current && speechToken.current === token) done?.();
+        };
+        Speech.speak(text, {
+          language: "tr-TR",
+          rate: 0.84,
+          onDone: complete,
+          onStopped: complete,
+        });
+      });
     },
     [game.presentation.playAudioInstructions],
+  );
+
+  const exitGame = useCallback(() => {
+    speechToken.current += 1;
+    void Speech.stop();
+    onExit();
+  }, [onExit]);
+
+  useEffect(
+    () => () => {
+      isMounted.current = false;
+      speechToken.current += 1;
+      void Speech.stop();
+    },
+    [],
   );
 
   useEffect(() => {
@@ -802,7 +830,7 @@ export function MomoWorkshopGame({
           <Pressable accessibilityRole="button" onPress={onRestart} style={styles.exitButton}>
             <Text style={styles.exitButtonText}>Tekrar başlamak için dokun</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" onPress={onExit}>
+          <Pressable accessibilityRole="button" onPress={exitGame}>
             <Text style={styles.finishCopy}>Oyunlara dön</Text>
           </Pressable>
         </View>
@@ -816,7 +844,7 @@ export function MomoWorkshopGame({
         <Pressable
           accessibilityLabel="Oyundan çık"
           hitSlop={10}
-          onPress={onExit}
+          onPress={exitGame}
           style={styles.close}
         >
           <Text style={styles.closeText}>×</Text>
@@ -851,7 +879,7 @@ export function MomoWorkshopGame({
       <Pressable
         accessibilityLabel="Oyundan çık"
         hitSlop={10}
-        onPress={onExit}
+        onPress={exitGame}
         style={styles.close}
       >
         <Text style={styles.closeText}>×</Text>
