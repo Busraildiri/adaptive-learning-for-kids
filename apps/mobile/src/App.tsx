@@ -482,7 +482,7 @@ export default function App() {
               updatedAt: new Date().toISOString(),
             };
             setGameProgress((current) => ({ ...current, [selectedGame.id]: progress }));
-            void saveGameProgress(activeChild.id, progress);
+            return saveGameProgress(activeChild.id, progress).then(() => undefined);
           }}
         />
       );

@@ -1,6 +1,7 @@
 import type { Game } from "@adaptive/content-schema";
 import type { ChildSessionProfile } from "@adaptive/shared-types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AppState } from "react-native";
 import { createActivityEventRecorder } from "../../services/interactionEvents";
 import {
   type AdaptiveProgressionState,
@@ -64,7 +65,7 @@ export function TrackedGame({
     completedRunsAtLevel: number;
   };
   onExit: () => void;
-  onProgress?: (progress: AdaptiveProgressionState, completed?: boolean) => void;
+  onProgress?: (progress: AdaptiveProgressionState, completed?: boolean) => void | Promise<void>;
 }) {
   const initialState = progressionForGame(game, createInitialAdaptiveState(game, initialProgress));
   const maximumLevel = maxAdaptiveLevelForGame(game);
@@ -85,6 +86,21 @@ export function TrackedGame({
   const spokenInstructions = useRef(new Set<string>());
   const progressedStepCount = useRef(0);
   const exiting = useRef(false);
+  const onProgressRef = useRef(onProgress);
+  const pendingProgressWrite = useRef<Promise<void>>(Promise.resolve());
+  onProgressRef.current = onProgress;
+
+  const persistProgress = useCallback(
+    (nextProgression: AdaptiveProgressionState, completed = false) => {
+      pendingProgressWrite.current = pendingProgressWrite.current
+        .catch(() => undefined)
+        .then(() => onProgressRef.current?.(nextProgression, completed))
+        .then(() => undefined)
+        .catch(() => undefined);
+      return pendingProgressWrite.current;
+    },
+    [],
+  );
   const recorder = useMemo(
     () =>
       createActivityEventRecorder({
@@ -96,6 +112,8 @@ export function TrackedGame({
   );
 
   useEffect(() => {
+    if (currentRunCompleted.current) return;
+    void persistProgress(progression);
     void recorder.record("activity_started", {
       activityKind: "game",
       mechanic: activeGame.mechanic,
@@ -104,18 +122,22 @@ export function TrackedGame({
       adaptiveLevel: progression.adaptiveLevel,
       gameVersion: activeGame.version,
     });
-  }, [activeGame, progression.adaptiveLevel, recorder, runKey]);
+  }, [activeGame, persistProgress, progression, recorder, runKey]);
 
-  const startRun = useCallback(
-    (nextGame: Game, nextProgression: AdaptiveProgressionState) => {
-      currentRunCompleted.current = false;
-      setProgression(nextProgression);
-      setActiveGame(nextGame);
-      setRunKey((current) => current + 1);
-      onProgress?.(nextProgression);
-    },
-    [onProgress],
-  );
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") return;
+      void Promise.all([recorder.ensurePersisted(), pendingProgressWrite.current]);
+    });
+    return () => subscription.remove();
+  }, [recorder]);
+
+  const startRun = useCallback((nextGame: Game, nextProgression: AdaptiveProgressionState) => {
+    currentRunCompleted.current = false;
+    setProgression(nextProgression);
+    setActiveGame(nextGame);
+    setRunKey((current) => current + 1);
+  }, []);
 
   const report = useCallback(
     (observation: GameObservation) => {
@@ -143,7 +165,7 @@ export function TrackedGame({
           progression.adaptiveLevel === maximumLevel && nextProgression.completedRunsAtLevel === 0;
         if (reachedFinalLevel && !continuesAfterMaximumLevel(activeGame)) {
           setProgression(nextProgression);
-          onProgress?.(nextProgression, true);
+          void persistProgress(nextProgression, true);
           return;
         }
         const nextVariant = applyDifficultyLevel(
@@ -185,7 +207,17 @@ export function TrackedGame({
         });
       }
     },
-    [activeGame, child.ageBand, games, maximumLevel, onProgress, progression, recorder, startRun],
+    [
+      activeGame,
+      child.ageBand,
+      game,
+      games,
+      maximumLevel,
+      persistProgress,
+      progression,
+      recorder,
+      startRun,
+    ],
   );
 
   const restart = useCallback(() => {
@@ -222,7 +254,7 @@ export function TrackedGame({
             adaptiveLevel: progression.adaptiveLevel,
           });
         }
-        await recorder.ensurePersisted();
+        await Promise.all([recorder.ensurePersisted(), pendingProgressWrite.current]);
       } catch {
         // Navigation must stay available even if local persistence fails unexpectedly.
       } finally {
