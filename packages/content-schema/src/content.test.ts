@@ -146,6 +146,22 @@ describe("Turkish content v1", () => {
     }
   });
 
+  it("keeps every Duru scene aligned with the event shown in its image", () => {
+    const content = contentVersionSchema.parse(contentV1);
+    const duru = content.games?.find((game) => game.id === "mino-emotion-detective-001");
+    if (!duru || duru.mechanic !== "emotion_clues") throw new Error("Expected Duru game");
+
+    const expectedScene = {
+      "sad-bear": { event: /dondurma/i, emotion: "sad" },
+      "happy-rabbit": { event: /balon/i, emotion: "happy" },
+      "angry-fox": { event: /blok|kule/i, emotion: "angry" },
+    } as const;
+    for (const round of duru.rounds) {
+      expect(round.storyPrompt).toMatch(expectedScene[round.sceneAssetKey].event);
+      expect(round.correctEmotion).toBe(expectedScene[round.sceneAssetKey].emotion);
+    }
+  });
+
   it("includes the four new progressive mini games without duplicating Zuzu", () => {
     const content = contentVersionSchema.parse(contentV1);
     const games = content.games ?? [];

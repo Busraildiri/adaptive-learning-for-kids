@@ -1381,7 +1381,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "mino-emotion-detective-001",
-      "version": 2,
+      "version": 3,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "emotion_clues",
@@ -1426,7 +1426,7 @@
         {
           "id": "bear-sad-again",
           "sceneAssetKey": "sad-bear",
-          "storyPrompt": "Ayı sevdiği oyuncağını bulamıyor.",
+          "storyPrompt": "Ayının dondurması yere düştü ve ayı ağlıyor.",
           "emotionPrompt": "Ayı şimdi nasıl hissediyor?",
           "correctEmotion": "sad",
           "cluePrompt": "Ayının üzgün olduğunu anlatan beden ipucunu bul.",
@@ -1435,8 +1435,8 @@
         {
           "id": "rabbit-happy-again",
           "sceneAssetKey": "happy-rabbit",
-          "storyPrompt": "Tavşanın arkadaşı onunla oynamaya geldi.",
-          "emotionPrompt": "Tavşan arkadaşını görünce nasıl hissediyor?",
+          "storyPrompt": "Tavşan kırmızı balonuyla neşeyle oynuyor.",
+          "emotionPrompt": "Tavşan balonuyla oynarken nasıl hissediyor?",
           "correctEmotion": "happy",
           "cluePrompt": "Tavşanın mutlu olduğunu anlatan yüz ipucunu bul.",
           "correctClue": "mouth"
