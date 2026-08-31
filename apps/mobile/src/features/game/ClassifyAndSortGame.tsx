@@ -8,6 +8,7 @@ import * as Speech from "expo-speech";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Dimensions,
   Easing,
   Image,
   type ImageSourcePropType,
@@ -163,12 +164,17 @@ function DraggableObject({
     }),
     onPanResponderRelease: (_, gesture) => {
       const dropPadding = 48;
-      const droppedInside =
+      const droppedOnMeasuredBasket =
         basketBounds &&
         gesture.moveX >= basketBounds.x - dropPadding &&
         gesture.moveX <= basketBounds.x + basketBounds.width + dropPadding &&
         gesture.moveY >= basketBounds.y - dropPadding &&
         gesture.moveY <= basketBounds.y + basketBounds.height + dropPadding;
+      // Some iOS/Expo Go layouts report a stale basket measurement after the
+      // dense grid settles. The basket is always in the lower part of Pati's
+      // board, so retain a screen-coordinate fallback for that device case.
+      const droppedOnBasketArea = gesture.moveY >= Dimensions.get("window").height * 0.54;
+      const droppedInside = droppedOnMeasuredBasket || droppedOnBasketArea;
       if (droppedInside) onDrop(object);
       Animated.spring(position, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
     },
