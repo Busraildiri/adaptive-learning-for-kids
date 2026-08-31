@@ -237,22 +237,22 @@ describe("adaptive game progression", () => {
     expect(target?.id).toBe("red-balloon-adaptive-target");
   });
 
-  it("names Pati's animal target instead of using a generic category label", () => {
+  it("uses Pati's visible animal target instead of a generic category label", () => {
     const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
     if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
 
     const adapted = adaptGameComplexity(pati, 2, 1);
-    expect(adapted.rounds[0]?.instruction).toBe("Kediyi sepete sürükle ve bırak.");
+    expect(adapted.rounds[0]?.instruction).toBe("Köpeği sepete sürükle ve bırak.");
   });
 
-  it("does not select an unavailable Pati animal visual as a target", () => {
+  it("does not select an unverified Pati animal visual as a target", () => {
     const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
     if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
 
     for (let challengeIndex = 0; challengeIndex < 80; challengeIndex += 1) {
       const adapted = adaptGameComplexity(pati, 12, challengeIndex);
       if (adapted.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
-      expect(adapted.rounds[0]?.instruction).not.toContain("ayıcık");
+      expect(adapted.rounds[0]?.instruction).not.toMatch(/kedi|tavşan|tilki|ayıcık/);
     }
   });
 

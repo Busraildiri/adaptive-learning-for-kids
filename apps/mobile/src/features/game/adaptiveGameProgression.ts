@@ -570,10 +570,18 @@ export function adaptGameComplexity(
     // A color rule must use an asset whose color is visually unambiguous. For
     // example, the multicolored play ball is not a valid "red" target even
     // though an earlier content record classified it as red.
+    const isPatiAnimalRule =
+      game.id === "rule-changed-garden-001" &&
+      sourceRound.dimension === "category" &&
+      sourceRound.targetValue === "animal";
     const matchingPool =
       game.id === "rule-changed-garden-001" && sourceRound.dimension === "color"
         ? sourceRound.objects.filter((object) => object.color === sourceRound.targetValue)
-        : objectPool.filter((object) => object[sourceRound.dimension] === sourceRound.targetValue);
+        : isPatiAnimalRule
+          ? sourceRound.objects.filter((object) => object.category === "animal")
+          : objectPool.filter(
+              (object) => object[sourceRound.dimension] === sourceRound.targetValue,
+            );
     const matching = rotate(matchingPool, challengeIndex)[0];
     const distractors = rotate(
       objectPool.filter((object) => object[sourceRound.dimension] !== sourceRound.targetValue),
