@@ -16,6 +16,7 @@ import {
   View,
 } from "react-native";
 import { isClueChoiceCorrect, isEmotionChoiceCorrect } from "./emotionCluesEngine";
+import { GameCompletionCard } from "./GameCompletionCard";
 import { useGameObservation } from "./GameObservationContext";
 
 const sceneAssets: Record<EmotionClueRound["sceneAssetKey"], ImageSourcePropType> = {
@@ -165,17 +166,12 @@ export function EmotionCluesGame({
   if (completed) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.finishCard}>
-          <MaterialCommunityIcons color="#7A55B3" name="magnify-scan" size={92} />
-          <Text style={styles.finishTitle}>Duygu dedektifi oldun!</Text>
-          <Text style={styles.finishText}>{game.presentation.closingNarration}</Text>
-          <Pressable onPress={onRestart} style={styles.exitButton}>
-            <Text style={styles.exitText}>Tekrar başlamak için dokun</Text>
-          </Pressable>
-          <Pressable onPress={onExit}>
-            <Text style={styles.finishText}>Oyunlara dön</Text>
-          </Pressable>
-        </View>
+        <GameCompletionCard
+          message={game.presentation.closingNarration}
+          onExit={onExit}
+          onRestart={onRestart}
+          title={game.title}
+        />
       </SafeAreaView>
     );
   }

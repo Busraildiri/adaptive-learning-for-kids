@@ -630,17 +630,17 @@ const fishColorSchema = z.enum([
 const fishColorPatternRoundSchema = z.strictObject({
   id: z.string().trim().min(1).max(100),
   kind: z.literal("color_prediction"),
-  sequence: z.array(fishColorSchema).min(3).max(4),
+  sequence: z.array(fishColorSchema).min(2).max(8),
   correctColor: fishColorSchema,
-  choices: z.array(fishColorSchema).min(2).max(3),
+  choices: z.array(fishColorSchema).min(2).max(8),
   prompt: z.string().trim().min(1).max(160),
 });
 
 const fishMemoryRoundSchema = z.strictObject({
   id: z.string().trim().min(1).max(100),
   kind: z.literal("sequence_memory"),
-  fish: z.array(fishColorSchema).min(2).max(4),
-  sequence: z.array(fishColorSchema).min(2).max(4),
+  fish: z.array(fishColorSchema).min(2).max(8),
+  sequence: z.array(fishColorSchema).min(2).max(8),
   prompt: z.string().trim().min(1).max(160),
   revealMs: z.number().int().min(500).max(1800),
 });
@@ -714,6 +714,10 @@ const balloonColorSchema = z.enum([
   "purple",
   "pink",
   "cyan",
+  "darkGreen",
+  "black",
+  "gray",
+  "white",
 ]);
 const balloonRoundSchema = z.strictObject({
   id: z.string().trim().min(1).max(100),
@@ -863,7 +867,7 @@ const miniRoundSchema = z.strictObject({
   kind: z.enum(["rhythm", "sequence", "single"]),
   prompt: z.string().trim().min(1).max(180),
   choices: z.array(miniChoiceSchema).min(2).max(4),
-  correctSequence: z.array(z.string().trim().min(1)).min(1).max(4),
+  correctSequence: z.array(z.string().trim().min(1)).min(1).max(8),
   demoSequence: z.array(z.string().trim().min(1)).max(4).optional(),
   displaySequence: z.array(miniIconSchema).min(2).max(6).optional(),
   previewIcon: miniIconSchema.optional(),

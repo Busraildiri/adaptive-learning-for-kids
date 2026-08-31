@@ -952,7 +952,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "color-lights-001",
-      "version": 5,
+      "version": 6,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "tap_or_wait",
@@ -1460,7 +1460,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "bobi-fish-patterns-2-4-001",
-      "version": 2,
+      "version": 3,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "fish_patterns",
@@ -1524,7 +1524,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "bobi-fish-memory-4-7-001",
-      "version": 4,
+      "version": 5,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "fish_patterns",
@@ -1588,7 +1588,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "pofi-balloon-counting-001",
-      "version": 2,
+      "version": 5,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "balloon_counting",
@@ -1606,14 +1606,14 @@
           "id": "pop-two",
           "kind": "count",
           "prompt": "İki balonu patlat.",
-          "balloons": ["red", "blue", "yellow", "green"],
+          "balloons": ["red", "blue", "yellow", "darkGreen"],
           "targetCount": 2
         },
         {
           "id": "pop-yellow",
           "kind": "color",
           "prompt": "Sarı balona dokun.",
-          "balloons": ["purple", "yellow", "pink"],
+          "balloons": ["purple", "yellow", "pink", "white"],
           "targetCount": 1,
           "targetColor": "yellow"
         },
@@ -1621,7 +1621,7 @@
           "id": "red-then-blue",
           "kind": "order",
           "prompt": "Önce kırmızıya, sonra maviye dokun.",
-          "balloons": ["red", "blue", "orange"],
+          "balloons": ["red", "blue", "orange", "black"],
           "targetCount": 2,
           "targetOrder": ["red", "blue"]
         },
@@ -1629,7 +1629,7 @@
           "id": "pop-three",
           "kind": "count",
           "prompt": "Üç balonu patlat.",
-          "balloons": ["cyan", "green", "pink", "orange", "blue"],
+          "balloons": ["cyan", "green", "pink", "orange", "gray"],
           "targetCount": 3
         },
         {
@@ -1731,7 +1731,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "maya-morning-order-001",
-      "version": 3,
+      "version": 4,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "mini_challenge",
@@ -2012,7 +2012,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "kiki-big-small-shop-001",
-      "version": 2,
+      "version": 3,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "mini_challenge",
@@ -2387,7 +2387,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "toko-little-map-001",
-      "version": 1,
+      "version": 2,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "mini_challenge",

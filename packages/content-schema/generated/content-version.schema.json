@@ -2140,8 +2140,8 @@
                           "const": "color_prediction"
                         },
                         "sequence": {
-                          "minItems": 3,
-                          "maxItems": 4,
+                          "minItems": 2,
+                          "maxItems": 8,
                           "type": "array",
                           "items": {
                             "type": "string",
@@ -2172,7 +2172,7 @@
                         },
                         "choices": {
                           "minItems": 2,
-                          "maxItems": 3,
+                          "maxItems": 8,
                           "type": "array",
                           "items": {
                             "type": "string",
@@ -2211,7 +2211,7 @@
                         },
                         "fish": {
                           "minItems": 2,
-                          "maxItems": 4,
+                          "maxItems": 8,
                           "type": "array",
                           "items": {
                             "type": "string",
@@ -2229,7 +2229,7 @@
                         },
                         "sequence": {
                           "minItems": 2,
-                          "maxItems": 4,
+                          "maxItems": 8,
                           "type": "array",
                           "items": {
                             "type": "string",
@@ -2426,7 +2426,11 @@
                           "orange",
                           "purple",
                           "pink",
-                          "cyan"
+                          "cyan",
+                          "darkGreen",
+                          "black",
+                          "gray",
+                          "white"
                         ]
                       }
                     },
@@ -2437,7 +2441,20 @@
                     },
                     "targetColor": {
                       "type": "string",
-                      "enum": ["red", "blue", "green", "yellow", "orange", "purple", "pink", "cyan"]
+                      "enum": [
+                        "red",
+                        "blue",
+                        "green",
+                        "yellow",
+                        "orange",
+                        "purple",
+                        "pink",
+                        "cyan",
+                        "darkGreen",
+                        "black",
+                        "gray",
+                        "white"
+                      ]
                     },
                     "targetOrder": {
                       "maxItems": 2,
@@ -2452,7 +2469,11 @@
                           "orange",
                           "purple",
                           "pink",
-                          "cyan"
+                          "cyan",
+                          "darkGreen",
+                          "black",
+                          "gray",
+                          "white"
                         ]
                       }
                     }
@@ -2735,7 +2756,7 @@
                     },
                     "correctSequence": {
                       "minItems": 1,
-                      "maxItems": 4,
+                      "maxItems": 8,
                       "type": "array",
                       "items": {
                         "type": "string",

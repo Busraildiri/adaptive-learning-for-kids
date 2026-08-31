@@ -25,6 +25,7 @@ import {
   markMomoChapterCompleted,
   saveMomoCustomization,
 } from "../../services/momoCustomization";
+import { GameCompletionCard } from "./GameCompletionCard";
 import { useGameObservation } from "./GameObservationContext";
 import {
   type Bounds,
@@ -820,20 +821,12 @@ export function MomoWorkshopGame({
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.sparkleOne} />
         <View style={styles.sparkleTwo} />
-        <View style={styles.finishCard}>
-          <Text style={styles.finishEyebrow}>ATÖLYE IŞIL IŞIL!</Text>
-          <MomoAvatar assemblyStage={assemblyStage} dancing large selectedPart={selectedPart} />
-          <Text style={styles.finishTitle}>Momo uyandı!</Text>
-          <Text style={styles.finishCopy}>
-            {game.presentation.closingNarration.replace("{childName}", childName)}
-          </Text>
-          <Pressable accessibilityRole="button" onPress={onRestart} style={styles.exitButton}>
-            <Text style={styles.exitButtonText}>Tekrar başlamak için dokun</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={exitGame}>
-            <Text style={styles.finishCopy}>Oyunlara dön</Text>
-          </Pressable>
-        </View>
+        <GameCompletionCard
+          message={game.presentation.closingNarration.replace("{childName}", childName)}
+          onExit={exitGame}
+          onRestart={onRestart}
+          title={game.title}
+        />
       </SafeAreaView>
     );
   }

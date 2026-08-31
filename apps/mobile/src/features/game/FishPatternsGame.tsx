@@ -7,11 +7,14 @@ import {
   type ImageSourcePropType,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   Vibration,
   View,
 } from "react-native";
+import { GameCompletionCard } from "./GameCompletionCard";
 import { useGameObservation } from "./GameObservationContext";
 
 const aquarium = require("../../../assets/game/fish/aquarium-background-v1.png");
@@ -37,11 +40,13 @@ const colorNames: Record<string, string> = {
 };
 
 export function FishPatternsGame({
+  adaptiveLevel,
   announceIntro = true,
   game,
   onExit,
   onRestart,
 }: {
+  adaptiveLevel: number;
   announceIntro?: boolean;
   game: FishGameContent;
   onExit: () => void;
@@ -56,13 +61,47 @@ export function FishPatternsGame({
   const [wrongAttempts, setWrongAttempts] = useState(0);
   const [completed, setCompleted] = useState(false);
   const round = game.rounds[roundIndex];
+  const visibleFish = round.kind === "color_prediction" ? round.sequence : round.fish;
+  const choices = round.kind === "color_prediction" ? round.choices : round.fish;
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const compactHeight = windowHeight < 720;
+  const contentWidth = Math.min(460, Math.max(280, windowWidth - 28));
+  const lakeItemCount = visibleFish.length + (round.kind === "color_prediction" ? 1 : 0);
+  const lakeColumns = lakeItemCount <= 3 ? lakeItemCount : lakeItemCount <= 6 ? 3 : 4;
+  const lakeGap = windowWidth < 360 ? 5 : 8;
+  const lakeCellWidth =
+    (contentWidth - Math.max(0, lakeColumns - 1) * lakeGap) / Math.max(1, lakeColumns);
+  const fishSlotSize = Math.max(54, Math.min(92, lakeCellWidth));
+  const lakeRows = Math.ceil(lakeItemCount / Math.max(1, lakeColumns));
+  const lakeHeight = lakeRows * fishSlotSize + Math.max(0, lakeRows - 1) * lakeGap;
+  const choiceColumns = choices.length <= 3 ? choices.length : choices.length <= 6 ? 3 : 4;
+  const choiceWidth =
+    (contentWidth - Math.max(0, choiceColumns - 1) * lakeGap) / Math.max(1, choiceColumns);
 
   const speak = useCallback(
     (text: string, done?: () => void) => {
       if (!game.presentation.playAudioInstructions) return done?.();
-      void Speech.stop().then(() =>
-        Speech.speak(text, { language: "tr-TR", rate: 0.84, onDone: done, onStopped: done }),
-      );
+      let finished = false;
+      const complete = () => {
+        if (finished) return;
+        finished = true;
+        if (fallback) clearTimeout(fallback);
+        done?.();
+      };
+      const fallback = done
+        ? setTimeout(complete, Math.max(1800, Math.min(5000, text.length * 90)))
+        : undefined;
+      void Speech.stop()
+        .then(() =>
+          Speech.speak(text, {
+            language: "tr-TR",
+            rate: 0.84,
+            onDone: complete,
+            onError: complete,
+            onStopped: complete,
+          }),
+        )
+        .catch(complete);
     },
     [game.presentation.playAudioInstructions],
   );
@@ -105,7 +144,6 @@ export function FishPatternsGame({
   };
 
   const retry = () => {
-    report({ type: "retry", stepId: round.id });
     if (wrongAttempts >= 1) {
       setLocked(true);
       const answer =
@@ -153,25 +191,15 @@ export function FishPatternsGame({
           style={styles.finishBackground}
         >
           <View style={styles.finishGlow} />
-          <Text style={[styles.sparkle, styles.sparkleLeft]}>✦</Text>
-          <Text style={[styles.sparkle, styles.sparkleRight]}>✦</Text>
-          <View style={styles.finishCard}>
-            <Text style={styles.finishIcon}>✦</Text>
-            <Text style={styles.finishTitle}>Göl tamamlandı!</Text>
-            <Text style={styles.finishCopy}>{game.presentation.closingNarration}</Text>
-            <Pressable onPress={onRestart} style={styles.exitButton}>
-              <Text style={styles.exitText}>Tekrar başlamak için dokun</Text>
-            </Pressable>
-            <Pressable onPress={onExit}>
-              <Text style={styles.finishCopy}>Oyunlara dön</Text>
-            </Pressable>
-          </View>
+          <GameCompletionCard
+            message={game.presentation.closingNarration}
+            onExit={onExit}
+            onRestart={onRestart}
+            title={game.title}
+          />
         </ImageBackground>
       </SafeAreaView>
     );
-
-  const visibleFish = round.kind === "color_prediction" ? round.sequence : round.fish;
-  const choices = round.kind === "color_prediction" ? round.choices : round.fish;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -189,51 +217,98 @@ export function FishPatternsGame({
         >
           <Text style={styles.closeText}>×</Text>
         </Pressable>
-        <View style={styles.progress}>
-          {game.rounds.map((item, index) => (
-            <View key={item.id} style={[styles.dot, index <= roundIndex && styles.dotActive]} />
-          ))}
-        </View>
-        <Text style={styles.title}>{game.title}</Text>
-        <View style={styles.promptCard}>
-          <Text style={styles.prompt}>{round.prompt}</Text>
-          {round.kind === "sequence_memory" && locked ? (
-            <Text style={styles.watch}>İyi izle…</Text>
-          ) : null}
-        </View>
-        <View style={styles.lakeRow}>
-          {visibleFish.map((color, index) => (
-            <View
-              key={`${color}-${index}`}
-              style={[styles.fishSlot, highlighted === color && styles.fishHighlighted]}
-            >
-              <Image source={fishAssets[color]} style={styles.fish} />
-              {round.kind === "color_prediction" && index < visibleFish.length - 1 ? null : null}
-            </View>
-          ))}
-          {round.kind === "color_prediction" ? (
-            <View style={styles.questionFish}>
-              <Text style={styles.question}>?</Text>
-            </View>
-          ) : null}
-        </View>
-        <View style={styles.choiceRow}>
-          {choices.map((color) => (
-            <Pressable
-              accessibilityLabel={`${colorNames[color]} balık`}
-              disabled={locked}
-              key={color}
-              onPress={() => choose(color)}
-              style={({ pressed }) => [styles.choice, pressed && styles.pressed]}
-            >
-              <Image source={fishAssets[color]} style={styles.choiceFish} />
-              <Text style={styles.choiceText}>{colorNames[color]}</Text>
-            </Pressable>
-          ))}
-        </View>
-        <Text accessibilityLiveRegion="polite" style={styles.feedback}>
-          {feedback}
-        </Text>
+        <ScrollView
+          bounces={false}
+          contentContainerStyle={[styles.content, compactHeight && styles.contentCompact]}
+          showsVerticalScrollIndicator={false}
+          style={styles.scroll}
+        >
+          <View style={styles.levelBadge}>
+            <Text style={styles.level}>SEVİYE {adaptiveLevel}</Text>
+          </View>
+          <View style={styles.progress}>
+            {game.rounds.map((item, index) => (
+              <View key={item.id} style={[styles.dot, index <= roundIndex && styles.dotActive]} />
+            ))}
+          </View>
+          <Text style={[styles.title, compactHeight && styles.titleCompact]}>{game.title}</Text>
+          <View style={[styles.promptCard, compactHeight && styles.promptCardCompact]}>
+            <Text style={[styles.prompt, compactHeight && styles.promptCompact]}>
+              {round.prompt}
+            </Text>
+            {round.kind === "sequence_memory" && locked ? (
+              <Text style={styles.watch}>İyi izle…</Text>
+            ) : null}
+          </View>
+          <View
+            style={[styles.lakeRow, { gap: lakeGap, minHeight: lakeHeight, width: contentWidth }]}
+          >
+            {visibleFish.map((color, index) => (
+              <View
+                key={`${color}-${index}`}
+                style={[
+                  styles.fishSlot,
+                  {
+                    borderRadius: fishSlotSize / 2,
+                    height: fishSlotSize,
+                    width: fishSlotSize,
+                  },
+                  highlighted === color && styles.fishHighlighted,
+                ]}
+              >
+                <Image
+                  resizeMode="contain"
+                  source={fishAssets[color]}
+                  style={{ height: fishSlotSize * 0.78, width: fishSlotSize * 0.94 }}
+                />
+              </View>
+            ))}
+            {round.kind === "color_prediction" ? (
+              <View
+                style={[
+                  styles.questionFish,
+                  {
+                    borderRadius: fishSlotSize / 2,
+                    height: fishSlotSize,
+                    width: fishSlotSize,
+                  },
+                ]}
+              >
+                <Text style={[styles.question, { fontSize: fishSlotSize * 0.5 }]}>?</Text>
+              </View>
+            ) : null}
+          </View>
+          <View style={[styles.choiceRow, { gap: lakeGap, width: contentWidth }]}>
+            {choices.map((color) => (
+              <Pressable
+                accessibilityLabel={`${colorNames[color]} balık`}
+                disabled={locked}
+                key={color}
+                onPress={() => choose(color)}
+                style={({ pressed }) => [
+                  styles.choice,
+                  { minHeight: Math.max(82, choiceWidth * 0.84), width: choiceWidth },
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Image
+                  resizeMode="contain"
+                  source={fishAssets[color]}
+                  style={{
+                    height: Math.min(67, choiceWidth * 0.58),
+                    width: Math.min(88, choiceWidth * 0.76),
+                  }}
+                />
+                <Text style={[styles.choiceText, compactHeight && styles.choiceTextCompact]}>
+                  {colorNames[color]}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          <Text accessibilityLiveRegion="polite" style={styles.feedback}>
+            {feedback}
+          </Text>
+        </ScrollView>
         <View pointerEvents="none" style={styles.bubbles}>
           <Text style={styles.bubbleText}>○ · ○</Text>
         </View>
@@ -244,13 +319,21 @@ export function FishPatternsGame({
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#92D9F4" },
-  background: { flex: 1, alignItems: "center", paddingHorizontal: 16 },
+  background: { flex: 1 },
   backgroundImage: { resizeMode: "cover" },
   tint: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(220,248,255,0.52)" },
+  scroll: { flex: 1, width: "100%" },
+  content: {
+    flexGrow: 1,
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingBottom: 18,
+  },
+  contentCompact: { paddingBottom: 8 },
   closeButton: {
     position: "absolute",
     zIndex: 3,
-    top: 28,
+    top: 14,
     left: 16,
     width: 52,
     height: 52,
@@ -260,10 +343,24 @@ const styles = StyleSheet.create({
     backgroundColor: "#E75252",
   },
   closeText: { color: "#FFFFFF", fontSize: 32, lineHeight: 35 },
-  progress: { flexDirection: "row", gap: 8, marginTop: 27 },
+  levelBadge: {
+    marginTop: 18,
+    paddingVertical: 6,
+    paddingHorizontal: 18,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.94)",
+  },
+  progress: { flexDirection: "row", gap: 8, marginTop: 8 },
   dot: { width: 13, height: 13, borderRadius: 7, backgroundColor: "#B7E4ED" },
   dotActive: { backgroundColor: "#087F9B" },
+  level: {
+    color: "#087F9B",
+    fontSize: 18,
+    fontWeight: "900",
+    letterSpacing: 2,
+  },
   title: { marginTop: 10, color: "#164E63", fontSize: 25, fontWeight: "900", textAlign: "center" },
+  titleCompact: { marginTop: 4, fontSize: 22 },
   promptCard: {
     width: "100%",
     maxWidth: 450,
@@ -273,64 +370,52 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.94)",
   },
   prompt: { color: "#234E59", fontSize: 21, fontWeight: "900", textAlign: "center" },
+  promptCardCompact: { marginTop: 7, paddingVertical: 9, paddingHorizontal: 12 },
+  promptCompact: { fontSize: 18 },
   watch: { marginTop: 4, color: "#D56B32", fontSize: 16, fontWeight: "900", textAlign: "center" },
   lakeRow: {
-    width: "100%",
-    maxWidth: 410,
-    minHeight: 180,
     flexDirection: "row",
     flexWrap: "wrap",
+    alignContent: "center",
     alignItems: "center",
     justifyContent: "center",
-    gap: 5,
-    marginTop: 18,
+    marginTop: 12,
   },
   fishSlot: {
-    width: 78,
-    height: 72,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 36,
   },
   fishHighlighted: {
     backgroundColor: "#FFF18A",
     transform: [{ translateY: -12 }, { scale: 1.12 }],
   },
-  fish: { width: 76, height: 62, resizeMode: "contain" },
   questionFish: {
-    width: 66,
-    height: 66,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 3,
     borderColor: "#FFFFFF",
-    borderRadius: 33,
     backgroundColor: "#1CA6C4",
   },
-  question: { color: "#FFFFFF", fontSize: 38, fontWeight: "900" },
+  question: { color: "#FFFFFF", fontWeight: "900" },
   choiceRow: {
-    width: "100%",
-    maxWidth: 460,
     flexDirection: "row",
+    flexWrap: "wrap",
+    alignContent: "center",
     justifyContent: "center",
-    gap: 10,
     marginTop: 10,
   },
   choice: {
-    flex: 1,
-    maxWidth: 135,
-    minHeight: 112,
     alignItems: "center",
     justifyContent: "center",
-    padding: 8,
+    padding: 6,
     borderWidth: 3,
     borderColor: "#FFFFFF",
     borderRadius: 23,
     backgroundColor: "rgba(255,255,255,0.92)",
   },
   pressed: { opacity: 0.72, transform: [{ scale: 0.96 }] },
-  choiceFish: { width: 88, height: 67, resizeMode: "contain" },
   choiceText: { color: "#225467", fontSize: 16, fontWeight: "900" },
+  choiceTextCompact: { fontSize: 14 },
   feedback: {
     minHeight: 26,
     marginTop: 12,

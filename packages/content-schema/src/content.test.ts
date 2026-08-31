@@ -146,6 +146,30 @@ describe("Turkish content v1", () => {
     }
   });
 
+  it("registers all twelve Pofi balloon colors", () => {
+    const content = contentVersionSchema.parse(contentV1);
+    const pofi = content.games?.find((game) => game.id === "pofi-balloon-counting-001");
+    if (!pofi || pofi.mechanic !== "balloon_counting") throw new Error("Expected Pofi game");
+
+    const colors = new Set(pofi.rounds.flatMap((round) => round.balloons));
+    expect(colors).toEqual(
+      new Set([
+        "red",
+        "blue",
+        "green",
+        "yellow",
+        "orange",
+        "purple",
+        "pink",
+        "cyan",
+        "darkGreen",
+        "black",
+        "gray",
+        "white",
+      ]),
+    );
+  });
+
   it("keeps every Duru scene aligned with the event shown in its image", () => {
     const content = contentVersionSchema.parse(contentV1);
     const duru = content.games?.find((game) => game.id === "mino-emotion-detective-001");
