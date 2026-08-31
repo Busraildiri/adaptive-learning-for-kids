@@ -315,21 +315,20 @@ export function ClassifyAndSortGame({
           ? game.presentation.introNarration
           : shownInstruction
         : game.presentation.ruleChangeNarration;
-    setLocked(true);
+    // Narration must never block the child from interacting with the card.
+    setLocked(false);
     setHighlightedObjectId(null);
     setFeedback(roundIndex === 0 ? "" : "Kural değişti!");
     roundStartedAt.current = Date.now();
     const speakInstructionOnce = () => {
       if (wasInstructionSpoken(shownInstruction)) {
-        setLocked(false);
         return;
       }
       onInstructionSpoken(shownInstruction);
-      speak(shownInstruction, () => setLocked(false));
+      speak(shownInstruction);
     };
     speak(text, () => {
-      if (roundIndex === 0 && !announceIntro) setLocked(false);
-      else speakInstructionOnce();
+      if (roundIndex !== 0 || announceIntro) speakInstructionOnce();
     });
     Animated.sequence([
       Animated.timing(mascotScale, { toValue: 1.1, duration: 220, useNativeDriver: true }),
@@ -465,6 +464,14 @@ export function ClassifyAndSortGame({
       >
         <Text style={styles.parentButtonText}>×</Text>
       </Pressable>
+      <Pressable
+        accessibilityLabel="Yönergeyi yeniden dinle"
+        accessibilityRole="button"
+        onPress={() => speak(shownInstruction)}
+        style={styles.audioButton}
+      >
+        <MaterialCommunityIcons color="#3C6E92" name="volume-high" size={28} />
+      </Pressable>
       <View style={[styles.gameArea, denseLayout && styles.denseGameArea]}>
         <View style={[styles.progressRow, denseLayout && styles.compactProgressRow]}>
           {game.rounds.map((round, index) => (
@@ -592,6 +599,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#E75252",
   },
   parentButtonText: { color: "#FFFFFF", fontSize: 32, lineHeight: 35 },
+  audioButton: {
+    position: "absolute",
+    zIndex: 3,
+    top: 28,
+    right: 16,
+    width: 52,
+    height: 52,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 26,
+    backgroundColor: "#FFFFFF",
+  },
   gameArea: {
     zIndex: 2,
     flex: 1,
