@@ -260,7 +260,7 @@ describe("adaptive game progression", () => {
       "Köpeği sepete sürükle ve bırak.",
       "Şimdi 12 nesne var. Mavi olanı sepete sürükle ve bırak.",
       "Yıldızı sepete sürükle ve bırak.",
-      "Arabayı sepete sürükle ve bırak.",
+      "Mor arabayı sepete sürükle ve bırak.",
     ]);
   });
 

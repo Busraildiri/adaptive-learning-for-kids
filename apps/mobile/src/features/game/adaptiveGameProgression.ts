@@ -36,6 +36,11 @@ const patiAnimalAccusatives: Record<string, string> = {
   bear: "Ayıcığı",
 };
 
+const patiCarAccusatives: Record<string, string> = {
+  "purple-car": "Mor arabayı",
+  "large-green-car": "Yeşil arabayı",
+};
+
 // These are the additional illustrated Pati objects. They stay outside the
 // five starter rounds, but join the adaptive pool as distinct visuals.
 const patiVisualObjects: SortObject[] = [
@@ -605,12 +610,16 @@ export function adaptGameComplexity(
       sourceRound.dimension === "category" &&
       sourceRound.targetValue === "animal"
         ? `${patiAnimalAccusatives[matching.id] ?? matching.label} sepete sürükle ve bırak.`
-        : sourceRound.instruction
-            .replace(/Şimdi dört nesne var\./, `Şimdi ${objectCountWord} nesne var.`)
-            .replace(
-              /Dört nesnenin içinden/,
-              `${objectCountWord.charAt(0).toLocaleUpperCase("tr-TR")}${objectCountWord.slice(1)} nesnenin içinden`,
-            );
+        : game.id === "rule-changed-garden-001" &&
+            sourceRound.dimension === "shape" &&
+            sourceRound.targetValue === "car"
+          ? `${patiCarAccusatives[matching.id] ?? matching.label} sepete sürükle ve bırak.`
+          : sourceRound.instruction
+              .replace(/Şimdi dört nesne var\./, `Şimdi ${objectCountWord} nesne var.`)
+              .replace(
+                /Dört nesnenin içinden/,
+                `${objectCountWord.charAt(0).toLocaleUpperCase("tr-TR")}${objectCountWord.slice(1)} nesnenin içinden`,
+              );
     return {
       ...game,
       rounds: [
