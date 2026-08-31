@@ -29,6 +29,64 @@ const turkishObjectCounts: Record<number, string> = {
   10: "on",
 };
 
+const zuzuPieceCells: Record<string, [number, number][]> = {
+  "zuzu-circle": [
+    [0, 0],
+    [0, 1],
+    [1, 1],
+  ],
+  "zuzu-square": [
+    [0, 0],
+    [1, 0],
+    [2, 0],
+  ],
+  "zuzu-triangle": [
+    [0, 0],
+    [0, 1],
+    [0, 2],
+  ],
+  "zuzu-star": [
+    [0, 0],
+    [1, 0],
+    [2, 0],
+    [1, 1],
+  ],
+};
+
+const zuzuPieceOffsets: Record<string, [number, number]> = {
+  "zuzu-circle": [1, 1],
+  "zuzu-square": [0, 2],
+  "zuzu-triangle": [2, 0],
+  "zuzu-star": [0, 1],
+};
+
+export function zuzuBoardCellColor(
+  column: number,
+  row: number,
+  palette: readonly string[],
+): string {
+  return palette[(column + row) % palette.length] ?? palette[0] ?? "#65A7F3";
+}
+
+function colorsForZuzuPiece(
+  icon: string | undefined,
+  boardSize: 4 | 8 | 16,
+  palette: readonly string[],
+  pieceOffsetColumn?: number,
+  pieceOffsetRow?: number,
+): string[] {
+  if (!icon || palette.length === 0) return [];
+  const centerShift = (boardSize - 4) / 2;
+  const [defaultOffsetColumn, defaultOffsetRow] = zuzuPieceOffsets[icon] ?? [0, 0];
+  const offsetColumn = pieceOffsetColumn ?? defaultOffsetColumn + centerShift;
+  const offsetRow = pieceOffsetRow ?? defaultOffsetRow + centerShift;
+  return (zuzuPieceCells[icon] ?? []).map(([column, row]) => {
+    const boardColumn = column + offsetColumn;
+    const boardRow = row + offsetRow;
+    return zuzuBoardCellColor(boardColumn, boardRow, palette);
+  });
+}
+
 const patiAnimalAccusatives: Record<string, string> = {
   "happy-dog": "Köpeği",
   cat: "Kediyi",
@@ -195,6 +253,7 @@ export function requiredRunsForGame(game: Game, ageBand: AgeBand): number {
   // Pati also has a finite sequence of unique sorting combinations; each
   // completed combination should advance to the next visible level.
   return game.id === "riko-where-001" ||
+    game.id === "zuzu-missing-piece-001" ||
     game.id === "rule-changed-garden-001" ||
     game.id === "mino-routine-path-001" ||
     game.id === DURU_EMOTION_GAME_ID
@@ -238,6 +297,10 @@ export function maxAdaptiveLevelForGame(game: Game): number {
       combinations = game.id === DURU_EMOTION_GAME_ID ? game.rounds.length : game.rounds.length * 2;
       break;
     case "mini_challenge":
+      if (game.id === "zuzu-missing-piece-001") {
+        combinations = 60;
+        break;
+      }
       if (game.id === "riko-where-001") {
         combinations = 9;
         break;
@@ -321,6 +384,17 @@ export function previousProgression(state: AdaptiveProgressionState): AdaptivePr
     completedRunsAtLevel: 0,
     itemCount: itemCountForLevel(adaptiveLevel),
     challengeIndex: state.challengeIndex + 1,
+    adaptiveLevel,
+  };
+}
+
+export function previousZuzuProgression(state: AdaptiveProgressionState): AdaptiveProgressionState {
+  const adaptiveLevel = Math.max(1, state.adaptiveLevel - 2);
+  return {
+    difficulty: difficultyForLevel(adaptiveLevel),
+    completedRunsAtLevel: 0,
+    itemCount: itemCountForLevel(adaptiveLevel),
+    challengeIndex: adaptiveLevel - 1,
     adaptiveLevel,
   };
 }
@@ -457,6 +531,124 @@ export function adaptGameComplexity(
     );
     const adaptiveRound = adaptiveRounds[0];
     if (!adaptiveRound) return game;
+    if (game.id === "zuzu-missing-piece-001") {
+      const zuzuLevel = Math.min(60, challengeIndex + 1);
+      const isLevelTwenty = zuzuLevel === 20;
+      const usesColorMatching = zuzuLevel >= 12;
+      const boardSize = zuzuLevel >= 56 ? 16 : zuzuLevel >= 50 ? 8 : 4;
+      const shapeOrder = ["circle", "square", "triangle", "star"];
+      const targetShape = isLevelTwenty
+        ? "square"
+        : (shapeOrder[challengeIndex % shapeOrder.length] ?? "circle");
+      const zuzuRound =
+        game.rounds.find((round) => round.correctSequence[0] === targetShape) ?? adaptiveRound;
+      const allZuzuChoices = Array.from(
+        new Map(
+          game.rounds.flatMap((round) => round.choices).map((choice) => [choice.id, choice]),
+        ).values(),
+      );
+      const correctChoice = allZuzuChoices.find(
+        (choice) => choice.id === zuzuRound.correctSequence[0],
+      );
+      const distractors = rotate(
+        allZuzuChoices.filter((choice) => choice.id !== zuzuRound.correctSequence[0]),
+        challengeIndex,
+      );
+      const optionCount = zuzuLevel <= 5 ? 3 : 4;
+      const levelColors =
+        zuzuLevel >= 56
+          ? ["#4C87D9", "#79C9F2", "#72D69B", "#FFD45C", "#FF8A65", "#B388FF"]
+          : zuzuLevel >= 35
+            ? ["#4C87D9", "#79C9F2", "#72D69B", "#FFD45C"]
+            : zuzuLevel >= 20
+              ? ["#4C87D9", "#79C9F2", "#72D69B"]
+              : zuzuLevel >= 12
+                ? ["#4C87D9", "#79C9F2"]
+                : ["#65A7F3"];
+      const pieceCells = zuzuPieceCells[correctChoice?.icon ?? ""] ?? [];
+      const pieceWidth = Math.max(...pieceCells.map(([column]) => column), 0) + 1;
+      const pieceHeight = Math.max(...pieceCells.map(([, row]) => row), 0) + 1;
+      const maxOffsetColumn = boardSize - pieceWidth;
+      const maxOffsetRow = boardSize - pieceHeight;
+      const positionVariant =
+        Math.floor(challengeIndex / shapeOrder.length) + (isLevelTwenty ? 5 : 0);
+      const pieceOffsetColumn = positionVariant % (maxOffsetColumn + 1);
+      const pieceOffsetRow =
+        Math.floor(positionVariant / (maxOffsetColumn + 1)) % (maxOffsetRow + 1);
+      const piecePalette = usesColorMatching
+        ? colorsForZuzuPiece(
+            correctChoice?.icon,
+            boardSize,
+            levelColors,
+            pieceOffsetColumn,
+            pieceOffsetRow,
+          )
+        : undefined;
+      const incorrectPiecePalette = piecePalette?.map(
+        (_, index) => piecePalette[(index + 1) % piecePalette.length] ?? piecePalette[0],
+      );
+      const shapePrompts =
+        optionCount === 3
+          ? [
+              "Eksik parçayı bul ve tabloyu tamamla.",
+              "Üç parçadan tabloyu tamamlayanı seç.",
+              "Şekle dikkat et. Hangi parça buraya uyar?",
+              "Kenarları karşılaştır ve doğru parçayı bul.",
+            ]
+          : [
+              "Dört parçadan tabloyu tamamlayanı bul.",
+              "Hangi şekil eksik bölümü tamamlar?",
+              "Parçaları karşılaştır ve doğru olanı seç.",
+              "Tablodaki eksik şekli dört seçenekten bul.",
+            ];
+      const colorPrompts = [
+        "Şekle ve renk sırasına bak. Uyan parçayı bul.",
+        "Renkleri aynı sırada olan doğru parçayı seç.",
+        "Hem şekli hem renkleri eşleşen parçayı bul.",
+        "Renk örüntüsünü tamamlayan parçayı seç.",
+      ];
+      const promptPool = usesColorMatching ? colorPrompts : shapePrompts;
+      const prompt = isLevelTwenty
+        ? "Son örüntüde şekli ve renk sırası aynı olan yatay parçayı bul."
+        : (promptPool[challengeIndex % promptPool.length] ?? promptPool[0]);
+      const colorDistractor =
+        usesColorMatching && correctChoice && incorrectPiecePalette
+          ? {
+              ...correctChoice,
+              id: `${correctChoice.id}-wrong-colors`,
+              cellPalette: incorrectPiecePalette,
+            }
+          : undefined;
+      const choices = rotate(
+        [correctChoice, colorDistractor, ...distractors]
+          .filter((choice): choice is NonNullable<typeof choice> => Boolean(choice))
+          .slice(0, optionCount),
+        challengeIndex,
+      );
+      return {
+        ...game,
+        rounds: [
+          {
+            ...zuzuRound,
+            id: `${zuzuRound.id}-adaptive-${challengeIndex}`,
+            boardSize,
+            levelNumber: zuzuLevel,
+            levelCount: 60,
+            pieceOffsetColumn,
+            pieceOffsetRow,
+            prompt,
+            boardPalette: levelColors,
+            ...(usesColorMatching
+              ? {
+                  piecePalette,
+                  holePalette: piecePalette,
+                }
+              : {}),
+            choices,
+          },
+        ],
+      };
+    }
     if (adaptiveRound.kind === "single") {
       return {
         ...game,

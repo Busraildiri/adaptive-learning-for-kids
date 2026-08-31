@@ -12,6 +12,7 @@ export type GameProgress = {
   currentDifficulty: GameDifficultyLevel;
   updatedAt: string;
   rhythmProgressionVersion?: number;
+  zuzuProgressionVersion?: number;
   duruEmotionProgressionVersion?: number;
 };
 
@@ -20,6 +21,8 @@ export type GameProgressMap = Record<string, GameProgress>;
 const keyForChild = (childId: string) => `adaptive.game-progress.${childId}`;
 const NINO_GAME_ID = "nino-sound-rhythm-001";
 const NINO_RHYTHM_PROGRESSION_VERSION = 1;
+const ZUZU_GAME_ID = "zuzu-missing-piece-001";
+const ZUZU_PROGRESSION_VERSION = 6;
 const DURU_GAME_ID = "mino-emotion-detective-001";
 const DURU_EMOTION_PROGRESSION_VERSION = 1;
 
@@ -49,6 +52,19 @@ export function normalizeGameProgress(gameId: string, progress: GameProgress): G
       completedRunsAtLevel: 0,
       currentDifficulty: "starter",
       rhythmProgressionVersion: NINO_RHYTHM_PROGRESSION_VERSION,
+    };
+  }
+
+  if (gameId === ZUZU_GAME_ID && progress.zuzuProgressionVersion !== ZUZU_PROGRESSION_VERSION) {
+    return {
+      ...normalized,
+      maxItemCount: 2,
+      completed: false,
+      adaptiveLevel: 1,
+      challengeIndex: 0,
+      completedRunsAtLevel: 0,
+      currentDifficulty: "starter",
+      zuzuProgressionVersion: ZUZU_PROGRESSION_VERSION,
     };
   }
 
@@ -98,6 +114,11 @@ export async function saveGameProgress(
       ...progress,
       rhythmProgressionVersion: NINO_RHYTHM_PROGRESSION_VERSION,
     };
+  } else if (progress.gameId === ZUZU_GAME_ID) {
+    versionedProgress = {
+      ...progress,
+      zuzuProgressionVersion: ZUZU_PROGRESSION_VERSION,
+    };
   } else if (progress.gameId === DURU_GAME_ID) {
     versionedProgress = {
       ...progress,
@@ -124,7 +145,9 @@ export async function restartCompletedGame(
     replayCount: (previous?.replayCount ?? 0) + (previous?.completed ? 1 : 0),
     adaptiveLevel: 1,
     challengeIndex:
-      gameId === NINO_GAME_ID || gameId === DURU_GAME_ID ? 0 : (previous?.challengeIndex ?? 0) + 1,
+      gameId === NINO_GAME_ID || gameId === ZUZU_GAME_ID || gameId === DURU_GAME_ID
+        ? 0
+        : (previous?.challengeIndex ?? 0) + 1,
     completedRunsAtLevel: 0,
     currentDifficulty: "starter",
     updatedAt: new Date().toISOString(),

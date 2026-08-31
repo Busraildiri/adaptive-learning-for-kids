@@ -13,6 +13,7 @@ import {
   maxAdaptiveLevelForGame,
   nextDifficultyAfterCompletion,
   previousProgression,
+  previousZuzuProgression,
   requiredRunsForGame,
   requiredRunsToAdvance,
   shouldAnnounceGameIntro,
@@ -151,6 +152,28 @@ describe("adaptive game progression", () => {
     ).toMatchObject({ adaptiveLevel: 54, challengeIndex: 9 });
   });
 
+  it("drops Zuzu by at most two levels without returning to the beginning", () => {
+    expect(
+      previousZuzuProgression({
+        difficulty: "growing",
+        completedRunsAtLevel: 0,
+        itemCount: 11,
+        challengeIndex: 27,
+        adaptiveLevel: 28,
+      }),
+    ).toMatchObject({ adaptiveLevel: 26, challengeIndex: 25 });
+
+    expect(
+      previousZuzuProgression({
+        difficulty: "growing",
+        completedRunsAtLevel: 0,
+        itemCount: 3,
+        challengeIndex: 1,
+        adaptiveLevel: 2,
+      }),
+    ).toMatchObject({ adaptiveLevel: 1, challengeIndex: 0 });
+  });
+
   it("uses 150 levels while keeping at most 25 visible items", () => {
     expect(itemCountForLevel(MAX_ADAPTIVE_LEVEL)).toBe(MAX_ADAPTIVE_ITEM_COUNT);
   });
@@ -283,6 +306,7 @@ describe("adaptive game progression", () => {
     if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
 
     const adapted = adaptGameComplexity(pati, 2, 1);
+    if (adapted.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
     expect(adapted.rounds[0]?.instruction).toBe("Köpeği sepete sürükle ve bırak.");
   });
 
@@ -617,5 +641,145 @@ describe("adaptive game progression", () => {
         }
       }
     }
+  });
+
+  it("stages Zuzu from 4x4 shapes to color matching and larger boards", () => {
+    const game = publishedGames.find((candidate) => candidate.id === "zuzu-missing-piece-001");
+    if (!game || game.mechanic !== "mini_challenge") throw new Error("Expected Zuzu game");
+
+    expect(maxAdaptiveLevelForGame(game)).toBe(60);
+    const sizes = [0, 1, 2].map((challengeIndex) => {
+      const adapted = adaptGameComplexity(game, 1, challengeIndex);
+      if (adapted.mechanic !== "mini_challenge") throw new Error("Expected adapted Zuzu game");
+      return adapted.rounds[0];
+    });
+    expect(sizes.map((round) => round?.boardSize)).toEqual([4, 4, 4]);
+    expect(sizes.map((round) => round?.levelNumber)).toEqual([1, 2, 3]);
+    expect(new Set(sizes.map((round) => round?.prompt)).size).toBe(3);
+    expect(sizes.map((round) => round?.boardPalette)).toEqual([
+      ["#65A7F3"],
+      ["#65A7F3"],
+      ["#65A7F3"],
+    ]);
+
+    const levelFive = adaptGameComplexity(game, 1, 4);
+    const levelSix = adaptGameComplexity(game, 1, 5);
+    if (levelFive.mechanic !== "mini_challenge" || levelSix.mechanic !== "mini_challenge") {
+      throw new Error("Expected Zuzu levels 5 and 6");
+    }
+    expect(levelFive.rounds[0]?.levelNumber).toBe(5);
+    expect(levelSix.rounds[0]?.levelNumber).toBe(6);
+    expect(levelFive.rounds[0]?.choices).toHaveLength(3);
+    expect(levelSix.rounds[0]?.choices).toHaveLength(4);
+    expect(levelFive.rounds[0]?.piecePalette).toBeUndefined();
+    expect(levelSix.rounds[0]?.piecePalette).toBeUndefined();
+
+    const levelEleven = adaptGameComplexity(game, 1, 10);
+    const levelTwelve = adaptGameComplexity(game, 1, 11);
+    const levelFourteen = adaptGameComplexity(game, 1, 13);
+    const levelFifteen = adaptGameComplexity(game, 1, 14);
+    const levelSixteen = adaptGameComplexity(game, 1, 15);
+    if (
+      levelEleven.mechanic !== "mini_challenge" ||
+      levelTwelve.mechanic !== "mini_challenge" ||
+      levelFourteen.mechanic !== "mini_challenge" ||
+      levelFifteen.mechanic !== "mini_challenge" ||
+      levelSixteen.mechanic !== "mini_challenge"
+    ) {
+      throw new Error("Expected staged Zuzu color levels");
+    }
+    expect(levelEleven.rounds[0]).toMatchObject({ boardSize: 4, boardPalette: ["#65A7F3"] });
+    expect(levelEleven.rounds[0]?.piecePalette).toBeUndefined();
+    expect(levelTwelve.rounds[0]).toMatchObject({
+      boardSize: 4,
+      boardPalette: ["#4C87D9", "#79C9F2"],
+    });
+    expect(levelTwelve.rounds[0]?.piecePalette).toBeDefined();
+    expect(levelFourteen.rounds[0]?.boardPalette).toHaveLength(2);
+    expect(levelFourteen.rounds[0]?.piecePalette).toEqual(["#4C87D9", "#79C9F2", "#4C87D9"]);
+    expect(levelFifteen.rounds[0]).toMatchObject({
+      levelNumber: 15,
+      boardSize: 4,
+      correctSequence: ["triangle"],
+      pieceOffsetColumn: 3,
+      pieceOffsetRow: 0,
+      boardPalette: ["#4C87D9", "#79C9F2"],
+      piecePalette: ["#79C9F2", "#4C87D9", "#79C9F2"],
+      holePalette: ["#79C9F2", "#4C87D9", "#79C9F2"],
+    });
+    const levelFifteenTriangleChoices = levelFifteen.rounds[0]?.choices.filter(
+      (choice) => choice.icon === "zuzu-triangle",
+    );
+    expect(levelFifteenTriangleChoices).toHaveLength(2);
+    expect(
+      levelFifteenTriangleChoices?.find((choice) => choice.id === "triangle"),
+    ).not.toHaveProperty("cellPalette");
+    expect(
+      levelFifteenTriangleChoices?.find((choice) => choice.id === "triangle-wrong-colors"),
+    ).toMatchObject({ cellPalette: ["#4C87D9", "#79C9F2", "#79C9F2"] });
+
+    const levelNineteen = adaptGameComplexity(game, 1, 18);
+    if (levelNineteen.mechanic !== "mini_challenge") throw new Error("Expected Zuzu level 19");
+    const levelNineteenTriangleChoices = levelNineteen.rounds[0]?.choices.filter(
+      (choice) => choice.icon === "zuzu-triangle",
+    );
+    expect(levelNineteen.rounds[0]).toMatchObject({
+      levelNumber: 19,
+      correctSequence: ["triangle"],
+      piecePalette: ["#79C9F2", "#4C87D9", "#79C9F2"],
+    });
+    expect(levelNineteenTriangleChoices).toHaveLength(2);
+    expect(
+      levelNineteenTriangleChoices?.find((choice) => choice.id === "triangle-wrong-colors"),
+    ).toMatchObject({ cellPalette: ["#4C87D9", "#79C9F2", "#79C9F2"] });
+    expect(levelSixteen.rounds[0]).toMatchObject({ boardSize: 4 });
+    expect(levelSixteen.rounds[0]?.boardPalette).toHaveLength(2);
+
+    const levelTwenty = adaptGameComplexity(game, 1, 19);
+    if (levelTwenty.mechanic !== "mini_challenge") throw new Error("Expected Zuzu level 20");
+    expect(levelTwenty.rounds[0]).toMatchObject({
+      levelNumber: 20,
+      levelCount: 60,
+      boardSize: 4,
+      choices: expect.arrayContaining([
+        expect.objectContaining({ id: "square", icon: "zuzu-square" }),
+      ]),
+      correctSequence: ["square"],
+      piecePalette: ["#79C9F2", "#72D69B", "#4C87D9"],
+      holePalette: ["#79C9F2", "#72D69B", "#4C87D9"],
+    });
+    expect(levelTwenty.rounds[0]?.choices).toHaveLength(4);
+
+    const levelFifty = adaptGameComplexity(game, 1, 49);
+    if (levelFifty.mechanic !== "mini_challenge") throw new Error("Expected Zuzu level 50");
+    expect(levelFifty.rounds[0]).toMatchObject({
+      levelNumber: 50,
+      levelCount: 60,
+      boardSize: 8,
+    });
+
+    const levelFiftySix = adaptGameComplexity(game, 1, 55);
+    if (levelFiftySix.mechanic !== "mini_challenge") throw new Error("Expected Zuzu level 56");
+    expect(levelFiftySix.rounds[0]).toMatchObject({
+      levelNumber: 56,
+      levelCount: 60,
+      boardSize: 16,
+    });
+
+    const uniqueLayouts = new Set(
+      Array.from({ length: 60 }, (_, challengeIndex) => {
+        const adapted = adaptGameComplexity(game, 1, challengeIndex);
+        if (adapted.mechanic !== "mini_challenge") throw new Error("Expected unique Zuzu level");
+        const round = adapted.rounds[0];
+        return JSON.stringify({
+          boardSize: round?.boardSize,
+          correctSequence: round?.correctSequence,
+          pieceOffsetColumn: round?.pieceOffsetColumn,
+          pieceOffsetRow: round?.pieceOffsetRow,
+          boardPalette: round?.boardPalette,
+        });
+      }),
+    );
+    expect(uniqueLayouts.size).toBe(60);
   });
 });

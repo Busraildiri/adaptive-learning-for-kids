@@ -1333,7 +1333,11 @@
               "assetKey": "wash-hands"
             },
             { "id": "breakfast-morning", "label": "kahvaltı", "assetKey": "breakfast" },
-            { "id": "toothbrush-morning", "label": "dişlerini fırçalayan Tomo", "assetKey": "toothbrush" },
+            {
+              "id": "toothbrush-morning",
+              "label": "dişlerini fırçalayan Tomo",
+              "assetKey": "toothbrush"
+            },
             { "id": "shoes-morning", "label": "ayakkabılar", "assetKey": "shoes" },
             { "id": "coat-morning", "label": "mont", "assetKey": "coat" }
           ],
@@ -1938,7 +1942,7 @@
       "presentation": {
         "introNarration": "Zuzu'nun blok tablosundaki boşluğu tamamlayalım.",
         "closingNarration": "Bütün blok tablolarını tamamladın!",
-        "playAudioInstructions": true
+        "playAudioInstructions": false
       },
       "rounds": [
         {
