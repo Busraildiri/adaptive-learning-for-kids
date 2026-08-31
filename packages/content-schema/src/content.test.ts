@@ -162,9 +162,7 @@ describe("Turkish content v1", () => {
       expect(round.storyPrompt).toMatch(expectedScene[round.sceneAssetKey].event);
       expect(round.correctEmotion).toBe(expectedScene[round.sceneAssetKey].emotion);
     }
-    expect(new Set(duru.rounds.map((round) => round.sceneAssetKey)).size).toBe(
-      duru.rounds.length,
-    );
+    expect(new Set(duru.rounds.map((round) => round.sceneAssetKey)).size).toBe(duru.rounds.length);
   });
 
   it("includes the four new progressive mini games without duplicating Zuzu", () => {
