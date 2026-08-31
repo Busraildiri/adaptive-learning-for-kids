@@ -83,4 +83,34 @@ describe("game progress migration", () => {
 
     expect(normalizeGameProgress(migratedDuru.gameId, migratedDuru)).toEqual(migratedDuru);
   });
+
+  it("resets old Pofi progress once for the 150-level balloon curriculum", () => {
+    const oldPofiProgress: GameProgress = {
+      ...savedProgress,
+      gameId: "pofi-balloon-counting-001",
+      completed: false,
+    };
+
+    expect(normalizeGameProgress(oldPofiProgress.gameId, oldPofiProgress)).toMatchObject({
+      maxItemCount: 2,
+      completed: false,
+      replayCount: 2,
+      adaptiveLevel: 1,
+      challengeIndex: 0,
+      completedRunsAtLevel: 0,
+      currentDifficulty: "starter",
+      pofiBalloonProgressionVersion: 1,
+    });
+  });
+
+  it("keeps Pofi progress after the balloon curriculum migration has been applied", () => {
+    const migratedPofi: GameProgress = {
+      ...savedProgress,
+      gameId: "pofi-balloon-counting-001",
+      completed: false,
+      pofiBalloonProgressionVersion: 1,
+    };
+
+    expect(normalizeGameProgress(migratedPofi.gameId, migratedPofi)).toEqual(migratedPofi);
+  });
 });

@@ -14,6 +14,7 @@ export type GameProgress = {
   rhythmProgressionVersion?: number;
   zuzuProgressionVersion?: number;
   duruEmotionProgressionVersion?: number;
+  pofiBalloonProgressionVersion?: number;
 };
 
 export type GameProgressMap = Record<string, GameProgress>;
@@ -25,6 +26,8 @@ const ZUZU_GAME_ID = "zuzu-missing-piece-001";
 const ZUZU_PROGRESSION_VERSION = 6;
 const DURU_GAME_ID = "mino-emotion-detective-001";
 const DURU_EMOTION_PROGRESSION_VERSION = 1;
+const POFI_GAME_ID = "pofi-balloon-counting-001";
+const POFI_BALLOON_PROGRESSION_VERSION = 1;
 
 export function shouldRestartGameOnLaunch(gameId: string, progress?: GameProgress): boolean {
   return gameId === NINO_GAME_ID || Boolean(progress?.completed);
@@ -84,6 +87,22 @@ export function normalizeGameProgress(gameId: string, progress: GameProgress): G
     };
   }
 
+  if (
+    gameId === POFI_GAME_ID &&
+    progress.pofiBalloonProgressionVersion !== POFI_BALLOON_PROGRESSION_VERSION
+  ) {
+    return {
+      ...normalized,
+      maxItemCount: 2,
+      completed: false,
+      adaptiveLevel: 1,
+      challengeIndex: 0,
+      completedRunsAtLevel: 0,
+      currentDifficulty: "starter",
+      pofiBalloonProgressionVersion: POFI_BALLOON_PROGRESSION_VERSION,
+    };
+  }
+
   return normalized;
 }
 
@@ -124,6 +143,11 @@ export async function saveGameProgress(
       ...progress,
       duruEmotionProgressionVersion: DURU_EMOTION_PROGRESSION_VERSION,
     };
+  } else if (progress.gameId === POFI_GAME_ID) {
+    versionedProgress = {
+      ...progress,
+      pofiBalloonProgressionVersion: POFI_BALLOON_PROGRESSION_VERSION,
+    };
   }
   const next = { ...current, [progress.gameId]: versionedProgress };
   await SecureStore.setItemAsync(keyForChild(childId), JSON.stringify(next), {
@@ -145,7 +169,10 @@ export async function restartCompletedGame(
     replayCount: (previous?.replayCount ?? 0) + (previous?.completed ? 1 : 0),
     adaptiveLevel: 1,
     challengeIndex:
-      gameId === NINO_GAME_ID || gameId === ZUZU_GAME_ID || gameId === DURU_GAME_ID
+      gameId === NINO_GAME_ID ||
+      gameId === ZUZU_GAME_ID ||
+      gameId === DURU_GAME_ID ||
+      gameId === POFI_GAME_ID
         ? 0
         : (previous?.challengeIndex ?? 0) + 1,
     completedRunsAtLevel: 0,

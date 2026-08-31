@@ -2,10 +2,16 @@ import type { AgeBand, Game, GameDifficultyLevel, SortObject } from "@adaptive/c
 import { adaptRhythmRound } from "./miniChallengeEngine";
 
 type MiniChallengeContent = Extract<Game, { mechanic: "mini_challenge" }>;
+type BalloonGameContent = Extract<Game, { mechanic: "balloon_counting" }>;
+type BalloonColor = BalloonGameContent["rounds"][number]["balloons"][number];
 
 const DURU_EMOTION_GAME_ID = "mino-emotion-detective-001";
+export const POFI_BALLOON_GAME_ID = "pofi-balloon-counting-001";
+export const POFI_BALLOON_MAX_LEVEL = 150;
+export const POFI_BALLOON_MAX_COUNT = 12;
+const POFI_LEVELS_PER_BALLOON_COUNT = 14;
 const levels: readonly GameDifficultyLevel[] = ["starter", "growing", "advanced"];
-const balloonColorNames = {
+const balloonColorNames: Record<BalloonColor, string> = {
   red: "kırmızı",
   blue: "mavi",
   green: "yeşil",
@@ -18,7 +24,21 @@ const balloonColorNames = {
   black: "siyah",
   gray: "gri",
   white: "beyaz",
-} as const;
+};
+const pofiBalloonColors: readonly BalloonColor[] = [
+  "red",
+  "blue",
+  "green",
+  "yellow",
+  "orange",
+  "purple",
+  "pink",
+  "cyan",
+  "darkGreen",
+  "black",
+  "gray",
+  "white",
+];
 
 const turkishObjectCounts: Record<number, string> = {
   1: "bir",
@@ -237,6 +257,14 @@ export function itemCountForLevel(adaptiveLevel: number): number {
   );
 }
 
+export function pofiBalloonCountForLevel(adaptiveLevel: number): number {
+  const normalizedLevel = Math.max(1, Math.min(POFI_BALLOON_MAX_LEVEL, adaptiveLevel));
+  return Math.min(
+    POFI_BALLOON_MAX_COUNT,
+    MIN_ADAPTIVE_ITEM_COUNT + Math.floor((normalizedLevel - 1) / POFI_LEVELS_PER_BALLOON_COUNT),
+  );
+}
+
 export function difficultyForLevel(adaptiveLevel: number): GameDifficultyLevel {
   if (adaptiveLevel <= 50) return "starter";
   if (adaptiveLevel <= 100) return "growing";
@@ -260,7 +288,8 @@ export function requiredRunsForGame(game: Game, ageBand: AgeBand): number {
     game.id === "zuzu-missing-piece-001" ||
     game.id === "rule-changed-garden-001" ||
     game.id === "mino-routine-path-001" ||
-    game.id === DURU_EMOTION_GAME_ID
+    game.id === DURU_EMOTION_GAME_ID ||
+    game.id === POFI_BALLOON_GAME_ID
     ? 1
     : requiredRunsToAdvance(ageBand);
 }
@@ -356,6 +385,10 @@ export function maxAdaptiveLevelForGame(game: Game): number {
       );
       break;
     case "balloon_counting":
+      if (game.id === POFI_BALLOON_GAME_ID) {
+        combinations = POFI_BALLOON_MAX_LEVEL;
+        break;
+      }
       combinations = game.rounds.reduce(
         (total, round) =>
           total + (MAX_ADAPTIVE_ITEM_COUNT - MIN_ADAPTIVE_ITEM_COUNT + 1) * round.balloons.length,
@@ -419,6 +452,16 @@ function rotate<T>(items: readonly T[], offset: number): T[] {
   if (items.length === 0) return [];
   const normalizedOffset = ((offset % items.length) + items.length) % items.length;
   return [...items.slice(normalizedOffset), ...items.slice(0, normalizedOffset)];
+}
+
+function pofiBalloonOrder(levelNumber: number, itemCount: number): BalloonColor[] {
+  const variant = (levelNumber - 1) % POFI_LEVELS_PER_BALLOON_COUNT;
+  const start = variant % pofiBalloonColors.length;
+  const step = variant < pofiBalloonColors.length ? 1 : 5;
+  return Array.from({ length: itemCount }, (_, index) => {
+    const colorIndex = (start + index * step) % pofiBalloonColors.length;
+    return pofiBalloonColors[colorIndex] as BalloonColor;
+  });
 }
 
 function answerSignature(round: unknown): string {
@@ -744,6 +787,54 @@ export function adaptGameComplexity(
   }
 
   if (game.mechanic === "balloon_counting") {
+    if (game.id === POFI_BALLOON_GAME_ID) {
+      const levelNumber = Math.max(
+        1,
+        Math.min(POFI_BALLOON_MAX_LEVEL, Math.floor(challengeIndex) + 1),
+      );
+      const visibleCount = pofiBalloonCountForLevel(levelNumber);
+      const orderedBalloons = pofiBalloonOrder(levelNumber, visibleCount);
+      const variant = (levelNumber - 1) % POFI_LEVELS_PER_BALLOON_COUNT;
+      const isColorLevel = levelNumber % 2 === 0;
+      const balloons = isColorLevel
+        ? rotate(orderedBalloons, (Math.floor(variant / 2) + 1) % visibleCount)
+        : orderedBalloons;
+
+      if (isColorLevel) {
+        const sourceRound = game.rounds.find((round) => round.kind === "color");
+        const targetColor = orderedBalloons[0];
+        if (!sourceRound || !targetColor) return game;
+        return {
+          ...game,
+          rounds: [
+            {
+              ...sourceRound,
+              id: `pofi-color-level-${levelNumber}`,
+              prompt: `${balloonColorNames[targetColor]} balonu bul ve patlat.`,
+              balloons,
+              targetCount: 1,
+              targetColor,
+            },
+          ],
+        };
+      }
+
+      const sourceRound = game.rounds.find((round) => round.kind === "count");
+      if (!sourceRound) return game;
+      return {
+        ...game,
+        rounds: [
+          {
+            ...sourceRound,
+            id: `pofi-pop-level-${levelNumber}`,
+            prompt: `${visibleCount} balonu patlat.`,
+            balloons,
+            targetCount: visibleCount,
+          },
+        ],
+      };
+    }
+
     const sourceRound =
       game.rounds[(itemCount - MIN_ADAPTIVE_ITEM_COUNT + challengeIndex) % game.rounds.length];
     if (!sourceRound) return game;

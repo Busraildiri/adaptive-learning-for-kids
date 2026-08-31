@@ -122,11 +122,13 @@ function PopBurst({ itemCount }: { itemCount: number }) {
 
 export function BalloonCountingGame({
   game,
+  adaptiveLevel,
   announceIntro = true,
   onExit,
   onRestart,
 }: {
   game: BalloonGameContent;
+  adaptiveLevel: number;
   announceIntro?: boolean;
   onExit: () => void;
   onRestart: () => void;
@@ -215,7 +217,6 @@ export function BalloonCountingGame({
         setHighlight(expected ?? null);
       } else {
         setWrong(1);
-        report({ type: "retry", stepId: round.id });
         setFeedback(game.feedback.retry);
         speak(game.feedback.retry);
         Vibration.vibrate(20);
@@ -265,6 +266,7 @@ export function BalloonCountingGame({
             <View key={item.id} style={[styles.dot, index <= roundIndex && styles.dotOn]} />
           ))}
         </View>
+        <Text style={styles.level}>SEVİYE {adaptiveLevel}</Text>
         <Text style={styles.title}>{game.title}</Text>
         <View style={styles.prompt}>
           <Text style={styles.promptText}>{round.prompt}</Text>
@@ -316,7 +318,14 @@ const styles = StyleSheet.create({
   dots: { flexDirection: "row", gap: 8, marginTop: 28 },
   dot: { width: 13, height: 13, borderRadius: 7, backgroundColor: "#D7DBDF" },
   dotOn: { backgroundColor: "#F28E2B" },
-  title: { marginTop: 12, color: "#4B3C38", fontSize: 26, fontWeight: "900" },
+  level: {
+    marginTop: 10,
+    color: "#2F7865",
+    fontSize: 18,
+    fontWeight: "900",
+    letterSpacing: 2,
+  },
+  title: { marginTop: 4, color: "#4B3C38", fontSize: 26, fontWeight: "900" },
   prompt: {
     width: "100%",
     maxWidth: 440,

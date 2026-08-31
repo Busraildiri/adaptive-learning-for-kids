@@ -12,6 +12,8 @@ import {
   findGameVariant,
   maxAdaptiveLevelForGame,
   nextDifficultyAfterCompletion,
+  POFI_BALLOON_GAME_ID,
+  pofiBalloonCountForLevel,
   previousProgression,
   previousZuzuProgression,
   requiredRunsForGame,
@@ -32,7 +34,8 @@ function adaptationIndexForRun(game: Game, progression: AdaptiveProgressionState
   // distinct instead of accidentally returning to the same color rule.
   return game.id === "rule-changed-garden-001" ||
     game.id === "mino-routine-path-001" ||
-    game.id === "mino-emotion-detective-001"
+    game.id === "mino-emotion-detective-001" ||
+    game.id === POFI_BALLOON_GAME_ID
     ? progression.adaptiveLevel - 1
     : progression.challengeIndex;
 }
@@ -41,6 +44,12 @@ function progressionForGame(
   game: Game,
   progression: AdaptiveProgressionState,
 ): AdaptiveProgressionState {
+  if (game.id === POFI_BALLOON_GAME_ID && game.mechanic === "balloon_counting") {
+    return {
+      ...progression,
+      itemCount: pofiBalloonCountForLevel(progression.adaptiveLevel),
+    };
+  }
   if (game.id !== "mino-routine-path-001" || game.mechanic !== "sequence_and_place") {
     return progression;
   }
@@ -315,6 +324,7 @@ export function TrackedGame({
       />
     ) : activeGame.mechanic === "balloon_counting" ? (
       <BalloonCountingGame
+        adaptiveLevel={progression.adaptiveLevel}
         announceIntro={shouldAnnounceGameIntro(runKey)}
         game={activeGame}
         key={runKey}

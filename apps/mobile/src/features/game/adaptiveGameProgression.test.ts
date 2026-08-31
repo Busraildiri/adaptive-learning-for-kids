@@ -12,6 +12,9 @@ import {
   MAX_ADAPTIVE_LEVEL,
   maxAdaptiveLevelForGame,
   nextDifficultyAfterCompletion,
+  POFI_BALLOON_MAX_COUNT,
+  POFI_BALLOON_MAX_LEVEL,
+  pofiBalloonCountForLevel,
   previousProgression,
   previousZuzuProgression,
   requiredRunsForGame,
@@ -572,7 +575,11 @@ describe("adaptive game progression", () => {
           break;
         }
         case "balloon_counting":
-          expect(adapted.rounds[0]?.balloons, adapted.id).toHaveLength(MAX_ADAPTIVE_ITEM_COUNT);
+          expect(adapted.rounds[0]?.balloons, adapted.id).toHaveLength(
+            adapted.id === "pofi-balloon-counting-001"
+              ? POFI_BALLOON_MAX_COUNT
+              : MAX_ADAPTIVE_ITEM_COUNT,
+          );
           break;
         case "mini_challenge": {
           const round = adapted.rounds[0];
@@ -623,8 +630,8 @@ describe("adaptive game progression", () => {
       throw new Error("Expected the balloon counting game");
     }
 
-    for (let challengeIndex = 0; challengeIndex < 30; challengeIndex += 1) {
-      const itemCount = itemCountForLevel(challengeIndex + 1);
+    for (let challengeIndex = 0; challengeIndex < POFI_BALLOON_MAX_LEVEL; challengeIndex += 1) {
+      const itemCount = pofiBalloonCountForLevel(challengeIndex + 1);
       const adapted = adaptGameComplexity(game, itemCount, challengeIndex);
       if (adapted.mechanic !== "balloon_counting") throw new Error("Expected balloon game");
       const round = adapted.rounds[0];
@@ -634,13 +641,50 @@ describe("adaptive game progression", () => {
         expect(round.targetColor, round.id).toBeDefined();
         expect(round.balloons, round.id).toContain(round.targetColor);
       }
-      if (round?.kind === "order") {
-        expect(round.targetOrder, round.id).toHaveLength(itemCount);
-        for (const color of round.targetOrder ?? []) {
-          expect(round.balloons, round.id).toContain(color);
-        }
-      }
+      expect(round?.kind).not.toBe("order");
     }
+  });
+
+  it("builds 150 unique Pofi levels and increases the balloon count up to twelve", () => {
+    const game = publishedGames.find((candidate) => candidate.id === "pofi-balloon-counting-001");
+    if (!game || game.mechanic !== "balloon_counting") throw new Error("Expected Pofi game");
+
+    expect(requiredRunsForGame(game, "2-4")).toBe(1);
+    expect(maxAdaptiveLevelForGame(game)).toBe(POFI_BALLOON_MAX_LEVEL);
+    expect(pofiBalloonCountForLevel(1)).toBe(2);
+    expect(pofiBalloonCountForLevel(15)).toBe(3);
+    expect(pofiBalloonCountForLevel(141)).toBe(12);
+    expect(pofiBalloonCountForLevel(POFI_BALLOON_MAX_LEVEL)).toBe(12);
+
+    const signatures = new Set<string>();
+    const counts: number[] = [];
+    const kinds = new Set<string>();
+    for (let level = 1; level <= POFI_BALLOON_MAX_LEVEL; level += 1) {
+      const itemCount = pofiBalloonCountForLevel(level);
+      const adapted = adaptGameComplexity(game, itemCount, level - 1);
+      if (adapted.mechanic !== "balloon_counting") throw new Error("Expected Pofi game");
+      const round = adapted.rounds[0];
+      if (!round) throw new Error(`Expected Pofi level ${level}`);
+
+      counts.push(round.balloons.length);
+      kinds.add(round.kind);
+      signatures.add(
+        JSON.stringify({
+          kind: round.kind,
+          balloons: round.balloons,
+          targetColor: round.targetColor,
+          targetCount: round.targetCount,
+        }),
+      );
+      expect(round.id).toContain(`level-${level}`);
+      expect(new Set(round.balloons).size).toBe(round.balloons.length);
+    }
+
+    expect(signatures.size).toBe(POFI_BALLOON_MAX_LEVEL);
+    expect(kinds).toEqual(new Set(["count", "color"]));
+    expect(counts.every((count, index) => index === 0 || count >= (counts[index - 1] ?? 0))).toBe(
+      true,
+    );
   });
 
   it("stages Zuzu from 4x4 shapes to color matching and larger boards", () => {

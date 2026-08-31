@@ -1588,7 +1588,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "pofi-balloon-counting-001",
-      "version": 3,
+      "version": 4,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "balloon_counting",
