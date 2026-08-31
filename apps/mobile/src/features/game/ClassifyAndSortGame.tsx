@@ -3,6 +3,7 @@ import type {
   SortObject,
 } from "@adaptive/content-schema";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { setAudioModeAsync } from "expo-audio";
 import * as Speech from "expo-speech";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -266,17 +267,24 @@ export function ClassifyAndSortGame({
       const fallbackTimer = setTimeout(complete, 1_800);
       const startSpeech = () => {
         if (!isMounted.current || speechToken.current !== token) return;
-        Speech.speak(text, {
-          language: "tr-TR",
-          rate: 0.84,
-          volume: 1,
-          // iOS can keep the app's audio session busy after other game audio.
-          // Let the system create a fresh speech session for each instruction.
-          useApplicationAudioSession: false,
-          onDone: complete,
-          onStopped: complete,
-          onError: complete,
-        });
+        void setAudioModeAsync({
+          playsInSilentMode: true,
+          shouldPlayInBackground: false,
+          interruptionMode: "duckOthers",
+        })
+          .catch(() => undefined)
+          .finally(() => {
+            if (!isMounted.current || speechToken.current !== token) return;
+            Speech.speak(text, {
+              language: "tr-TR",
+              rate: 0.84,
+              volume: 1,
+              useApplicationAudioSession: true,
+              onDone: complete,
+              onStopped: complete,
+              onError: complete,
+            });
+          });
       };
       void Speech.stop()
         .catch(() => undefined)
