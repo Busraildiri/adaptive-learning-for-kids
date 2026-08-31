@@ -162,12 +162,13 @@ function DraggableObject({
       useNativeDriver: false,
     }),
     onPanResponderRelease: (_, gesture) => {
+      const dropPadding = 48;
       const droppedInside =
         basketBounds &&
-        gesture.moveX >= basketBounds.x &&
-        gesture.moveX <= basketBounds.x + basketBounds.width &&
-        gesture.moveY >= basketBounds.y &&
-        gesture.moveY <= basketBounds.y + basketBounds.height;
+        gesture.moveX >= basketBounds.x - dropPadding &&
+        gesture.moveX <= basketBounds.x + basketBounds.width + dropPadding &&
+        gesture.moveY >= basketBounds.y - dropPadding &&
+        gesture.moveY <= basketBounds.y + basketBounds.height + dropPadding;
       if (droppedInside) onDrop(object);
       Animated.spring(position, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
     },
