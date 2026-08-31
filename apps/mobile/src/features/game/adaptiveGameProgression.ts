@@ -41,6 +41,28 @@ const patiCarAccusatives: Record<string, string> = {
   "large-green-car": "Yeşil arabayı",
 };
 
+const routineStepNames: Record<string, string> = {
+  toothbrush: "diş fırçasını",
+  pajamas: "pijamayı",
+  storybook: "hikâye kitabını",
+  bed: "yatağı",
+  blocks: "oyuncak bloklarını",
+  "toy-basket": "oyuncak sepetini",
+  "wash-hands": "ellerini yıkamayı",
+  towel: "havluyu",
+  coat: "montu",
+};
+
+function routineInstructionFor(items: readonly { id: string; label: string }[]): string {
+  const steps = items.map(
+    (item) => routineStepNames[item.id.replace(/-adaptive-\d+$/, "")] ?? item.label,
+  );
+  if (steps.length === 0) return "Kartları doğru sıraya koy.";
+  if (steps.length === 1) return `Önce ${steps[0]}.`;
+  if (steps.length === 2) return `Önce ${steps[0]}, sonra ${steps[1]}.`;
+  return `Önce ${steps.slice(0, -1).join(", sonra ")}, en son ${steps.at(-1)}.`;
+}
+
 // These are the additional illustrated Pati objects. They stay outside the
 // five starter rounds, but join the adaptive pool as distinct visuals.
 const patiVisualObjects: SortObject[] = [
@@ -644,6 +666,7 @@ export function adaptGameComplexity(
         {
           ...sourceRound,
           id: `${sourceRound.id}-adaptive-${challengeIndex}`,
+          instruction: routineInstructionFor(items),
           items,
           correctOrder: items.map((item) => item.id),
         },

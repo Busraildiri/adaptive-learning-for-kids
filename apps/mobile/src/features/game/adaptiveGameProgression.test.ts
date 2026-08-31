@@ -224,6 +224,18 @@ describe("adaptive game progression", () => {
     expect(pati.rounds.every((round) => round.dimension !== "size")).toBe(true);
   });
 
+  it("describes only the routine cards that Tomo shows", () => {
+    const tomo = publishedGames.find((game) => game.id === "mino-routine-path-001");
+    if (!tomo || tomo.mechanic !== "sequence_and_place") throw new Error("Expected Tomo game");
+
+    const adapted = adaptGameComplexity(tomo, 2, 2);
+    if (adapted.mechanic !== "sequence_and_place") throw new Error("Expected Tomo game");
+
+    expect(adapted.rounds[0]?.items).toHaveLength(2);
+    expect(adapted.rounds[0]?.instruction).toBe("Önce hikâye kitabını, sonra yatağı.");
+    expect(adapted.rounds[0]?.instruction).not.toContain("diş fırçasını");
+  });
+
   it("uses Pati's clearly colored source asset as the color-rule target", () => {
     const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
     if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
