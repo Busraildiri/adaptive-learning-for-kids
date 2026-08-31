@@ -11,6 +11,7 @@ import {
   PanResponder,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   Vibration,
@@ -57,22 +58,8 @@ function DraggableRoutineCard({
   onTap: (item: RoutineItem) => void;
 }) {
   const position = useRef(new Animated.ValueXY()).current;
-  const densityStyle =
-    itemCount >= 5
-      ? styles.tinySourceCard
-      : itemCount === 4
-        ? styles.denseSourceCard
-        : itemCount === 3
-          ? styles.compactSourceCard
-          : undefined;
-  const imageDensityStyle =
-    itemCount >= 5
-      ? styles.tinySourceImage
-      : itemCount === 4
-        ? styles.denseSourceImage
-        : itemCount === 3
-          ? styles.compactSourceImage
-          : undefined;
+  const densityStyle = itemCount >= 3 ? styles.gridSourceCard : undefined;
+  const imageDensityStyle = itemCount >= 3 ? styles.gridSourceImage : undefined;
   const responder = PanResponder.create({
     onStartShouldSetPanResponder: () => false,
     onMoveShouldSetPanResponder: (_, gesture) =>
@@ -113,12 +100,10 @@ function DraggableRoutineCard({
           source={routineAssets[item.assetKey]}
           style={[styles.sourceImage, imageDensityStyle]}
         />
-        <Text numberOfLines={2} style={[styles.cardLabel, itemCount >= 4 && styles.denseCardLabel]}>
+        <Text numberOfLines={2} style={[styles.cardLabel, itemCount >= 3 && styles.gridCardLabel]}>
           {item.label}
         </Text>
-        <Text style={[styles.dragLabel, itemCount >= 4 && styles.denseDragLabel]}>
-          Sürükle veya dokun
-        </Text>
+        {itemCount < 4 ? <Text style={styles.dragLabel}>Sürükle veya dokun</Text> : null}
       </Pressable>
     </Animated.View>
   );
@@ -154,22 +139,8 @@ export function SequenceAndPlaceGame({
   const slotRefs = useRef(Array.from({ length: 25 }, () => createRef<View>())).current;
   const currentRound = game.rounds[roundIndex];
   const itemCount = currentRound.items.length;
-  const sourceDensityStyle =
-    itemCount >= 5
-      ? styles.tinySourceCard
-      : itemCount === 4
-        ? styles.denseSourceCard
-        : itemCount === 3
-          ? styles.compactSourceCard
-          : undefined;
-  const slotDensityStyle =
-    itemCount >= 5
-      ? styles.tinySlot
-      : itemCount === 4
-        ? styles.denseSlot
-        : itemCount === 3
-          ? styles.compactSlot
-          : undefined;
+  const sourceDensityStyle = itemCount >= 3 ? styles.gridSourceCard : undefined;
+  const slotDensityStyle = itemCount >= 3 ? styles.gridSlot : undefined;
   const displayedItems = useMemo(
     () => shuffledRoutineItems(currentRound.items, roundIndex),
     [currentRound.items, roundIndex],
@@ -305,7 +276,7 @@ export function SequenceAndPlaceGame({
       >
         <Text style={styles.closeText}>×</Text>
       </Pressable>
-      <View style={styles.gameArea}>
+      <ScrollView contentContainerStyle={styles.gameArea} showsVerticalScrollIndicator={false}>
         <View style={[styles.starPath, game.rounds.length > 6 && styles.longStarPath]}>
           {game.rounds.map((round, index) => (
             <Image
@@ -319,7 +290,7 @@ export function SequenceAndPlaceGame({
         <Text style={styles.levelLabel}>SEVİYE {adaptiveLevel}</Text>
         <Text style={styles.title}>{game.title}</Text>
         <Text style={styles.instruction}>{currentRound.instruction}</Text>
-        <View style={[styles.sourceRow, itemCount >= 4 && styles.denseRow]}>
+        <View style={[styles.sourceRow, itemCount >= 3 && styles.gridRow]}>
           {displayedItems.map((item) =>
             placedIds.includes(item.id) ? (
               <View key={item.id} style={[styles.sourcePlaceholder, sourceDensityStyle]} />
@@ -340,7 +311,7 @@ export function SequenceAndPlaceGame({
             ),
           )}
         </View>
-        <View style={[styles.slotRow, itemCount >= 4 && styles.denseRow]}>
+        <View style={[styles.slotRow, itemCount >= 3 && styles.gridRow]}>
           {placedIds.map((itemId, index) => {
             const item = currentRound.items.find((candidate) => candidate.id === itemId);
             return (
@@ -376,16 +347,7 @@ export function SequenceAndPlaceGame({
                 {item ? (
                   <Image
                     source={routineAssets[item.assetKey]}
-                    style={[
-                      styles.slotImage,
-                      itemCount >= 5
-                        ? styles.tinySlotImage
-                        : itemCount === 4
-                          ? styles.denseSlotImage
-                          : itemCount === 3
-                            ? styles.compactSlotImage
-                            : undefined,
-                    ]}
+                    style={[styles.slotImage, itemCount >= 3 && styles.gridSlotImage]}
                   />
                 ) : (
                   <Text style={styles.slotArrow}>↓</Text>
@@ -396,7 +358,7 @@ export function SequenceAndPlaceGame({
         </View>
         <Text style={styles.feedback}>{locked && !feedback ? "Tomo anlatıyor…" : feedback}</Text>
         <Text style={styles.attemptText}>{attempt > 0 ? "Birlikte yeniden deniyoruz" : ""}</Text>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -416,7 +378,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#E75252",
   },
   closeText: { color: "#FFFFFF", fontSize: 32, lineHeight: 35 },
-  gameArea: { flex: 1, alignItems: "center", justifyContent: "center", paddingBottom: 16 },
+  gameArea: {
+    flexGrow: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 18,
+    paddingBottom: 24,
+  },
   starPath: {
     minHeight: 55,
     flexDirection: "row",
@@ -458,7 +426,7 @@ const styles = StyleSheet.create({
     gap: 14,
     marginTop: 8,
   },
-  denseRow: { minHeight: 96, gap: 6 },
+  gridRow: { gap: 8 },
   sourceCard: {
     zIndex: 5,
     width: 145,
@@ -477,19 +445,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     overflow: "hidden",
   },
-  compactSourceCard: { width: 104, height: 116, borderRadius: 20 },
-  denseSourceCard: { width: 78, height: 100, borderRadius: 17 },
-  tinySourceCard: { width: 62, height: 86, borderRadius: 14, borderWidth: 2 },
+  gridSourceCard: { width: "31%", maxWidth: 104, height: 112, borderRadius: 18 },
   sourcePlaceholder: { width: 145, height: 145 },
   highlightedCard: { borderWidth: 6, borderColor: "#FFD95A", backgroundColor: "#FFF3B3" },
   sourceImage: { width: 106, height: 82, borderRadius: 14, resizeMode: "cover" },
-  compactSourceImage: { width: 90, height: 68, borderRadius: 10 },
-  denseSourceImage: { width: 70, height: 58, borderRadius: 8 },
-  tinySourceImage: { width: 54, height: 46, borderRadius: 7 },
+  gridSourceImage: { width: "88%", height: 72, borderRadius: 10 },
   cardLabel: { color: "#4F443C", fontSize: 13, fontWeight: "900" },
-  denseCardLabel: { maxWidth: 58, fontSize: 9, lineHeight: 10, textAlign: "center" },
+  gridCardLabel: { maxWidth: 92, fontSize: 11, lineHeight: 12, textAlign: "center" },
   dragLabel: { color: "#83776E", fontSize: 10, fontWeight: "700" },
-  denseDragLabel: { fontSize: 7 },
   slotRow: {
     width: "100%",
     maxWidth: 334,
@@ -510,15 +473,11 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     backgroundColor: "#243C63",
   },
-  compactSlot: { width: 104, height: 124, borderRadius: 22 },
-  denseSlot: { width: 78, height: 104, borderRadius: 18, borderWidth: 3 },
-  tinySlot: { width: 62, height: 82, borderRadius: 14, borderWidth: 2 },
+  gridSlot: { width: "31%", maxWidth: 104, height: 108, borderRadius: 18, borderWidth: 3 },
   slotLabel: { position: "absolute", top: 9, color: "#FFD95A", fontSize: 14, fontWeight: "900" },
   compactSlotLabel: { fontSize: 11 },
   slotImage: { width: 116, height: 92, marginTop: 20, borderRadius: 14, resizeMode: "cover" },
-  compactSlotImage: { width: 88, height: 70, borderRadius: 10 },
-  denseSlotImage: { width: 64, height: 58 },
-  tinySlotImage: { width: 52, height: 46 },
+  gridSlotImage: { width: "88%", height: 70, borderRadius: 10 },
   slotArrow: { color: "#A7C7E8", fontSize: 42, fontWeight: "900" },
   feedback: {
     minHeight: 44,
