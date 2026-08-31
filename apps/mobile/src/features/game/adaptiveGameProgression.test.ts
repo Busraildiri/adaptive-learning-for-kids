@@ -32,6 +32,7 @@ import {
   requiredRunsForGame,
   requiredRunsToAdvance,
   shouldAnnounceGameIntro,
+  TOKO_MAP_ADMIN_GAME_ID,
   TOKO_MAP_GAME_ID,
   TOKO_MAP_MAX_LEVEL,
   TOKO_MAP_MAX_MOVES,
@@ -839,15 +840,15 @@ describe("adaptive game progression", () => {
     expect(levelSixty.choices).toHaveLength(8);
   });
 
-  it("grows Toko routes from two to eight valid movements across 60 unique levels", () => {
+  it("grows Toko routes from one to eight valid movements across 60 unique levels", () => {
     const game = publishedGames.find((candidate) => candidate.id === TOKO_MAP_GAME_ID);
     if (!game || game.mechanic !== "mini_challenge") throw new Error("Expected Toko map game");
 
     expect(requiredRunsForGame(game, game.ageBand)).toBe(1);
     expect(maxAdaptiveLevelForGame(game)).toBe(TOKO_MAP_MAX_LEVEL);
-    expect(tokoMovementCountForLevel(1)).toBe(2);
-    expect(tokoMovementCountForLevel(2)).toBe(3);
-    expect(tokoMovementCountForLevel(7)).toBe(TOKO_MAP_MAX_MOVES);
+    expect(tokoMovementCountForLevel(1)).toBe(1);
+    expect(tokoMovementCountForLevel(2)).toBe(2);
+    expect(tokoMovementCountForLevel(8)).toBe(TOKO_MAP_MAX_MOVES);
     expect(tokoMovementCountForLevel(TOKO_MAP_MAX_LEVEL)).toBe(TOKO_MAP_MAX_MOVES);
 
     const signatures = new Set<string>();
@@ -884,6 +885,21 @@ describe("adaptive game progression", () => {
         (count, index) => index === 0 || count >= (movementCounts[index - 1] ?? 0),
       ),
     ).toBe(true);
+
+    const adminToko = {
+      ...game,
+      id: TOKO_MAP_ADMIN_GAME_ID,
+      ageBand: "4-7",
+      title: "Toko’nun Minik Haritası",
+    } as Game;
+    const firstAdminLevel = adaptGameComplexity(adminToko, 2, 0);
+    if (firstAdminLevel.mechanic !== "mini_challenge") {
+      throw new Error("Expected admin Toko map level");
+    }
+    expect(requiredRunsForGame(adminToko, adminToko.ageBand)).toBe(1);
+    expect(maxAdaptiveLevelForGame(adminToko)).toBe(TOKO_MAP_MAX_LEVEL);
+    expect(firstAdminLevel.rounds[0]?.correctSequence).toHaveLength(1);
+    expect(firstAdminLevel.rounds[0]?.prompt).toMatch(/Bir kez/);
   });
 
   it("finishes Lila at level 5 and Maya and Kiki at level 20", () => {

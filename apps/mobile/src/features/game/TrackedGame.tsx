@@ -13,6 +13,7 @@ import {
   continuesAfterMaximumLevel,
   createInitialAdaptiveState,
   findGameVariant,
+  isTokoMapGameId,
   KIKI_SHOP_GAME_ID,
   LILA_LIGHT_GAME_ID,
   lilaRoundCountForLevel,
@@ -25,7 +26,6 @@ import {
   previousZuzuProgression,
   requiredRunsForGame,
   shouldAnnounceGameIntro,
-  TOKO_MAP_GAME_ID,
 } from "./adaptiveGameProgression";
 import { BalloonCountingGame } from "./BalloonCountingGame";
 import { ClassifyAndSortGame } from "./ClassifyAndSortGame";
@@ -46,7 +46,7 @@ function adaptationIndexForRun(game: Game, progression: AdaptiveProgressionState
     game.id === POFI_BALLOON_GAME_ID ||
     game.id === BOBI_FISH_PATTERN_GAME_ID ||
     game.id === BOBI_FISH_MEMORY_GAME_ID ||
-    game.id === TOKO_MAP_GAME_ID ||
+    isTokoMapGameId(game.id) ||
     game.id === LILA_LIGHT_GAME_ID ||
     game.id === MAYA_MORNING_GAME_ID ||
     game.id === KIKI_SHOP_GAME_ID

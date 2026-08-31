@@ -1,5 +1,6 @@
-import { type AgeBand, type Game, gameSchema } from "@adaptive/content-schema";
+import type { AgeBand, Game } from "@adaptive/content-schema";
 import { supabase } from "../lib/supabase";
+import { mergePublishedGames, type PublishedGameRow } from "./gameCatalogMerge";
 
 export async function loadPublishedGames(ageBand: AgeBand, fallbackGames: Game[]): Promise<Game[]> {
   if (!supabase) return fallbackGames.filter((game) => game.ageBand === ageBand);
@@ -18,26 +19,10 @@ export async function loadPublishedGames(ageBand: AgeBand, fallbackGames: Game[]
     tombstoneResult.error ? [] : (tombstoneResult.data ?? []).map((row) => row.game_id),
   );
 
-  const latestById = new Map<string, Game>();
-  for (const row of publishedResult.data ?? []) {
-    if (deletedGameIds.has(row.game_id)) continue;
-    if (latestById.has(row.game_id)) continue;
-    const parsed = gameSchema.safeParse(row.game);
-    if (!parsed.success || parsed.data.status !== "published") continue;
-    latestById.set(row.game_id, parsed.data);
-  }
-
-  const bundledGames = fallbackGames.filter(
-    (game) => game.ageBand === ageBand && !deletedGameIds.has(game.id),
+  return mergePublishedGames(
+    ageBand,
+    fallbackGames,
+    (publishedResult.data ?? []) as PublishedGameRow[],
+    deletedGameIds,
   );
-  const bundledIds = new Set(bundledGames.map((game) => game.id));
-  const mergedBundledGames = bundledGames.map((bundledGame) => {
-    const remoteGame = latestById.get(bundledGame.id);
-    return remoteGame && remoteGame.version >= bundledGame.version ? remoteGame : bundledGame;
-  });
-  const remoteOnlyGames = [...latestById.values()].filter(
-    (game) => game.ageBand === ageBand && !bundledIds.has(game.id),
-  );
-
-  return [...mergedBundledGames, ...remoteOnlyGames];
 }

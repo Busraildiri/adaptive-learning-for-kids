@@ -39,6 +39,7 @@ const BOBI_FISH_PATTERN_PROGRESSION_VERSION = 1;
 const BOBI_FISH_MEMORY_GAME_ID = "bobi-fish-memory-4-7-001";
 const BOBI_FISH_MEMORY_PROGRESSION_VERSION = 1;
 const TOKO_MAP_GAME_ID = "toko-little-map-001";
+const TOKO_MAP_ADMIN_GAME_ID = "auto-a4d2abba-2d3e-4152-aca0-cd75bbb8e099";
 const TOKO_MAP_PROGRESSION_VERSION = 1;
 const LILA_LIGHT_GAME_ID = "color-lights-001";
 const LILA_LIGHT_PROGRESSION_VERSION = 1;
@@ -46,6 +47,9 @@ const MAYA_MORNING_GAME_ID = "maya-morning-order-001";
 const MAYA_MORNING_PROGRESSION_VERSION = 1;
 const KIKI_SHOP_GAME_ID = "kiki-big-small-shop-001";
 const KIKI_SHOP_PROGRESSION_VERSION = 1;
+
+const isTokoMapGameId = (gameId: string) =>
+  gameId === TOKO_MAP_GAME_ID || gameId === TOKO_MAP_ADMIN_GAME_ID;
 
 export function shouldRestartGameOnLaunch(gameId: string, progress?: GameProgress): boolean {
   return gameId === NINO_GAME_ID || Boolean(progress?.completed);
@@ -154,7 +158,7 @@ export function normalizeGameProgress(gameId: string, progress: GameProgress): G
   }
 
   if (
-    gameId === TOKO_MAP_GAME_ID &&
+    isTokoMapGameId(gameId) &&
     progress.tokoMapProgressionVersion !== TOKO_MAP_PROGRESSION_VERSION
   ) {
     return {
@@ -248,7 +252,7 @@ export async function saveGameProgress(
       ...progress,
       bobiFishMemoryProgressionVersion: BOBI_FISH_MEMORY_PROGRESSION_VERSION,
     };
-  } else if (progress.gameId === TOKO_MAP_GAME_ID) {
+  } else if (isTokoMapGameId(progress.gameId)) {
     versionedProgress = {
       ...progress,
       tokoMapProgressionVersion: TOKO_MAP_PROGRESSION_VERSION,
@@ -295,7 +299,7 @@ export async function restartCompletedGame(
       gameId === POFI_GAME_ID ||
       gameId === BOBI_FISH_PATTERN_GAME_ID ||
       gameId === BOBI_FISH_MEMORY_GAME_ID ||
-      gameId === TOKO_MAP_GAME_ID ||
+      isTokoMapGameId(gameId) ||
       gameId === LILA_LIGHT_GAME_ID ||
       gameId === MAYA_MORNING_GAME_ID ||
       gameId === KIKI_SHOP_GAME_ID

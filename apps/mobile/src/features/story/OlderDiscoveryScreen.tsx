@@ -38,7 +38,7 @@ const fishGameIcon = require("../../../assets/game/home/fish-patterns.png");
 const routineGameIcon = require("../../../assets/game/home/morning-routine.png");
 const sortGameIcon = require("../../../assets/game/home/sort-basket.png");
 const emotionGameIcon = require("../../../assets/game/emotion/happy-rabbit-v2.png");
-const balloonGameIcon = require("../../../assets/game/balloon/balloon-pink-v1.png");
+const balloonGameIcon = require("../../../assets/game/home/pofi-balloons.png");
 const defaultMiniGameIcon = require("../../../assets/game/home/light-path.png");
 const lightGardenGameIcon = require("../../../assets/game/home/light-garden.png");
 const soundRhythmGameIcon = require("../../../assets/game/home/sound-rhythm.png");
@@ -57,6 +57,7 @@ const gameArtworkById: Record<string, ImageSourcePropType> = {
   "mavi-shadow-pairs-001": missingBlocksGameIcon,
   "lumi-sound-hunt-001": soundRhythmGameIcon,
   "toko-little-map-001": spatialGameIcon,
+  "auto-a4d2abba-2d3e-4152-aca0-cd75bbb8e099": spatialGameIcon,
 };
 
 const storyCoverImages: Record<string, ImageSourcePropType> = {
@@ -215,7 +216,12 @@ function GameArtwork({ game, large = false }: { game: Game; large?: boolean }) {
     <Image
       accessibilityIgnoresInvertColors
       source={source}
-      style={{ width: size, height: size, resizeMode: "contain" }}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: game.mechanic === "balloon_counting" ? size / 2 : 0,
+        resizeMode: game.mechanic === "balloon_counting" ? "cover" : "contain",
+      }}
     />
   );
 }
@@ -801,13 +807,13 @@ export function DiscoveryScreen({
             </Text>
           </View>
           <Pressable
-            accessibilityLabel="Ebeveyn alanına dön"
+            accessibilityLabel="Ana ekrana dön"
             accessibilityRole="button"
             hitSlop={8}
             onPress={onRequestParentArea}
             style={styles.parentButton}
           >
-            <MaterialCommunityIcons color="#5C554F" name="arrow-left" size={27} />
+            <MaterialCommunityIcons color="#5C554F" name="home" size={30} />
           </Pressable>
         </View>
 
