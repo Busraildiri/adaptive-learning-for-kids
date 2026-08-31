@@ -262,8 +262,13 @@ export function ClassifyAndSortGame({
         Speech.speak(text, {
           language: "tr-TR",
           rate: 0.84,
+          volume: 1,
+          // iOS can keep the app's audio session busy after other game audio.
+          // Let the system create a fresh speech session for each instruction.
+          useApplicationAudioSession: false,
           onDone: complete,
           onStopped: complete,
+          onError: complete,
         });
       });
     },
