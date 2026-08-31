@@ -254,11 +254,18 @@ export function ClassifyAndSortGame({
       }
       const token = speechToken.current + 1;
       speechToken.current = token;
-      void Speech.stop().then(() => {
+      let finished = false;
+      const complete = () => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(fallbackTimer);
+        if (isMounted.current && speechToken.current === token) onDone?.();
+      };
+      // Never leave the child unable to play if iOS TTS does not send a
+      // completion event (for example after an interrupted audio session).
+      const fallbackTimer = setTimeout(complete, 1_800);
+      const startSpeech = () => {
         if (!isMounted.current || speechToken.current !== token) return;
-        const complete = () => {
-          if (isMounted.current && speechToken.current === token) onDone?.();
-        };
         Speech.speak(text, {
           language: "tr-TR",
           rate: 0.84,
@@ -270,7 +277,10 @@ export function ClassifyAndSortGame({
           onStopped: complete,
           onError: complete,
         });
-      });
+      };
+      void Speech.stop()
+        .catch(() => undefined)
+        .finally(startSpeech);
     },
     [game.presentation.playAudioInstructions],
   );
