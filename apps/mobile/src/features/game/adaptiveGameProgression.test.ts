@@ -641,7 +641,12 @@ describe("adaptive game progression", () => {
         expect(round.targetColor, round.id).toBeDefined();
         expect(round.balloons, round.id).toContain(round.targetColor);
       }
-      expect(round?.kind).not.toBe("order");
+      if (round?.kind === "order") {
+        expect(round.targetOrder, round.id).toHaveLength(round.targetCount);
+        for (const color of round.targetOrder ?? []) {
+          expect(round.balloons, round.id).toContain(color);
+        }
+      }
     }
   });
 
@@ -652,8 +657,9 @@ describe("adaptive game progression", () => {
     expect(requiredRunsForGame(game, "2-4")).toBe(1);
     expect(maxAdaptiveLevelForGame(game)).toBe(POFI_BALLOON_MAX_LEVEL);
     expect(pofiBalloonCountForLevel(1)).toBe(2);
-    expect(pofiBalloonCountForLevel(15)).toBe(3);
-    expect(pofiBalloonCountForLevel(141)).toBe(12);
+    expect(pofiBalloonCountForLevel(2)).toBe(3);
+    expect(pofiBalloonCountForLevel(4)).toBe(5);
+    expect(pofiBalloonCountForLevel(11)).toBe(12);
     expect(pofiBalloonCountForLevel(POFI_BALLOON_MAX_LEVEL)).toBe(12);
 
     const signatures = new Set<string>();
@@ -674,6 +680,7 @@ describe("adaptive game progression", () => {
           balloons: round.balloons,
           targetColor: round.targetColor,
           targetCount: round.targetCount,
+          targetOrder: round.targetOrder,
         }),
       );
       expect(round.id).toContain(`level-${level}`);
@@ -681,10 +688,24 @@ describe("adaptive game progression", () => {
     }
 
     expect(signatures.size).toBe(POFI_BALLOON_MAX_LEVEL);
-    expect(kinds).toEqual(new Set(["count", "color"]));
+    expect(kinds).toEqual(new Set(["count", "color", "order"]));
     expect(counts.every((count, index) => index === 0 || count >= (counts[index - 1] ?? 0))).toBe(
       true,
     );
+
+    const openingLevels = Array.from({ length: 4 }, (_, index) => {
+      const level = index + 1;
+      const adapted = adaptGameComplexity(game, pofiBalloonCountForLevel(level), level - 1);
+      if (adapted.mechanic !== "balloon_counting") throw new Error("Expected Pofi game");
+      const round = adapted.rounds[0];
+      return { balloonCount: round?.balloons.length, kind: round?.kind };
+    });
+    expect(openingLevels).toEqual([
+      { balloonCount: 2, kind: "count" },
+      { balloonCount: 3, kind: "color" },
+      { balloonCount: 4, kind: "order" },
+      { balloonCount: 5, kind: "count" },
+    ]);
   });
 
   it("stages Zuzu from 4x4 shapes to color matching and larger boards", () => {

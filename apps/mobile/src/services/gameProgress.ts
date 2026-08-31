@@ -27,7 +27,7 @@ const ZUZU_PROGRESSION_VERSION = 6;
 const DURU_GAME_ID = "mino-emotion-detective-001";
 const DURU_EMOTION_PROGRESSION_VERSION = 1;
 const POFI_GAME_ID = "pofi-balloon-counting-001";
-const POFI_BALLOON_PROGRESSION_VERSION = 1;
+const POFI_BALLOON_PROGRESSION_VERSION = 2;
 
 export function shouldRestartGameOnLaunch(gameId: string, progress?: GameProgress): boolean {
   return gameId === NINO_GAME_ID || Boolean(progress?.completed);

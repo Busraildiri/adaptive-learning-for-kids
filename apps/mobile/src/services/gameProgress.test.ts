@@ -99,7 +99,7 @@ describe("game progress migration", () => {
       challengeIndex: 0,
       completedRunsAtLevel: 0,
       currentDifficulty: "starter",
-      pofiBalloonProgressionVersion: 1,
+      pofiBalloonProgressionVersion: 2,
     });
   });
 
@@ -108,7 +108,7 @@ describe("game progress migration", () => {
       ...savedProgress,
       gameId: "pofi-balloon-counting-001",
       completed: false,
-      pofiBalloonProgressionVersion: 1,
+      pofiBalloonProgressionVersion: 2,
     };
 
     expect(normalizeGameProgress(migratedPofi.gameId, migratedPofi)).toEqual(migratedPofi);

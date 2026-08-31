@@ -9,7 +9,6 @@ const DURU_EMOTION_GAME_ID = "mino-emotion-detective-001";
 export const POFI_BALLOON_GAME_ID = "pofi-balloon-counting-001";
 export const POFI_BALLOON_MAX_LEVEL = 150;
 export const POFI_BALLOON_MAX_COUNT = 12;
-const POFI_LEVELS_PER_BALLOON_COUNT = 14;
 const levels: readonly GameDifficultyLevel[] = ["starter", "growing", "advanced"];
 const balloonColorNames: Record<BalloonColor, string> = {
   red: "kırmızı",
@@ -259,10 +258,7 @@ export function itemCountForLevel(adaptiveLevel: number): number {
 
 export function pofiBalloonCountForLevel(adaptiveLevel: number): number {
   const normalizedLevel = Math.max(1, Math.min(POFI_BALLOON_MAX_LEVEL, adaptiveLevel));
-  return Math.min(
-    POFI_BALLOON_MAX_COUNT,
-    MIN_ADAPTIVE_ITEM_COUNT + Math.floor((normalizedLevel - 1) / POFI_LEVELS_PER_BALLOON_COUNT),
-  );
+  return Math.min(POFI_BALLOON_MAX_COUNT, MIN_ADAPTIVE_ITEM_COUNT + normalizedLevel - 1);
 }
 
 export function difficultyForLevel(adaptiveLevel: number): GameDifficultyLevel {
@@ -455,13 +451,16 @@ function rotate<T>(items: readonly T[], offset: number): T[] {
 }
 
 function pofiBalloonOrder(levelNumber: number, itemCount: number): BalloonColor[] {
-  const variant = (levelNumber - 1) % POFI_LEVELS_PER_BALLOON_COUNT;
-  const start = variant % pofiBalloonColors.length;
-  const step = variant < pofiBalloonColors.length ? 1 : 5;
-  return Array.from({ length: itemCount }, (_, index) => {
-    const colorIndex = (start + index * step) % pofiBalloonColors.length;
-    return pofiBalloonColors[colorIndex] as BalloonColor;
-  });
+  const pool = [...pofiBalloonColors];
+  const result: BalloonColor[] = [];
+  let permutationIndex = levelNumber - 1;
+  while (pool.length > 0) {
+    const choiceIndex = permutationIndex % pool.length;
+    permutationIndex = Math.floor(permutationIndex / pool.length);
+    const [color] = pool.splice(choiceIndex, 1);
+    if (color) result.push(color);
+  }
+  return result.slice(0, itemCount);
 }
 
 function answerSignature(round: unknown): string {
@@ -793,16 +792,13 @@ export function adaptGameComplexity(
         Math.min(POFI_BALLOON_MAX_LEVEL, Math.floor(challengeIndex) + 1),
       );
       const visibleCount = pofiBalloonCountForLevel(levelNumber);
-      const orderedBalloons = pofiBalloonOrder(levelNumber, visibleCount);
-      const variant = (levelNumber - 1) % POFI_LEVELS_PER_BALLOON_COUNT;
-      const isColorLevel = levelNumber % 2 === 0;
-      const balloons = isColorLevel
-        ? rotate(orderedBalloons, (Math.floor(variant / 2) + 1) % visibleCount)
-        : orderedBalloons;
+      const balloons = pofiBalloonOrder(levelNumber, visibleCount);
+      const levelGroup = Math.floor((levelNumber - 1) / 3);
+      const mode = (levelNumber - 1) % 3;
 
-      if (isColorLevel) {
+      if (mode === 1) {
         const sourceRound = game.rounds.find((round) => round.kind === "color");
-        const targetColor = orderedBalloons[0];
+        const targetColor = balloons[(levelGroup + 1) % visibleCount];
         if (!sourceRound || !targetColor) return game;
         return {
           ...game,
@@ -819,17 +815,40 @@ export function adaptGameComplexity(
         };
       }
 
+      if (mode === 2) {
+        const sourceRound = game.rounds.find((round) => round.kind === "order");
+        const sequenceLength = Math.min(visibleCount, 2 + (levelGroup % 3));
+        const targetOrder = rotate(balloons, levelGroup % visibleCount).slice(0, sequenceLength);
+        if (!sourceRound) return game;
+        return {
+          ...game,
+          rounds: [
+            {
+              ...sourceRound,
+              id: `pofi-order-level-${levelNumber}`,
+              prompt: `Balonları şu sırayla patlat: ${targetOrder
+                .map((color) => balloonColorNames[color])
+                .join(", ")}.`,
+              balloons,
+              targetCount: targetOrder.length,
+              targetOrder,
+            },
+          ],
+        };
+      }
+
       const sourceRound = game.rounds.find((round) => round.kind === "count");
       if (!sourceRound) return game;
+      const targetCount = Math.min(visibleCount, 2 + (levelGroup % (visibleCount - 1)));
       return {
         ...game,
         rounds: [
           {
             ...sourceRound,
-            id: `pofi-pop-level-${levelNumber}`,
-            prompt: `${visibleCount} balonu patlat.`,
+            id: `pofi-count-level-${levelNumber}`,
+            prompt: `${targetCount} balonu patlat.`,
             balloons,
-            targetCount: visibleCount,
+            targetCount,
           },
         ],
       };
