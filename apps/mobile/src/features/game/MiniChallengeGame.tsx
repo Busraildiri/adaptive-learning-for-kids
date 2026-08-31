@@ -14,7 +14,7 @@ import {
   Vibration,
   View,
 } from "react-native";
-import { zuzuBoardCellColor } from "./adaptiveGameProgression";
+import { isTokoMapGameId, zuzuBoardCellColor } from "./adaptiveGameProgression";
 import { GameCompletionCard } from "./GameCompletionCard";
 import { useGameObservation } from "./GameObservationContext";
 import { choicesAfterCorrectAnswer, expectedChoiceId } from "./miniChallengeEngine";
@@ -441,7 +441,7 @@ export function MiniChallengeGame({
   const soundFinished = useRef<(() => void) | null>(null);
   const transitionInFlight = useRef(false);
   const round = game.rounds[roundIndex];
-  const isToko = game.id === "toko-little-map-001";
+  const isToko = isTokoMapGameId(game.id);
   const isRiko = game.id === "riko-where-001";
   const isLumi = game.id === "lumi-sound-hunt-001";
   const isZuzu = game.id === "zuzu-missing-piece-001";
@@ -622,11 +622,11 @@ export function MiniChallengeGame({
       } else {
         setWrong(1);
         setFeedback(game.feedback.retry);
-        if (game.id === "toko-little-map-001") setLocked(true);
+        if (isToko) setLocked(true);
         const replay =
           round.kind === "rhythm"
             ? demonstrate
-            : game.id === "toko-little-map-001"
+            : isToko
               ? () => speak(round.prompt, () => setLocked(false))
               : undefined;
         speak(game.feedback.retry, replay);
@@ -637,7 +637,7 @@ export function MiniChallengeGame({
     setEntered(next);
     setWrong(0);
     setHighlight(null);
-    if (game.id === "toko-little-map-001" && next.length < round.correctSequence.length) {
+    if (isToko && next.length < round.correctSequence.length) {
       const label = round.choices.find((choice) => choice.id === id)?.label;
       setFeedback(`${label} yönüne gittin. Sıradaki yönü seç.`);
     }
@@ -703,6 +703,12 @@ export function MiniChallengeGame({
             <MiniVisual icon={round.previewIcon} size={82} />
           </View>
         ) : null}
+        {isToko ? (
+          <View accessibilityLabel="Toko'nun minik haritası" style={styles.tokoMapPanel}>
+            <Text style={styles.tokoMapTitle}>MİNİK HARİTA</Text>
+            <DirectionMap entered={entered} />
+          </View>
+        ) : null}
         {round.soundCue || isToko ? (
           <Pressable
             accessibilityLabel={isToko ? "Yönergeyi yeniden dinle" : "Sesi yeniden dinle"}
@@ -728,7 +734,6 @@ export function MiniChallengeGame({
             </Text>
           </Pressable>
         ) : null}
-        {isToko ? <DirectionMap entered={entered} /> : null}
         {isZuzu ? (
           <BlockBoard
             pieceIcon={correctChoice?.icon ?? ""}
@@ -745,8 +750,7 @@ export function MiniChallengeGame({
             styles.choices,
             isZuzu && styles.puzzleChoices,
             isZuzuFourChoices && styles.zuzuFourChoices,
-            (round.previewIcon || round.soundCue || game.id === "toko-little-map-001" || isRiko) &&
-              styles.compactChoices,
+            (round.previewIcon || round.soundCue || isToko || isRiko) && styles.compactChoices,
             isToko && styles.tokoChoices,
             isExpandedRhythm && styles.expandedRhythmChoices,
           ]}
@@ -1028,13 +1032,25 @@ const styles = StyleSheet.create({
     backgroundColor: "#6B62B5",
   },
   soundButtonText: { color: "#FFFFFF", fontSize: 18, fontWeight: "900" },
-  tokoSoundButton: { minWidth: 190, marginTop: 14, paddingVertical: 10 },
+  tokoSoundButton: { minWidth: 190, marginTop: 10, paddingVertical: 10 },
+  tokoMapPanel: {
+    alignItems: "center",
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 12,
+    borderWidth: 3,
+    borderColor: "#9BC78E",
+    borderRadius: 26,
+    backgroundColor: "#EAF6E4",
+  },
+  tokoMapTitle: { color: "#4F8052", fontSize: 15, fontWeight: "900", letterSpacing: 1.2 },
   directionMap: {
     width: 174,
     height: 174,
     flexDirection: "row",
     flexWrap: "wrap",
-    marginTop: 12,
+    marginTop: 8,
     padding: 4,
     borderRadius: 22,
     backgroundColor: "#CFE9C9",

@@ -19,6 +19,7 @@ export const BOBI_FISH_MEMORY_GAME_ID = "bobi-fish-memory-4-7-001";
 export const BOBI_FISH_MAX_LEVEL = 150;
 export const BOBI_FISH_MAX_COUNT = 8;
 export const TOKO_MAP_GAME_ID = "toko-little-map-001";
+export const TOKO_MAP_ADMIN_GAME_ID = "auto-a4d2abba-2d3e-4152-aca0-cd75bbb8e099";
 export const TOKO_MAP_MAX_LEVEL = 60;
 export const TOKO_MAP_MAX_MOVES = 8;
 export const LILA_LIGHT_GAME_ID = "color-lights-001";
@@ -81,6 +82,10 @@ const tokoOppositeDirection: Record<TokoDirection, TokoDirection> = {
   left: "right",
 };
 const tokoRouteCache = new Map<number, TokoDirection[][]>();
+
+export function isTokoMapGameId(gameId: string): boolean {
+  return gameId === TOKO_MAP_GAME_ID || gameId === TOKO_MAP_ADMIN_GAME_ID;
+}
 
 const turkishObjectCounts: Record<number, string> = {
   1: "bir",
@@ -311,7 +316,7 @@ export function bobiFishCountForLevel(adaptiveLevel: number): number {
 
 export function tokoMovementCountForLevel(adaptiveLevel: number): number {
   const normalizedLevel = Math.max(1, Math.min(TOKO_MAP_MAX_LEVEL, adaptiveLevel));
-  return Math.min(TOKO_MAP_MAX_MOVES, normalizedLevel + 1);
+  return Math.min(TOKO_MAP_MAX_MOVES, normalizedLevel);
 }
 
 export function lilaRoundCountForLevel(adaptiveLevel: number): number {
@@ -346,7 +351,7 @@ export function requiredRunsForGame(game: Game, ageBand: AgeBand): number {
     game.id === POFI_BALLOON_GAME_ID ||
     game.id === BOBI_FISH_PATTERN_GAME_ID ||
     game.id === BOBI_FISH_MEMORY_GAME_ID ||
-    game.id === TOKO_MAP_GAME_ID ||
+    isTokoMapGameId(game.id) ||
     game.id === LILA_LIGHT_GAME_ID ||
     game.id === MAYA_MORNING_GAME_ID ||
     game.id === KIKI_SHOP_GAME_ID
@@ -398,7 +403,7 @@ export function maxAdaptiveLevelForGame(game: Game): number {
         combinations = KIKI_SHOP_MAX_LEVEL;
         break;
       }
-      if (game.id === TOKO_MAP_GAME_ID) {
+      if (isTokoMapGameId(game.id)) {
         combinations = TOKO_MAP_MAX_LEVEL;
         break;
       }
@@ -609,12 +614,13 @@ function tokoRoutesForLength(length: number): TokoDirection[][] {
 
 function tokoRouteForLevel(levelNumber: number, movementCount: number): TokoDirection[] {
   const routes = tokoRoutesForLength(movementCount);
-  const firstLevelAtLength = Math.max(1, movementCount - 1);
+  const firstLevelAtLength = movementCount;
   return routes[(levelNumber - firstLevelAtLength) % routes.length] ?? routes[0] ?? ["right"];
 }
 
 function tokoRoutePrompt(route: readonly TokoDirection[]): string {
   const labels = route.map((direction) => tokoDirectionLabels[direction]);
+  if (labels.length === 1) return `Bir kez ${labels[0]} dokun.`;
   const last = labels.at(-1);
   const beginning = labels.slice(0, -1).join(", ");
   return `Sırayla ${beginning}${beginning ? " ve " : ""}${last} git.`;
@@ -825,7 +831,7 @@ export function adaptGameComplexity(
         ],
       };
     }
-    if (game.id === TOKO_MAP_GAME_ID) {
+    if (isTokoMapGameId(game.id)) {
       const levelNumber = Math.max(1, Math.min(TOKO_MAP_MAX_LEVEL, Math.floor(challengeIndex) + 1));
       const movementCount = tokoMovementCountForLevel(levelNumber);
       const correctSequence = tokoRouteForLevel(levelNumber, movementCount);
