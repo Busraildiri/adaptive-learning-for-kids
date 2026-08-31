@@ -3,6 +3,7 @@ import { adaptRhythmRound } from "./miniChallengeEngine";
 
 type MiniChallengeContent = Extract<Game, { mechanic: "mini_challenge" }>;
 
+const DURU_EMOTION_GAME_ID = "mino-emotion-detective-001";
 const levels: readonly GameDifficultyLevel[] = ["starter", "growing", "advanced"];
 const balloonColorNames = {
   red: "kırmızı",
@@ -86,6 +87,46 @@ function colorsForZuzuPiece(
   });
 }
 
+const patiAnimalAccusatives: Record<string, string> = {
+  "happy-dog": "Köpeği",
+  cat: "Kediyi",
+  fox: "Tilkiyi",
+  rabbit: "Tavşanı",
+  bear: "Ayıcığı",
+};
+
+const patiCarAccusatives: Record<string, string> = {
+  "purple-car": "Mor arabayı",
+  "large-green-car": "Yeşil arabayı",
+};
+
+const routineStepNames: Record<string, string> = {
+  toothbrush: "diş fırçasını",
+  pajamas: "pijamayı",
+  storybook: "hikâye kitabını",
+  bed: "yatağı",
+  blocks: "oyuncak bloklarını",
+  "toy-basket": "oyuncak sepetini",
+  "wash-hands": "ellerini yıkamayı",
+  towel: "havluyu",
+  coat: "montu",
+  shoes: "ayakkabılarını",
+  breakfast: "kahvaltıyı",
+};
+
+function routineInstructionFor(items: readonly { id: string; label: string }[]): string {
+  const steps = items.map(
+    (item) =>
+      routineStepNames[
+        item.id.replace(/-adaptive-\d+$/, "").replace(/-(evening|night|morning|play)$/, "")
+      ] ?? item.label,
+  );
+  if (steps.length === 0) return "Kartları doğru sıraya koy.";
+  if (steps.length === 1) return `Önce ${steps[0]}.`;
+  if (steps.length === 2) return `Önce ${steps[0]}, sonra ${steps[1]}.`;
+  return `Önce ${steps.slice(0, -1).join(", sonra ")}, en son ${steps.at(-1)}.`;
+}
+
 // These are the additional illustrated Pati objects. They stay outside the
 // five starter rounds, but join the adaptive pool as distinct visuals.
 const patiVisualObjects: SortObject[] = [
@@ -110,14 +151,6 @@ const patiVisualObjects: SortObject[] = [
     label: "mor tavşan",
     shape: "bear",
     color: "purple",
-    category: "animal",
-    size: "small",
-  },
-  {
-    id: "bear",
-    label: "sarı ayıcık",
-    shape: "bear",
-    color: "yellow",
     category: "animal",
     size: "small",
   },
@@ -217,7 +250,13 @@ export function requiredRunsToAdvance(ageBand: AgeBand): number {
 export function requiredRunsForGame(game: Game, ageBand: AgeBand): number {
   // Riko has five fixed, distinct spatial concepts. Repeating each one just
   // to satisfy the slower 2–4 cadence would make a completed curriculum loop.
-  return game.id === "riko-where-001" || game.id === "zuzu-missing-piece-001"
+  // Pati also has a finite sequence of unique sorting combinations; each
+  // completed combination should advance to the next visible level.
+  return game.id === "riko-where-001" ||
+    game.id === "zuzu-missing-piece-001" ||
+    game.id === "rule-changed-garden-001" ||
+    game.id === "mino-routine-path-001" ||
+    game.id === DURU_EMOTION_GAME_ID
     ? 1
     : requiredRunsToAdvance(ageBand);
 }
@@ -228,6 +267,15 @@ export function nextDifficultyAfterCompletion(
   maximumLevel = MAX_ADAPTIVE_LEVEL,
   requiredRuns = requiredRunsToAdvance(ageBand),
 ): AdaptiveProgressionState {
+  // A finite game's last available combination is its real finish line. It
+  // must not be repeated merely to satisfy the slower 2–4 progression pace.
+  if (state.adaptiveLevel >= maximumLevel) {
+    return {
+      ...state,
+      completedRunsAtLevel: 0,
+      challengeIndex: state.challengeIndex + 1,
+    };
+  }
   const completedRunsAtLevel = state.completedRunsAtLevel + 1;
   if (completedRunsAtLevel < requiredRuns) {
     return { ...state, completedRunsAtLevel, challengeIndex: state.challengeIndex + 1 };
@@ -246,7 +294,7 @@ export function maxAdaptiveLevelForGame(game: Game): number {
   let combinations: number;
   switch (game.mechanic) {
     case "emotion_clues":
-      combinations = game.rounds.length * 2;
+      combinations = game.id === DURU_EMOTION_GAME_ID ? game.rounds.length : game.rounds.length * 2;
       break;
     case "mini_challenge":
       if (game.id === "zuzu-missing-piece-001") {
@@ -284,6 +332,10 @@ export function maxAdaptiveLevelForGame(game: Game): number {
       );
       break;
     case "sequence_and_place":
+      if (game.id === "mino-routine-path-001") {
+        combinations = game.rounds.length;
+        break;
+      }
       combinations = game.rounds.reduce(
         (total, round) =>
           total + (MAX_ADAPTIVE_ITEM_COUNT - MIN_ADAPTIVE_ITEM_COUNT + 1) * round.items.length,
@@ -750,10 +802,18 @@ export function adaptGameComplexity(
     // A color rule must use an asset whose color is visually unambiguous. For
     // example, the multicolored play ball is not a valid "red" target even
     // though an earlier content record classified it as red.
+    const isPatiAnimalRule =
+      game.id === "rule-changed-garden-001" &&
+      sourceRound.dimension === "category" &&
+      sourceRound.targetValue === "animal";
     const matchingPool =
       game.id === "rule-changed-garden-001" && sourceRound.dimension === "color"
         ? sourceRound.objects.filter((object) => object.color === sourceRound.targetValue)
-        : objectPool.filter((object) => object[sourceRound.dimension] === sourceRound.targetValue);
+        : isPatiAnimalRule
+          ? sourceRound.objects.filter((object) => object.category === "animal")
+          : objectPool.filter(
+              (object) => object[sourceRound.dimension] === sourceRound.targetValue,
+            );
     const matching = rotate(matchingPool, challengeIndex)[0];
     const distractors = rotate(
       objectPool.filter((object) => object[sourceRound.dimension] !== sourceRound.targetValue),
@@ -772,12 +832,21 @@ export function adaptGameComplexity(
       challengeIndex,
     );
     const objectCountWord = turkishObjectCounts[objects.length] ?? String(objects.length);
-    const instruction = sourceRound.instruction
-      .replace(/Şimdi dört nesne var\./, `Şimdi ${objectCountWord} nesne var.`)
-      .replace(
-        /Dört nesnenin içinden/,
-        `${objectCountWord.charAt(0).toLocaleUpperCase("tr-TR")}${objectCountWord.slice(1)} nesnenin içinden`,
-      );
+    const instruction =
+      game.id === "rule-changed-garden-001" &&
+      sourceRound.dimension === "category" &&
+      sourceRound.targetValue === "animal"
+        ? `${patiAnimalAccusatives[matching.id] ?? matching.label} sepete sürükle ve bırak.`
+        : game.id === "rule-changed-garden-001" &&
+            sourceRound.dimension === "shape" &&
+            sourceRound.targetValue === "car"
+          ? `${patiCarAccusatives[matching.id] ?? matching.label} sepete sürükle ve bırak.`
+          : sourceRound.instruction
+              .replace(/Şimdi dört nesne var\./, `Şimdi ${objectCountWord} nesne var.`)
+              .replace(
+                /Dört nesnenin içinden/,
+                `${objectCountWord.charAt(0).toLocaleUpperCase("tr-TR")}${objectCountWord.slice(1)} nesnenin içinden`,
+              );
     return {
       ...game,
       rounds: [
@@ -794,7 +863,7 @@ export function adaptGameComplexity(
   if (game.mechanic === "sequence_and_place") {
     const sourceRound = game.rounds[challengeIndex % game.rounds.length];
     if (!sourceRound) return game;
-    const sourceItems = rotate(sourceRound.items, challengeIndex);
+    const sourceItems = sourceRound.items;
     const items = repeatWithUniqueIds(sourceItems, itemCount);
     return {
       ...game,
@@ -802,6 +871,7 @@ export function adaptGameComplexity(
         {
           ...sourceRound,
           id: `${sourceRound.id}-adaptive-${challengeIndex}`,
+          instruction: routineInstructionFor(items),
           items,
           correctOrder: items.map((item) => item.id),
         },
@@ -810,15 +880,17 @@ export function adaptGameComplexity(
   }
 
   if (game.mechanic === "emotion_clues") {
-    const ordered = avoidAdjacentDuplicateAnswers(game.rounds, challengeIndex);
-    const sourceRound = ordered[0];
+    const sourceRound =
+      game.id === DURU_EMOTION_GAME_ID
+        ? game.rounds[challengeIndex % game.rounds.length]
+        : avoidAdjacentDuplicateAnswers(game.rounds, challengeIndex)[0];
     if (!sourceRound) return game;
     return {
       ...game,
       rounds: [{ ...sourceRound, id: `${sourceRound.id}-adaptive-${challengeIndex}` }],
       difficulty: {
         ...game.difficulty,
-        askClueQuestion: challengeIndex >= game.rounds.length,
+        askClueQuestion: game.id === DURU_EMOTION_GAME_ID || challengeIndex >= game.rounds.length,
       },
     };
   }

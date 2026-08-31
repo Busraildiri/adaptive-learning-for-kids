@@ -1427,7 +1427,7 @@
                     },
                     "dimension": {
                       "type": "string",
-                      "enum": ["color", "category", "size"]
+                      "enum": ["color", "category", "shape", "size"]
                     },
                     "targetValue": {
                       "type": "string",
@@ -1671,7 +1671,8 @@
                               "wash-hands",
                               "towel",
                               "coat",
-                              "shoes"
+                              "shoes",
+                              "breakfast"
                             ]
                           }
                         },
@@ -1939,7 +1940,13 @@
                     },
                     "sceneAssetKey": {
                       "type": "string",
-                      "enum": ["sad-bear", "happy-rabbit", "angry-fox"]
+                      "enum": [
+                        "sad-bear",
+                        "happy-rabbit",
+                        "angry-fox",
+                        "scared-owl",
+                        "sad-elephant"
+                      ]
                     },
                     "storyPrompt": {
                       "type": "string",

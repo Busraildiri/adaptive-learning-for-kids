@@ -104,6 +104,22 @@ describe("adaptive game progression", () => {
     });
   });
 
+  it("does not require a repeat after a finite game's final combination", () => {
+    expect(
+      nextDifficultyAfterCompletion(
+        {
+          difficulty: "starter",
+          completedRunsAtLevel: 0,
+          itemCount: 2,
+          challengeIndex: 9,
+          adaptiveLevel: 10,
+        },
+        "2-4",
+        10,
+      ),
+    ).toMatchObject({ adaptiveLevel: 10, completedRunsAtLevel: 0, challengeIndex: 10 });
+  });
+
   it("finishes Riko's distinct spatial prompts without repeating each one", () => {
     const riko = publishedGames.find((game) => game.id === "riko-where-001");
     if (!riko) throw new Error("Expected Riko game");
@@ -216,29 +232,112 @@ describe("adaptive game progression", () => {
     const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
     if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
 
-    const adapted = adaptGameComplexity(pati, 2, 3);
+    expect(requiredRunsForGame(pati, "2-4")).toBe(1);
+
+    const adapted = adaptGameComplexity(pati, 2, 2);
     if (adapted.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
 
     expect(adapted.rounds[0]?.objects).toHaveLength(2);
     expect(adapted.rounds[0]?.instruction).toContain("Şimdi iki nesne var.");
 
-    const finalRound = adaptGameComplexity(pati, 2, 4);
-    if (finalRound.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
-    expect(finalRound.rounds[0]?.objects).toHaveLength(2);
-    expect(finalRound.rounds[0]?.instruction).toContain("İki nesnenin içinden");
+    const shapeRound = adaptGameComplexity(pati, 2, 3);
+    if (shapeRound.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
+    expect(shapeRound.rounds[0]?.objects).toHaveLength(2);
+    expect(shapeRound.rounds[0]?.instruction).toContain("Yıldızı");
+    expect(pati.rounds.every((round) => round.dimension !== "size")).toBe(true);
+  });
+
+  it("describes only the routine cards that Tomo shows", () => {
+    const tomo = publishedGames.find((game) => game.id === "mino-routine-path-001");
+    if (!tomo || tomo.mechanic !== "sequence_and_place") throw new Error("Expected Tomo game");
+
+    expect(requiredRunsForGame(tomo, "2-4")).toBe(1);
+    expect(maxAdaptiveLevelForGame(tomo)).toBe(5);
+    expect(
+      tomo.rounds.map((round, index) => {
+        const level = adaptGameComplexity(tomo, round.items.length, index);
+        return level.mechanic === "sequence_and_place" ? level.rounds[0]?.items.length : 0;
+      }),
+    ).toEqual([2, 3, 4, 5, 5]);
+
+    const adapted = adaptGameComplexity(tomo, 4, 2);
+    if (adapted.mechanic !== "sequence_and_place") throw new Error("Expected Tomo game");
+
+    expect(adapted.rounds[0]?.items).toHaveLength(4);
+    expect(adapted.rounds[0]?.instruction).toBe(
+      "Önce diş fırçasını, sonra pijamayı, sonra hikâye kitabını, en son yatağı.",
+    );
+  });
+
+  it("shows Duru's five scenes once in order and always asks for the clue", () => {
+    const duru = publishedGames.find((game) => game.id === "mino-emotion-detective-001");
+    if (!duru || duru.mechanic !== "emotion_clues") {
+      throw new Error("Expected Duru game");
+    }
+
+    expect(requiredRunsForGame(duru, "2-4")).toBe(1);
+    expect(maxAdaptiveLevelForGame(duru)).toBe(duru.rounds.length);
+
+    const shownRoundIds = duru.rounds.map((_, index) => {
+      const adapted = adaptGameComplexity(duru, 2, index);
+      if (adapted.mechanic !== "emotion_clues") throw new Error("Expected Duru game");
+      expect(adapted.difficulty.askClueQuestion).toBe(true);
+      return adapted.rounds[0]?.id.replace(/-adaptive-\d+$/, "");
+    });
+
+    expect(shownRoundIds).toEqual(duru.rounds.map((round) => round.id));
   });
 
   it("uses Pati's clearly colored source asset as the color-rule target", () => {
     const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
     if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
 
-    const adapted = adaptGameComplexity(pati, 2, 10);
+    const adapted = adaptGameComplexity(pati, 2, 5);
     if (adapted.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
     const target = adapted.rounds[0]?.objects.find((object) =>
       object.id.endsWith("-adaptive-target"),
     );
 
     expect(target?.id).toBe("red-balloon-adaptive-target");
+  });
+
+  it("uses Pati's visible animal target instead of a generic category label", () => {
+    const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
+    if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
+
+    const adapted = adaptGameComplexity(pati, 2, 1);
+    if (adapted.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
+    expect(adapted.rounds[0]?.instruction).toBe("Köpeği sepete sürükle ve bırak.");
+  });
+
+  it("rotates Pati's rules rather than returning to the same color on adjacent levels", () => {
+    const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
+    if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
+
+    const instructions = Array.from({ length: 5 }, (_, index) => {
+      const adapted = adaptGameComplexity(pati, 12, index);
+      if (adapted.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
+      return adapted.rounds[0]?.instruction;
+    });
+
+    expect(instructions).toEqual([
+      "Kırmızı olanı sepete sürükle ve bırak.",
+      "Köpeği sepete sürükle ve bırak.",
+      "Şimdi 12 nesne var. Mavi olanı sepete sürükle ve bırak.",
+      "Yıldızı sepete sürükle ve bırak.",
+      "Mor arabayı sepete sürükle ve bırak.",
+    ]);
+  });
+
+  it("does not select an unverified Pati animal visual as a target", () => {
+    const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
+    if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
+
+    for (let challengeIndex = 0; challengeIndex < 80; challengeIndex += 1) {
+      const adapted = adaptGameComplexity(pati, 12, challengeIndex);
+      if (adapted.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
+      expect(adapted.rounds[0]?.instruction).not.toMatch(/kedi|tavşan|tilki|ayıcık/);
+    }
   });
 
   it("audits every level of every published game for bounded adaptive content", () => {

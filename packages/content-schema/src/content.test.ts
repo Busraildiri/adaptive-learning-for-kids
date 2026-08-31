@@ -125,7 +125,7 @@ describe("Turkish content v1", () => {
     }
     expect(sortGame?.mechanic).toBe("classify_and_sort");
     if (sortGame?.mechanic === "classify_and_sort") {
-      expect(sortGame.rounds.map((round) => round.objects.length)).toEqual([3, 3, 3, 4, 4]);
+      expect(sortGame.rounds.map((round) => round.objects.length)).toEqual([3, 3, 4, 4, 4]);
     }
     expect(kikiGame?.mechanic).toBe("mini_challenge");
     if (kikiGame?.mechanic === "mini_challenge") {
@@ -144,6 +144,27 @@ describe("Turkish content v1", () => {
         firstRound.kind === "color_prediction" ? firstRound.sequence : firstRound.fish;
       expect(visibleFish).toHaveLength(4);
     }
+  });
+
+  it("keeps every Duru scene aligned with the event shown in its image", () => {
+    const content = contentVersionSchema.parse(contentV1);
+    const duru = content.games?.find((game) => game.id === "mino-emotion-detective-001");
+    if (!duru || duru.mechanic !== "emotion_clues") throw new Error("Expected Duru game");
+
+    const expectedScene = {
+      "sad-bear": { event: /dondurma/i, emotion: "sad" },
+      "happy-rabbit": { event: /balon/i, emotion: "happy" },
+      "angry-fox": { event: /blok|kule/i, emotion: "angry" },
+      "scared-owl": { event: /gölge/i, emotion: "scared" },
+      "sad-elephant": { event: /tren/i, emotion: "sad" },
+    } as const;
+    for (const round of duru.rounds) {
+      expect(round.storyPrompt).toMatch(expectedScene[round.sceneAssetKey].event);
+      expect(round.correctEmotion).toBe(expectedScene[round.sceneAssetKey].emotion);
+    }
+    expect(new Set(duru.rounds.map((round) => round.sceneAssetKey)).size).toBe(
+      duru.rounds.length,
+    );
   });
 
   it("includes the four new progressive mini games without duplicating Zuzu", () => {

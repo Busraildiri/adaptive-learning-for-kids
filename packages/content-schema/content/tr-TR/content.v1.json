@@ -952,7 +952,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "color-lights-001",
-      "version": 3,
+      "version": 5,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "tap_or_wait",
@@ -1037,12 +1037,12 @@
     {
       "schemaVersion": "game-v1",
       "id": "rule-changed-garden-001",
-      "version": 3,
+      "version": 4,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "classify_and_sort",
       "title": "Pati’nin Kural Sepeti",
-      "description": "Renk, tür ve büyüklük kurallarına göre doğru nesneyi sepete taşıma oyunu.",
+      "description": "Renk, nesne türü ve şekil kurallarına göre doğru nesneyi sepete taşıma oyunu.",
       "ageBand": "2-4",
       "skillTags": ["bilişsel-esneklik", "yönerge-takibi", "sınıflandırma"],
       "presentation": {
@@ -1118,38 +1118,6 @@
           ]
         },
         {
-          "id": "find-large",
-          "dimension": "size",
-          "targetValue": "large",
-          "instruction": "Kural değişti! En büyük olanı sepete sürükle ve bırak.",
-          "objects": [
-            {
-              "id": "large-play-ball",
-              "label": "büyük renkli top",
-              "shape": "ball",
-              "color": "red",
-              "category": "toy",
-              "size": "large"
-            },
-            {
-              "id": "small-play-ball-a",
-              "label": "küçük renkli top",
-              "shape": "ball",
-              "color": "red",
-              "category": "toy",
-              "size": "small"
-            },
-            {
-              "id": "small-play-ball-b",
-              "label": "küçük renkli top",
-              "shape": "ball",
-              "color": "red",
-              "category": "toy",
-              "size": "small"
-            }
-          ]
-        },
-        {
           "id": "find-blue",
           "dimension": "color",
           "targetValue": "blue",
@@ -1190,18 +1158,18 @@
           ]
         },
         {
-          "id": "find-large-final",
-          "dimension": "size",
-          "targetValue": "large",
-          "instruction": "Son görev! Dört nesnenin içinden büyük olanı bul.",
+          "id": "find-star",
+          "dimension": "shape",
+          "targetValue": "star",
+          "instruction": "Yıldızı sepete sürükle ve bırak.",
           "objects": [
             {
-              "id": "large-green-car",
-              "label": "büyük yeşil araba",
-              "shape": "car",
-              "color": "green",
+              "id": "small-yellow-star",
+              "label": "küçük sarı yıldız",
+              "shape": "star",
+              "color": "yellow",
               "category": "toy",
-              "size": "large"
+              "size": "small"
             },
             {
               "id": "small-red-ball",
@@ -1212,12 +1180,12 @@
               "size": "small"
             },
             {
-              "id": "small-yellow-star",
-              "label": "küçük sarı yıldız",
-              "shape": "star",
-              "color": "yellow",
+              "id": "large-green-car",
+              "label": "büyük yeşil araba",
+              "shape": "car",
+              "color": "green",
               "category": "toy",
-              "size": "small"
+              "size": "large"
             },
             {
               "id": "small-purple-block",
@@ -1228,10 +1196,50 @@
               "size": "small"
             }
           ]
+        },
+        {
+          "id": "find-car",
+          "dimension": "shape",
+          "targetValue": "car",
+          "instruction": "Arabayı sepete sürükle ve bırak.",
+          "objects": [
+            {
+              "id": "purple-car",
+              "label": "mor araba",
+              "shape": "car",
+              "color": "purple",
+              "category": "toy",
+              "size": "small"
+            },
+            {
+              "id": "red-balloon",
+              "label": "kırmızı balon",
+              "shape": "ball",
+              "color": "red",
+              "category": "toy",
+              "size": "small"
+            },
+            {
+              "id": "yellow-star",
+              "label": "sarı yıldız",
+              "shape": "star",
+              "color": "yellow",
+              "category": "toy",
+              "size": "small"
+            },
+            {
+              "id": "green-toothbrush",
+              "label": "yeşil diş fırçası",
+              "shape": "block",
+              "color": "green",
+              "category": "toy",
+              "size": "small"
+            }
+          ]
         }
       ],
       "feedback": {
-        "matched": "Hop! Doğru nesne sepette, bir filiz uyandı!",
+        "matched": "Doğru nesne sepette, bir filiz uyandı!",
         "retry": "Bu başka bir gruba ait. Birlikte yeniden bakalım.",
         "transition": "Hazır ol, yeni bir kural geliyor!"
       },
@@ -1244,7 +1252,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "mino-routine-path-001",
-      "version": 4,
+      "version": 5,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "sequence_and_place",
@@ -1290,51 +1298,51 @@
           "correctOrder": ["toothbrush", "pajamas", "storybook", "bed"]
         },
         {
-          "id": "book-and-bed",
-          "instruction": "Tomo önce bloklarla oynuyor, oyuncaklarını topluyor, ellerini yıkıyor, kuruluyor ve pijamasını giyiyor.",
+          "id": "playtime-cleanup",
+          "instruction": "Tomo bloklarıyla oynuyor, oyuncaklarını topluyor, ellerini yıkıyor, ayakkabılarını giyiyor ve montunu alıyor.",
           "items": [
-            { "id": "blocks-evening", "label": "oyuncak blokları", "assetKey": "blocks" },
+            { "id": "blocks-play", "label": "oyuncak blokları", "assetKey": "blocks" },
             {
-              "id": "toy-basket-evening",
+              "id": "toy-basket-play",
               "label": "oyuncak sepeti",
               "assetKey": "toy-basket"
             },
             {
-              "id": "wash-hands-evening",
+              "id": "wash-hands-play",
               "label": "ellerini yıkayan Tomo",
               "assetKey": "wash-hands"
             },
-            { "id": "towel-evening", "label": "havlu", "assetKey": "towel" },
-            { "id": "pajamas-evening", "label": "pijama", "assetKey": "pajamas" }
+            { "id": "shoes-play", "label": "ayakkabılar", "assetKey": "shoes" },
+            { "id": "coat-play", "label": "mont", "assetKey": "coat" }
           ],
           "correctOrder": [
-            "blocks-evening",
-            "toy-basket-evening",
-            "wash-hands-evening",
-            "towel-evening",
-            "pajamas-evening"
+            "blocks-play",
+            "toy-basket-play",
+            "wash-hands-play",
+            "shoes-play",
+            "coat-play"
           ]
         },
         {
-          "id": "wash-dry-and-pajamas",
-          "instruction": "Son tur! Tomo ellerini yıkıyor, kuruluyor, pijamasını giyiyor, kitabını okuyor ve yatağına giriyor.",
+          "id": "morning-ready",
+          "instruction": "Tomo ellerini yıkıyor, kahvaltı yapıyor, dişlerini fırçalıyor, ayakkabılarını giyiyor ve montunu alıyor.",
           "items": [
             {
-              "id": "wash-hands-night",
+              "id": "wash-hands-morning",
               "label": "ellerini yıkayan Tomo",
               "assetKey": "wash-hands"
             },
-            { "id": "towel-night", "label": "havlu", "assetKey": "towel" },
-            { "id": "pajamas-night", "label": "pijama", "assetKey": "pajamas" },
-            { "id": "storybook-night", "label": "hikâye kitabı", "assetKey": "storybook" },
-            { "id": "bed-night", "label": "yatak", "assetKey": "bed" }
+            { "id": "breakfast-morning", "label": "kahvaltı", "assetKey": "breakfast" },
+            { "id": "toothbrush-morning", "label": "dişlerini fırçalayan Tomo", "assetKey": "toothbrush" },
+            { "id": "shoes-morning", "label": "ayakkabılar", "assetKey": "shoes" },
+            { "id": "coat-morning", "label": "mont", "assetKey": "coat" }
           ],
           "correctOrder": [
-            "wash-hands-night",
-            "towel-night",
-            "pajamas-night",
-            "storybook-night",
-            "bed-night"
+            "wash-hands-morning",
+            "breakfast-morning",
+            "toothbrush-morning",
+            "shoes-morning",
+            "coat-morning"
           ]
         }
       ],
@@ -1373,7 +1381,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "mino-emotion-detective-001",
-      "version": 2,
+      "version": 3,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "emotion_clues",
@@ -1416,22 +1424,22 @@
           "correctClue": "body"
         },
         {
-          "id": "bear-sad-again",
-          "sceneAssetKey": "sad-bear",
-          "storyPrompt": "Ayı sevdiği oyuncağını bulamıyor.",
-          "emotionPrompt": "Ayı şimdi nasıl hissediyor?",
-          "correctEmotion": "sad",
-          "cluePrompt": "Ayının üzgün olduğunu anlatan beden ipucunu bul.",
-          "correctClue": "body"
+          "id": "owl-scared",
+          "sceneAssetKey": "scared-owl",
+          "storyPrompt": "Baykuş odasında büyük bir gölge gördü.",
+          "emotionPrompt": "Sence baykuş nasıl hissediyor?",
+          "correctEmotion": "scared",
+          "cluePrompt": "Baykuşun korktuğunu nereden anladın?",
+          "correctClue": "eyes"
         },
         {
-          "id": "rabbit-happy-again",
-          "sceneAssetKey": "happy-rabbit",
-          "storyPrompt": "Tavşanın arkadaşı onunla oynamaya geldi.",
-          "emotionPrompt": "Tavşan arkadaşını görünce nasıl hissediyor?",
-          "correctEmotion": "happy",
-          "cluePrompt": "Tavşanın mutlu olduğunu anlatan yüz ipucunu bul.",
-          "correctClue": "mouth"
+          "id": "elephant-sad",
+          "sceneAssetKey": "sad-elephant",
+          "storyPrompt": "Filin kırmızı oyuncak treni kırıldı.",
+          "emotionPrompt": "Sence fil nasıl hissediyor?",
+          "correctEmotion": "sad",
+          "cluePrompt": "Filin üzgün olduğunu nereden anladın?",
+          "correctClue": "body"
         }
       ],
       "feedback": {

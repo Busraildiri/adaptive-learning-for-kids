@@ -22,6 +22,8 @@ const sceneAssets: Record<EmotionClueRound["sceneAssetKey"], ImageSourcePropType
   "sad-bear": require("../../../assets/game/emotion/sad-bear-v1.png"),
   "happy-rabbit": require("../../../assets/game/emotion/happy-rabbit-v2.png"),
   "angry-fox": require("../../../assets/game/emotion/angry-fox-v1.png"),
+  "scared-owl": require("../../../assets/game/emotion/scared-owl-v1.png"),
+  "sad-elephant": require("../../../assets/game/emotion/sad-elephant-v1.png"),
 };
 
 const emotionChoices = [
@@ -213,7 +215,7 @@ export function EmotionCluesGame({
         </Text>
         <Text style={styles.prompt}>{prompt}</Text>
       </View>
-      <View style={[styles.choiceGrid, stage === "clue" && styles.clueGrid]}>
+      <View style={styles.choiceGrid}>
         {choices.map((choice) => (
           <Pressable
             accessibilityLabel={choice.label}
@@ -226,12 +228,19 @@ export function EmotionCluesGame({
             }
             style={({ pressed }) => [
               styles.choice,
+              stage === "clue" && styles.clueChoice,
               pressed && styles.choicePressed,
               attempt > 0 && styles.retryChoice,
             ]}
           >
-            <MaterialCommunityIcons color="#5A4674" name={choice.icon} size={43} />
-            <Text style={styles.choiceLabel}>{choice.label}</Text>
+            <MaterialCommunityIcons
+              color="#5A4674"
+              name={choice.icon}
+              size={stage === "clue" ? 36 : 43}
+            />
+            <Text style={[styles.choiceLabel, stage === "clue" && styles.clueChoiceLabel]}>
+              {choice.label}
+            </Text>
           </Pressable>
         ))}
       </View>
@@ -300,7 +309,6 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 12,
   },
-  clueGrid: { flexWrap: "nowrap" },
   choice: {
     width: "47%",
     minHeight: 82,
@@ -312,6 +320,8 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     backgroundColor: "#DDD0F2",
   },
+  clueChoice: { width: "31%", minHeight: 82, paddingHorizontal: 4 },
+  clueChoiceLabel: { fontSize: 14, lineHeight: 17, textAlign: "center" },
   retryChoice: { borderColor: "#F2C86B" },
   choicePressed: { opacity: 0.7, transform: [{ scale: 0.97 }] },
   choiceLabel: { marginTop: 2, color: "#493957", fontSize: 17, fontWeight: "900" },

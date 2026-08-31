@@ -1,6 +1,7 @@
 import type { Game } from "@adaptive/content-schema";
 import type { ChildSessionProfile } from "@adaptive/shared-types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AppState } from "react-native";
 import { createActivityEventRecorder } from "../../services/interactionEvents";
 import {
   type AdaptiveProgressionState,
@@ -24,6 +25,31 @@ import { type GameObservation, GameObservationProvider } from "./GameObservation
 import { MiniChallengeGame } from "./MiniChallengeGame";
 import { MomoWorkshopGame } from "./MomoWorkshopGame";
 import { SequenceAndPlaceGame } from "./SequenceAndPlaceGame";
+
+function adaptationIndexForRun(game: Game, progression: AdaptiveProgressionState): number {
+  // Pati has a fixed rule curriculum. Its persisted challenge counter can
+  // include older retries, so use the visible level to keep the next rule
+  // distinct instead of accidentally returning to the same color rule.
+  return game.id === "rule-changed-garden-001" ||
+    game.id === "mino-routine-path-001" ||
+    game.id === "mino-emotion-detective-001"
+    ? progression.adaptiveLevel - 1
+    : progression.challengeIndex;
+}
+
+function progressionForGame(
+  game: Game,
+  progression: AdaptiveProgressionState,
+): AdaptiveProgressionState {
+  if (game.id !== "mino-routine-path-001" || game.mechanic !== "sequence_and_place") {
+    return progression;
+  }
+  return {
+    ...progression,
+    itemCount: game.rounds[progression.adaptiveLevel - 1]?.items.length ?? progression.itemCount,
+  };
+}
+
 import { TapOrWaitGame } from "./TapOrWaitGame";
 
 export function TrackedGame({
@@ -43,22 +69,42 @@ export function TrackedGame({
     completedRunsAtLevel: number;
   };
   onExit: () => void;
-  onProgress?: (progress: AdaptiveProgressionState, completed?: boolean) => void;
+  onProgress?: (progress: AdaptiveProgressionState, completed?: boolean) => void | Promise<void>;
 }) {
-  const initialState = createInitialAdaptiveState(game, initialProgress);
+  const initialState = progressionForGame(game, createInitialAdaptiveState(game, initialProgress));
   const maximumLevel = maxAdaptiveLevelForGame(game);
   const initialGame = applyDifficultyLevel(
     findGameVariant(games, game, initialState.difficulty) ?? game,
     initialState.difficulty,
   );
   const [activeGame, setActiveGame] = useState(() =>
-    adaptGameComplexity(initialGame, initialState.itemCount, initialState.challengeIndex),
+    adaptGameComplexity(
+      initialGame,
+      initialState.itemCount,
+      adaptationIndexForRun(game, initialState),
+    ),
   );
   const [runKey, setRunKey] = useState(0);
   const [progression, setProgression] = useState<AdaptiveProgressionState>(initialState);
   const currentRunCompleted = useRef(false);
+  const spokenInstructions = useRef(new Set<string>());
   const progressedStepCount = useRef(0);
   const exiting = useRef(false);
+  const onProgressRef = useRef(onProgress);
+  const pendingProgressWrite = useRef<Promise<void>>(Promise.resolve());
+  onProgressRef.current = onProgress;
+
+  const persistProgress = useCallback(
+    (nextProgression: AdaptiveProgressionState, completed = false) => {
+      pendingProgressWrite.current = pendingProgressWrite.current
+        .catch(() => undefined)
+        .then(() => onProgressRef.current?.(nextProgression, completed))
+        .then(() => undefined)
+        .catch(() => undefined);
+      return pendingProgressWrite.current;
+    },
+    [],
+  );
   const recorder = useMemo(
     () =>
       createActivityEventRecorder({
@@ -70,6 +116,8 @@ export function TrackedGame({
   );
 
   useEffect(() => {
+    if (currentRunCompleted.current) return;
+    void persistProgress(progression);
     void recorder.record("activity_started", {
       activityKind: "game",
       mechanic: activeGame.mechanic,
@@ -78,18 +126,22 @@ export function TrackedGame({
       adaptiveLevel: progression.adaptiveLevel,
       gameVersion: activeGame.version,
     });
-  }, [activeGame, progression.adaptiveLevel, recorder, runKey]);
+  }, [activeGame, persistProgress, progression, recorder, runKey]);
 
-  const startRun = useCallback(
-    (nextGame: Game, nextProgression: AdaptiveProgressionState) => {
-      currentRunCompleted.current = false;
-      setProgression(nextProgression);
-      setActiveGame(nextGame);
-      setRunKey((current) => current + 1);
-      onProgress?.(nextProgression);
-    },
-    [onProgress],
-  );
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") return;
+      void Promise.all([recorder.ensurePersisted(), pendingProgressWrite.current]);
+    });
+    return () => subscription.remove();
+  }, [recorder]);
+
+  const startRun = useCallback((nextGame: Game, nextProgression: AdaptiveProgressionState) => {
+    currentRunCompleted.current = false;
+    setProgression(nextProgression);
+    setActiveGame(nextGame);
+    setRunKey((current) => current + 1);
+  }, []);
 
   const report = useCallback(
     (observation: GameObservation) => {
@@ -104,51 +156,56 @@ export function TrackedGame({
         currentRunCompleted.current = true;
         void recorder.record("activity_completed", { stepId: observation.stepId });
 
-        const nextProgression = nextDifficultyAfterCompletion(
-          progression,
-          child.ageBand,
-          maximumLevel,
-          requiredRunsForGame(activeGame, child.ageBand),
+        const nextProgression = progressionForGame(
+          game,
+          nextDifficultyAfterCompletion(
+            progression,
+            child.ageBand,
+            maximumLevel,
+            requiredRunsForGame(activeGame, child.ageBand),
+          ),
         );
         const reachedFinalLevel =
           progression.adaptiveLevel === maximumLevel && nextProgression.completedRunsAtLevel === 0;
         if (reachedFinalLevel && !continuesAfterMaximumLevel(activeGame)) {
           setProgression(nextProgression);
-          onProgress?.(nextProgression, true);
+          void persistProgress(nextProgression, true);
           return;
         }
         const nextVariant = applyDifficultyLevel(
-          findGameVariant(games, activeGame, nextProgression.difficulty) ?? activeGame,
+          findGameVariant(games, game, nextProgression.difficulty) ?? game,
           nextProgression.difficulty,
         );
         startRun(
           adaptGameComplexity(
             nextVariant,
             nextProgression.itemCount,
-            nextProgression.challengeIndex,
+            adaptationIndexForRun(nextVariant, nextProgression),
           ),
           nextProgression,
         );
       } else if (observation.type === "retry") {
         void recorder.record("retry_requested", { stepId: observation.stepId });
-        const easierProgression =
+        const easierProgression = progressionForGame(
+          game,
           activeGame.id === "zuzu-missing-piece-001"
             ? previousZuzuProgression(progression)
-            : previousProgression(progression);
+            : previousProgression(progression),
+        );
         const easierGame = applyDifficultyLevel(
-          findGameVariant(games, activeGame, easierProgression.difficulty) ?? activeGame,
+          findGameVariant(games, game, easierProgression.difficulty) ?? game,
           easierProgression.difficulty,
         );
         startRun(
           adaptGameComplexity(
             easierGame,
             easierProgression.itemCount,
-            easierProgression.challengeIndex,
+            adaptationIndexForRun(easierGame, easierProgression),
           ),
           easierProgression,
         );
         if (activeGame.id === "zuzu-missing-piece-001") {
-          onProgress?.(easierProgression, false);
+          void persistProgress(easierProgression);
         }
       } else if (observation.type === "wait") {
         void recorder.record("inactivity_help_shown", {
@@ -162,24 +219,38 @@ export function TrackedGame({
         });
       }
     },
-    [activeGame, child.ageBand, games, maximumLevel, onProgress, progression, recorder, startRun],
+    [
+      activeGame,
+      child.ageBand,
+      game,
+      games,
+      maximumLevel,
+      persistProgress,
+      progression,
+      recorder,
+      startRun,
+    ],
   );
 
   const restart = useCallback(() => {
     const starter = applyDifficultyLevel(
-      findGameVariant(games, activeGame, "starter") ?? activeGame,
+      findGameVariant(games, game, "starter") ?? game,
       "starter",
     );
     const challengeIndex =
       activeGame.id === "nino-sound-rhythm-001" ? 0 : progression.challengeIndex + 1;
-    startRun(adaptGameComplexity(starter, 2, challengeIndex), {
+    const starterProgression = {
       difficulty: starter.difficulty.level,
       completedRunsAtLevel: 0,
       itemCount: 2,
       challengeIndex,
       adaptiveLevel: 1,
-    });
-  }, [activeGame, games, progression.challengeIndex, startRun]);
+    };
+    startRun(
+      adaptGameComplexity(starter, 2, adaptationIndexForRun(starter, starterProgression)),
+      starterProgression,
+    );
+  }, [game, games, progression.challengeIndex, startRun]);
 
   const exit = useCallback(() => {
     if (exiting.current) return;
@@ -195,7 +266,7 @@ export function TrackedGame({
             adaptiveLevel: progression.adaptiveLevel,
           });
         }
-        await recorder.ensurePersisted();
+        await Promise.all([recorder.ensurePersisted(), pendingProgressWrite.current]);
       } catch {
         // Navigation must stay available even if local persistence fails unexpectedly.
       } finally {
@@ -209,13 +280,17 @@ export function TrackedGame({
     activeGame.mechanic === "classify_and_sort" ? (
       <ClassifyAndSortGame
         announceIntro={shouldAnnounceGameIntro(runKey)}
+        adaptiveLevel={progression.adaptiveLevel}
         game={activeGame}
         key={runKey}
         onExit={exit}
+        onInstructionSpoken={(instruction) => spokenInstructions.current.add(instruction)}
         onRestart={restart}
+        wasInstructionSpoken={(instruction) => spokenInstructions.current.has(instruction)}
       />
     ) : activeGame.mechanic === "sequence_and_place" ? (
       <SequenceAndPlaceGame
+        adaptiveLevel={progression.adaptiveLevel}
         announceIntro={shouldAnnounceGameIntro(runKey)}
         game={activeGame}
         key={runKey}
