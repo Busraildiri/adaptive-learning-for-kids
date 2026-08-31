@@ -714,6 +714,10 @@ const balloonColorSchema = z.enum([
   "purple",
   "pink",
   "cyan",
+  "darkGreen",
+  "black",
+  "gray",
+  "white",
 ]);
 const balloonRoundSchema = z.strictObject({
   id: z.string().trim().min(1).max(100),

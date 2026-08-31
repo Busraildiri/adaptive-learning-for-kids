@@ -25,6 +25,10 @@ const assets: Record<string, ImageSourcePropType> = {
   purple: require("../../../assets/game/balloon/balloon-purple-v1.png"),
   pink: require("../../../assets/game/balloon/balloon-pink-v1.png"),
   cyan: require("../../../assets/game/balloon/balloon-cyan-v1.png"),
+  darkGreen: require("../../../assets/game/balloon/balloon-dark-green-v1.png"),
+  black: require("../../../assets/game/balloon/balloon-black-v1.png"),
+  gray: require("../../../assets/game/balloon/balloon-gray-v1.png"),
+  white: require("../../../assets/game/balloon/balloon-white-v1.png"),
 };
 const names: Record<string, string> = {
   red: "kırmızı",
@@ -35,6 +39,10 @@ const names: Record<string, string> = {
   purple: "mor",
   pink: "pembe",
   cyan: "turkuaz",
+  darkGreen: "koyu yeşil",
+  black: "siyah",
+  gray: "gri",
+  white: "beyaz",
 };
 
 function FloatingBalloon({
@@ -75,7 +83,11 @@ function FloatingBalloon({
         onPress={onPress}
         style={[styles.balloonButton, { width: size, height }, highlighted && styles.highlight]}
       >
-        <Image source={assets[color]} style={[styles.balloon, { width: size, height }]} />
+        <Image
+          source={assets[color]}
+          resizeMode="contain"
+          style={[styles.balloon, { width: size, height }]}
+        />
       </Pressable>
     </Animated.View>
   );

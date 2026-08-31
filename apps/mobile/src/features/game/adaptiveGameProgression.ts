@@ -14,6 +14,10 @@ const balloonColorNames = {
   purple: "mor",
   pink: "pembe",
   cyan: "turkuaz",
+  darkGreen: "koyu yeşil",
+  black: "siyah",
+  gray: "gri",
+  white: "beyaz",
 } as const;
 
 const turkishObjectCounts: Record<number, string> = {
