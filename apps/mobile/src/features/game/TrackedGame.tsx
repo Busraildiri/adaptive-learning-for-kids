@@ -131,7 +131,7 @@ export function TrackedGame({
           return;
         }
         const nextVariant = applyDifficultyLevel(
-          findGameVariant(games, activeGame, nextProgression.difficulty) ?? activeGame,
+          findGameVariant(games, game, nextProgression.difficulty) ?? game,
           nextProgression.difficulty,
         );
         startRun(
@@ -146,14 +146,14 @@ export function TrackedGame({
         void recorder.record("retry_requested", { stepId: observation.stepId });
         const easierProgression = previousProgression(progression);
         const easierGame = applyDifficultyLevel(
-          findGameVariant(games, activeGame, easierProgression.difficulty) ?? activeGame,
+          findGameVariant(games, game, easierProgression.difficulty) ?? game,
           easierProgression.difficulty,
         );
         startRun(
           adaptGameComplexity(
             easierGame,
             easierProgression.itemCount,
-            easierProgression.challengeIndex,
+            adaptationIndexForRun(easierGame, easierProgression),
           ),
           easierProgression,
         );
@@ -174,19 +174,23 @@ export function TrackedGame({
 
   const restart = useCallback(() => {
     const starter = applyDifficultyLevel(
-      findGameVariant(games, activeGame, "starter") ?? activeGame,
+      findGameVariant(games, game, "starter") ?? game,
       "starter",
     );
     const challengeIndex =
       activeGame.id === "nino-sound-rhythm-001" ? 0 : progression.challengeIndex + 1;
-    startRun(adaptGameComplexity(starter, 2, challengeIndex), {
+    const starterProgression = {
       difficulty: starter.difficulty.level,
       completedRunsAtLevel: 0,
       itemCount: 2,
       challengeIndex,
       adaptiveLevel: 1,
-    });
-  }, [activeGame, games, progression.challengeIndex, startRun]);
+    };
+    startRun(
+      adaptGameComplexity(starter, 2, adaptationIndexForRun(starter, starterProgression)),
+      starterProgression,
+    );
+  }, [game, games, progression.challengeIndex, startRun]);
 
   const exit = useCallback(() => {
     if (exiting.current) return;
