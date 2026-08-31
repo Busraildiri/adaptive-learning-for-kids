@@ -21,6 +21,7 @@ import {
   View,
 } from "react-native";
 import { objectMatchesRound } from "./classifyAndSortEngine";
+import { GameCompletionCard } from "./GameCompletionCard";
 import { useGameObservation } from "./GameObservationContext";
 
 const minoHappy = require("../../../assets/characters/mino-happy.png");
@@ -435,23 +436,12 @@ export function ClassifyAndSortGame({
   if (completed) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.completedCard}>
-          <Text style={styles.confetti}>✦ · ✧ · ✦</Text>
-          <Image source={minoHappy} style={styles.mascotLarge} />
-          <Text style={styles.completedTitle}>Bahçe tamamlandı!</Text>
-          <Text style={styles.completedCopy}>{game.presentation.closingNarration}</Text>
-          <View style={styles.finalGarden}>
-            {gardenFlowers.map((flower, index) => (
-              <Image key={`garden-flower-${index}`} source={flower} style={styles.finalFlower} />
-            ))}
-          </View>
-          <Pressable accessibilityRole="button" onPress={onRestart} style={styles.exitButton}>
-            <Text style={styles.exitButtonText}>Tekrar başlamak için dokun</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={exitGame}>
-            <Text style={styles.completedCopy}>Oyunlara dön</Text>
-          </Pressable>
-        </View>
+        <GameCompletionCard
+          message={game.presentation.closingNarration}
+          onExit={exitGame}
+          onRestart={onRestart}
+          title={game.title}
+        />
       </SafeAreaView>
     );
   }

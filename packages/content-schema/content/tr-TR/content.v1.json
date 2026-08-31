@@ -952,7 +952,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "color-lights-001",
-      "version": 5,
+      "version": 6,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "tap_or_wait",
@@ -1460,7 +1460,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "bobi-fish-patterns-2-4-001",
-      "version": 2,
+      "version": 3,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "fish_patterns",
@@ -1524,7 +1524,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "bobi-fish-memory-4-7-001",
-      "version": 4,
+      "version": 5,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "fish_patterns",
@@ -1731,7 +1731,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "maya-morning-order-001",
-      "version": 3,
+      "version": 4,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "mini_challenge",
@@ -2012,7 +2012,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "kiki-big-small-shop-001",
-      "version": 2,
+      "version": 3,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "mini_challenge",
@@ -2387,7 +2387,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "toko-little-map-001",
-      "version": 1,
+      "version": 2,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "mini_challenge",

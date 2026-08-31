@@ -15,6 +15,7 @@ import {
   View,
 } from "react-native";
 import { zuzuBoardCellColor } from "./adaptiveGameProgression";
+import { GameCompletionCard } from "./GameCompletionCard";
 import { useGameObservation } from "./GameObservationContext";
 import { choicesAfterCorrectAnswer, expectedChoiceId } from "./miniChallengeEngine";
 
@@ -646,17 +647,12 @@ export function MiniChallengeGame({
   if (completed)
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={styles.finish}>
-          <MaterialCommunityIcons name="star-circle" color="#F4B942" size={92} />
-          <Text style={styles.finishTitle}>{game.title} tamamlandı!</Text>
-          <Text style={styles.copy}>{game.presentation.closingNarration}</Text>
-          <Pressable onPress={onRestart} style={styles.exit}>
-            <Text style={styles.exitText}>Tekrar başlamak için dokun</Text>
-          </Pressable>
-          <Pressable onPress={onExit}>
-            <Text style={styles.copy}>Oyunlara dön</Text>
-          </Pressable>
-        </View>
+        <GameCompletionCard
+          message={game.presentation.closingNarration}
+          onExit={onExit}
+          onRestart={onRestart}
+          title={game.title}
+        />
       </SafeAreaView>
     );
   return (
@@ -1150,19 +1146,39 @@ const styles = StyleSheet.create({
     width: "90%",
     maxWidth: 430,
     alignItems: "center",
-    marginTop: 150,
     padding: 30,
     borderRadius: 30,
     backgroundColor: "#fff",
   },
-  finishTitle: { color: "#493C38", fontSize: 27, fontWeight: "900", textAlign: "center" },
-  copy: { marginTop: 10, color: "#665C57", fontSize: 18, textAlign: "center" },
-  exit: {
-    marginTop: 24,
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderRadius: 22,
-    backgroundColor: "#E16B45",
+  finishTouch: {
+    flex: 1,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  exitText: { color: "#fff", fontSize: 17, fontWeight: "900" },
+  finishPressed: { opacity: 0.8 },
+  finishTitle: {
+    marginTop: 12,
+    color: "#249C55",
+    fontSize: 48,
+    lineHeight: 56,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  finishGameTitle: {
+    marginTop: 10,
+    color: "#493C38",
+    fontSize: 24,
+    lineHeight: 31,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  copy: { marginTop: 10, color: "#665C57", fontSize: 18, textAlign: "center" },
+  finishInstruction: {
+    marginTop: 28,
+    color: "#249C55",
+    fontSize: 18,
+    fontWeight: "900",
+    textAlign: "center",
+  },
 });

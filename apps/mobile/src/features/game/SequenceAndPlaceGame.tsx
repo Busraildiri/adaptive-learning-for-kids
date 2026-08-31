@@ -17,6 +17,7 @@ import {
   Vibration,
   View,
 } from "react-native";
+import { GameCompletionCard } from "./GameCompletionCard";
 import { useGameObservation } from "./GameObservationContext";
 import { isRoutineOrderCorrect, shuffledRoutineItems } from "./sequenceAndPlaceEngine";
 
@@ -242,26 +243,12 @@ export function SequenceAndPlaceGame({
   if (completed) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.completedCard}>
-          <View style={[styles.starPath, game.rounds.length > 6 && styles.longStarPath]}>
-            {game.rounds.map((round) => (
-              <Image
-                key={round.id}
-                source={starLit}
-                style={[styles.bigStar, game.rounds.length > 6 && styles.completedSmallStar]}
-              />
-            ))}
-          </View>
-          <Image source={minoHappy} style={styles.completedMascot} />
-          <Text style={styles.completedTitle}>Rutin yolu tamamlandı!</Text>
-          <Text style={styles.completedCopy}>{game.presentation.closingNarration}</Text>
-          <Pressable onPress={onRestart} style={styles.exitButton}>
-            <Text style={styles.exitText}>Tekrar başlamak için dokun</Text>
-          </Pressable>
-          <Pressable onPress={onExit}>
-            <Text style={styles.completedCopy}>Oyunlara dön</Text>
-          </Pressable>
-        </View>
+        <GameCompletionCard
+          message={game.presentation.closingNarration}
+          onExit={onExit}
+          onRestart={onRestart}
+          title={game.title}
+        />
       </SafeAreaView>
     );
   }

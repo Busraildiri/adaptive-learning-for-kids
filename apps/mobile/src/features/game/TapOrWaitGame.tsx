@@ -12,6 +12,7 @@ import {
   Vibration,
   View,
 } from "react-native";
+import { GameCompletionCard } from "./GameCompletionCard";
 import { useGameObservation } from "./GameObservationContext";
 import {
   feedbackForOutcome,
@@ -35,11 +36,13 @@ const FLOWERS = [
 ];
 
 export function TapOrWaitGame({
+  adaptiveLevel,
   announceIntro = true,
   game,
   onExit,
   onRestart,
 }: {
+  adaptiveLevel: number;
   announceIntro?: boolean;
   game: TapOrWaitGameContent;
   onExit: () => void;
@@ -216,35 +219,12 @@ export function TapOrWaitGame({
   if (phase === "completed") {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.completedCard}>
-          <View style={styles.balloonRow} accessible={false}>
-            <Text style={styles.balloon}>🎈</Text>
-            <Text style={styles.balloonHigh}>🎈</Text>
-            <Text style={styles.balloon}>🎈</Text>
-          </View>
-          <Animated.Text
-            style={[styles.completedSymbol, { transform: [{ translateY: mascotBounce }] }]}
-          >
-            ★
-          </Animated.Text>
-          <Text style={styles.title}>Bahçe uyandı!</Text>
-          <View style={styles.flowerRow} accessibilityLabel="Tamamlanan ışık bahçesi">
-            {game.roundPlan.rounds.map((_, index) => (
-              <Image
-                key={`completed-flower-${index}`}
-                source={FLOWERS[index % FLOWERS.length]}
-                style={styles.completedFlower}
-              />
-            ))}
-          </View>
-          <Text style={styles.instruction}>Lila ile bütün ışıkları uyandırdın.</Text>
-          <Pressable accessibilityRole="button" onPress={onRestart} style={styles.exitButton}>
-            <Text style={styles.exitButtonText}>Tekrar başlamak için dokun</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={onExit}>
-            <Text style={styles.instruction}>Oyunlara dön</Text>
-          </Pressable>
-        </View>
+        <GameCompletionCard
+          message={game.presentation.closingNarration}
+          onExit={onExit}
+          onRestart={onRestart}
+          title={game.title}
+        />
       </SafeAreaView>
     );
   }
@@ -272,6 +252,9 @@ export function TapOrWaitGame({
         <Text style={styles.parentButtonSymbol}>×</Text>
       </Pressable>
       <View style={styles.gameArea}>
+        <View style={styles.levelBadge}>
+          <Text style={styles.levelText}>SEVİYE {adaptiveLevel} / 5</Text>
+        </View>
         <View style={styles.flowerRow} accessibilityLabel={`${completedRounds} tur tamamlandı`}>
           {game.roundPlan.rounds.map((_, index) =>
             index < completedRounds ? (
@@ -385,6 +368,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingBottom: 30,
   },
+  levelBadge: {
+    marginBottom: 14,
+    paddingVertical: 7,
+    paddingHorizontal: 18,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.94)",
+  },
+  levelText: { color: "#368452", fontSize: 18, fontWeight: "900", letterSpacing: 1.5 },
   flowerRow: {
     width: "100%",
     maxWidth: 302,

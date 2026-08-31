@@ -4,12 +4,24 @@ import { describe, expect, it } from "vitest";
 import {
   adaptGameComplexity,
   adaptiveGridDimensions,
+  BOBI_FISH_MAX_COUNT,
+  BOBI_FISH_MAX_LEVEL,
+  BOBI_FISH_MEMORY_GAME_ID,
+  BOBI_FISH_PATTERN_GAME_ID,
+  bobiFishCountForLevel,
   continuesAfterMaximumLevel,
   createInitialAdaptiveState,
   findGameVariant,
   itemCountForLevel,
+  KIKI_SHOP_GAME_ID,
+  KIKI_SHOP_MAX_LEVEL,
+  LILA_LIGHT_GAME_ID,
+  LILA_LIGHT_MAX_LEVEL,
+  lilaRoundCountForLevel,
   MAX_ADAPTIVE_ITEM_COUNT,
   MAX_ADAPTIVE_LEVEL,
+  MAYA_MORNING_GAME_ID,
+  MAYA_MORNING_MAX_LEVEL,
   maxAdaptiveLevelForGame,
   nextDifficultyAfterCompletion,
   POFI_BALLOON_MAX_COUNT,
@@ -20,6 +32,10 @@ import {
   requiredRunsForGame,
   requiredRunsToAdvance,
   shouldAnnounceGameIntro,
+  TOKO_MAP_GAME_ID,
+  TOKO_MAP_MAX_LEVEL,
+  TOKO_MAP_MAX_MOVES,
+  tokoMovementCountForLevel,
 } from "./adaptiveGameProgression";
 
 const rhythmGame = {
@@ -393,9 +409,20 @@ describe("adaptive game progression", () => {
             const round = adapted.rounds[0];
             if (round?.kind === "color_prediction") {
               expect(round.choices).toContain(round.correctColor);
-              expect(round.correctColor).toBe(
-                round.choices[round.sequence.length % round.choices.length],
-              );
+              if (game.id === BOBI_FISH_PATTERN_GAME_ID) {
+                const sequenceWithAnswer = [...round.sequence, round.correctColor];
+                const followsARepeatedPattern = [2, 3, 4, 5, 6, 7, 8].some((patternLength) =>
+                  sequenceWithAnswer.every(
+                    (color, index) =>
+                      index < patternLength || color === sequenceWithAnswer[index % patternLength],
+                  ),
+                );
+                expect(followsARepeatedPattern).toBe(true);
+              } else {
+                expect(round.correctColor).toBe(
+                  round.choices[round.sequence.length % round.choices.length],
+                );
+              }
             } else if (round?.kind === "sequence_memory") {
               round.sequence.forEach((color) => expect(round.fish).toContain(color));
             }
@@ -587,7 +614,13 @@ describe("adaptive game progression", () => {
             expect(round.correctSequence, adapted.id).toHaveLength(4);
             expect(round.choices, adapted.id).toHaveLength(4);
           } else if (round?.kind !== "single") {
-            expect(round?.correctSequence, adapted.id).toHaveLength(MAX_ADAPTIVE_ITEM_COUNT);
+            if (adapted.id === TOKO_MAP_GAME_ID) {
+              expect(round?.correctSequence, adapted.id).toHaveLength(TOKO_MAP_MAX_MOVES);
+            } else if (adapted.id === MAYA_MORNING_GAME_ID) {
+              expect(round?.correctSequence.length, adapted.id).toBeLessThanOrEqual(4);
+            } else {
+              expect(round?.correctSequence, adapted.id).toHaveLength(MAX_ADAPTIVE_ITEM_COUNT);
+            }
           }
           break;
         }
@@ -706,6 +739,197 @@ describe("adaptive game progression", () => {
       { balloonCount: 4, kind: "order" },
       { balloonCount: 5, kind: "count" },
     ]);
+  });
+
+  it("builds 150 unique levels for both Bobi fish games and grows to eight fish", () => {
+    expect(bobiFishCountForLevel(1)).toBe(2);
+    expect(bobiFishCountForLevel(2)).toBe(3);
+    expect(bobiFishCountForLevel(7)).toBe(8);
+    expect(bobiFishCountForLevel(BOBI_FISH_MAX_LEVEL)).toBe(BOBI_FISH_MAX_COUNT);
+
+    for (const gameId of [BOBI_FISH_PATTERN_GAME_ID, BOBI_FISH_MEMORY_GAME_ID]) {
+      const game = publishedGames.find((candidate) => candidate.id === gameId);
+      if (!game || game.mechanic !== "fish_patterns") {
+        throw new Error(`Expected Bobi fish game ${gameId}`);
+      }
+
+      expect(requiredRunsForGame(game, game.ageBand)).toBe(1);
+      expect(maxAdaptiveLevelForGame(game)).toBe(BOBI_FISH_MAX_LEVEL);
+
+      const signatures = new Set<string>();
+      const counts: number[] = [];
+      for (let level = 1; level <= BOBI_FISH_MAX_LEVEL; level += 1) {
+        const itemCount = bobiFishCountForLevel(level);
+        const adapted = adaptGameComplexity(game, itemCount, level - 1);
+        if (adapted.mechanic !== "fish_patterns") throw new Error("Expected Bobi fish game");
+        const round = adapted.rounds[0];
+        if (!round) throw new Error(`Expected Bobi level ${level}`);
+
+        expect(round.id).toContain(`level-${level}`);
+        if (round.kind === "color_prediction") {
+          counts.push(round.sequence.length);
+          expect(round.sequence).toHaveLength(itemCount);
+          expect(round.choices).toContain(round.correctColor);
+          expect(new Set(round.choices).size).toBe(round.choices.length);
+          signatures.add(
+            JSON.stringify({
+              kind: round.kind,
+              sequence: round.sequence,
+              choices: round.choices,
+              correctColor: round.correctColor,
+            }),
+          );
+        } else {
+          counts.push(round.fish.length);
+          expect(round.fish).toHaveLength(itemCount);
+          expect(new Set(round.fish).size).toBe(round.fish.length);
+          round.sequence.forEach((color) => expect(round.fish).toContain(color));
+          signatures.add(
+            JSON.stringify({
+              kind: round.kind,
+              fish: round.fish,
+              sequence: round.sequence,
+              revealMs: round.revealMs,
+            }),
+          );
+        }
+      }
+
+      expect(signatures.size, gameId).toBe(BOBI_FISH_MAX_LEVEL);
+      expect(counts.every((count, index) => index === 0 || count >= (counts[index - 1] ?? 0))).toBe(
+        true,
+      );
+    }
+  });
+
+  it("stages Bobi patterns as AB, grouped pairs, ABCA, then ABCDEFGH", () => {
+    const game = publishedGames.find((candidate) => candidate.id === BOBI_FISH_PATTERN_GAME_ID);
+    if (!game || game.mechanic !== "fish_patterns") throw new Error("Expected Bobi pattern game");
+
+    const roundAt = (level: number) => {
+      const adapted = adaptGameComplexity(game, bobiFishCountForLevel(level), level - 1);
+      if (adapted.mechanic !== "fish_patterns") throw new Error("Expected Bobi pattern level");
+      const round = adapted.rounds[0];
+      if (round?.kind !== "color_prediction") throw new Error("Expected color prediction round");
+      return round;
+    };
+
+    const levelTwenty = roundAt(20);
+    const levelTwentyOne = roundAt(21);
+    const levelTwentyTwo = roundAt(22);
+    const levelForty = roundAt(40);
+    const levelSixty = roundAt(60);
+
+    expect(
+      levelTwenty.sequence.every((color, index) => color === levelTwenty.sequence[index % 2]),
+    ).toBe(true);
+    expect(levelTwenty.choices).toHaveLength(2);
+
+    expect(levelTwentyOne.sequence[0]).toBe(levelTwentyOne.sequence[1]);
+    expect(levelTwentyOne.sequence[2]).not.toBe(levelTwentyOne.sequence[1]);
+    expect(levelTwentyTwo.sequence[0]).toBe(levelTwentyTwo.sequence[1]);
+    expect(levelTwentyTwo.sequence[2]).not.toBe(levelTwentyTwo.sequence[1]);
+
+    expect(new Set(levelForty.sequence.slice(0, 3)).size).toBe(3);
+    expect(levelForty.sequence[0]).toBe(levelForty.sequence[3]);
+    expect(levelForty.choices).toHaveLength(3);
+
+    expect(new Set(levelSixty.sequence).size).toBe(8);
+    expect(levelSixty.correctColor).toBe(levelSixty.sequence[0]);
+    expect(levelSixty.choices).toHaveLength(8);
+  });
+
+  it("grows Toko routes from two to eight valid movements across 60 unique levels", () => {
+    const game = publishedGames.find((candidate) => candidate.id === TOKO_MAP_GAME_ID);
+    if (!game || game.mechanic !== "mini_challenge") throw new Error("Expected Toko map game");
+
+    expect(requiredRunsForGame(game, game.ageBand)).toBe(1);
+    expect(maxAdaptiveLevelForGame(game)).toBe(TOKO_MAP_MAX_LEVEL);
+    expect(tokoMovementCountForLevel(1)).toBe(2);
+    expect(tokoMovementCountForLevel(2)).toBe(3);
+    expect(tokoMovementCountForLevel(7)).toBe(TOKO_MAP_MAX_MOVES);
+    expect(tokoMovementCountForLevel(TOKO_MAP_MAX_LEVEL)).toBe(TOKO_MAP_MAX_MOVES);
+
+    const signatures = new Set<string>();
+    const movementCounts: number[] = [];
+    for (let level = 1; level <= TOKO_MAP_MAX_LEVEL; level += 1) {
+      const adapted = adaptGameComplexity(game, tokoMovementCountForLevel(level), level - 1);
+      if (adapted.mechanic !== "mini_challenge") throw new Error("Expected Toko map level");
+      const round = adapted.rounds[0];
+      if (!round) throw new Error(`Expected Toko level ${level}`);
+
+      expect(round.id).toBe(`toko-map-level-${level}`);
+      expect(round.levelNumber).toBe(level);
+      expect(round.levelCount).toBe(TOKO_MAP_MAX_LEVEL);
+      expect(round.choices).toHaveLength(4);
+      expect(round.correctSequence).toHaveLength(tokoMovementCountForLevel(level));
+      movementCounts.push(round.correctSequence.length);
+      signatures.add(JSON.stringify(round.correctSequence));
+
+      let column = 1;
+      let row = 1;
+      for (const direction of round.correctSequence) {
+        column += direction === "right" ? 1 : direction === "left" ? -1 : 0;
+        row += direction === "down" ? 1 : direction === "up" ? -1 : 0;
+        expect(column, `Toko level ${level}`).toBeGreaterThanOrEqual(0);
+        expect(column, `Toko level ${level}`).toBeLessThanOrEqual(2);
+        expect(row, `Toko level ${level}`).toBeGreaterThanOrEqual(0);
+        expect(row, `Toko level ${level}`).toBeLessThanOrEqual(2);
+      }
+    }
+
+    expect(signatures.size).toBe(TOKO_MAP_MAX_LEVEL);
+    expect(
+      movementCounts.every(
+        (count, index) => index === 0 || count >= (movementCounts[index - 1] ?? 0),
+      ),
+    ).toBe(true);
+  });
+
+  it("finishes Lila at level 5 and Maya and Kiki at level 20", () => {
+    const lila = publishedGames.find((game) => game.id === LILA_LIGHT_GAME_ID);
+    const maya = publishedGames.find((game) => game.id === MAYA_MORNING_GAME_ID);
+    const kiki = publishedGames.find((game) => game.id === KIKI_SHOP_GAME_ID);
+    if (!lila || lila.mechanic !== "tap_or_wait") throw new Error("Expected Lila game");
+    if (!maya || maya.mechanic !== "mini_challenge") throw new Error("Expected Maya game");
+    if (!kiki || kiki.mechanic !== "mini_challenge") throw new Error("Expected Kiki game");
+
+    expect(maxAdaptiveLevelForGame(lila)).toBe(LILA_LIGHT_MAX_LEVEL);
+    expect(maxAdaptiveLevelForGame(maya)).toBe(MAYA_MORNING_MAX_LEVEL);
+    expect(maxAdaptiveLevelForGame(kiki)).toBe(KIKI_SHOP_MAX_LEVEL);
+    expect(requiredRunsForGame(lila, lila.ageBand)).toBe(1);
+    expect(requiredRunsForGame(maya, maya.ageBand)).toBe(1);
+    expect(requiredRunsForGame(kiki, kiki.ageBand)).toBe(1);
+
+    for (let level = 1; level <= LILA_LIGHT_MAX_LEVEL; level += 1) {
+      const roundCount = lilaRoundCountForLevel(level);
+      const adapted = adaptGameComplexity(lila, roundCount, level - 1);
+      if (adapted.mechanic !== "tap_or_wait") throw new Error("Expected adaptive Lila game");
+      expect(adapted.roundPlan.rounds).toHaveLength(roundCount);
+    }
+
+    for (const [game, maximumLevel, idPrefix] of [
+      [maya, MAYA_MORNING_MAX_LEVEL, "maya-morning-level"],
+      [kiki, KIKI_SHOP_MAX_LEVEL, "kiki-shop-level"],
+    ] as const) {
+      const signatures = new Set<string>();
+      for (let level = 1; level <= maximumLevel; level += 1) {
+        const adapted = adaptGameComplexity(game, itemCountForLevel(level), level - 1);
+        if (adapted.mechanic !== "mini_challenge") throw new Error("Expected finite mini game");
+        const round = adapted.rounds[0];
+        expect(round?.id).toBe(`${idPrefix}-${level}`);
+        expect(round?.levelNumber).toBe(level);
+        expect(round?.levelCount).toBe(maximumLevel);
+        signatures.add(
+          JSON.stringify({
+            source: round?.prompt,
+            answer: round?.correctSequence,
+            choices: round?.choices.map((choice) => choice.id),
+          }),
+        );
+      }
+      expect(signatures.size).toBe(maximumLevel);
+    }
   });
 
   it("stages Zuzu from 4x4 shapes to color matching and larger boards", () => {

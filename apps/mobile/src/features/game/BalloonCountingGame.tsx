@@ -8,11 +8,14 @@ import {
   type ImageSourcePropType,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   Vibration,
   View,
 } from "react-native";
+import { GameCompletionCard } from "./GameCompletionCard";
 import { useGameObservation } from "./GameObservationContext";
 
 const park = require("../../../assets/game/balloon/park-balloons-v1.png");
@@ -44,24 +47,32 @@ const names: Record<string, string> = {
   gray: "gri",
   white: "beyaz",
 };
+const assetVisualScales: Record<string, number> = {
+  black: 0.56,
+  gray: 0.56,
+  white: 0.49,
+};
 
 function FloatingBalloon({
   color,
   index,
   disabled,
   highlighted,
-  itemCount,
+  size,
   onPress,
 }: {
   color: string;
   index: number;
   disabled: boolean;
   highlighted: boolean;
-  itemCount: number;
+  size: number;
   onPress: () => void;
 }) {
   const report = useGameObservation();
   const float = useRef(new Animated.Value(0)).current;
+  const visualScale = assetVisualScales[color] ?? 1;
+  const visualWidth = Math.round(size * visualScale);
+  const visualHeight = Math.round(size * 1.24 * visualScale);
   useEffect(() => {
     const animation = Animated.loop(
       Animated.sequence([
@@ -74,7 +85,6 @@ function FloatingBalloon({
     animation.start();
     return () => animation.stop();
   }, [float, index]);
-  const size = itemCount > 16 ? 52 : itemCount > 9 ? 72 : itemCount > 5 ? 100 : 145;
   const height = Math.round(size * 1.24);
   return (
     <Animated.View style={{ transform: [{ translateY: float }] }}>
@@ -86,15 +96,17 @@ function FloatingBalloon({
         <Image
           source={assets[color]}
           resizeMode="contain"
-          style={[styles.balloon, { width: size, height }]}
+          style={[styles.balloon, { width: visualWidth, height: visualHeight }]}
         />
       </Pressable>
     </Animated.View>
   );
 }
 
-function PopBurst({ itemCount }: { itemCount: number }) {
+function PopBurst({ size }: { size: number }) {
   const burst = useRef(new Animated.Value(0)).current;
+  const height = Math.round(size * 1.24);
+  const fragmentSize = Math.max(12, Math.round(size * 0.15));
   useEffect(() => {
     Animated.timing(burst, { toValue: 1, duration: 520, useNativeDriver: true }).start();
   }, [burst]);
@@ -102,7 +114,7 @@ function PopBurst({ itemCount }: { itemCount: number }) {
     <Animated.View
       style={[
         styles.pop,
-        itemCount > 9 && styles.compactPop,
+        { width: size, height },
         {
           opacity: burst.interpolate({ inputRange: [0, 0.75, 1], outputRange: [1, 1, 0] }),
           transform: [
@@ -111,11 +123,39 @@ function PopBurst({ itemCount }: { itemCount: number }) {
         },
       ]}
     >
-      <Text style={styles.popText}>✦</Text>
-      <Text style={[styles.fragment, styles.fragmentOne]}>●</Text>
-      <Text style={[styles.fragment, styles.fragmentTwo]}>◆</Text>
-      <Text style={[styles.fragment, styles.fragmentThree]}>▲</Text>
-      <Text style={[styles.fragment, styles.fragmentFour]}>●</Text>
+      <Text style={[styles.popText, { fontSize: Math.max(24, Math.round(size * 0.36)) }]}>✦</Text>
+      <Text
+        style={[styles.fragment, styles.fragmentOne, { fontSize: fragmentSize, left: size * 0.12 }]}
+      >
+        ●
+      </Text>
+      <Text
+        style={[
+          styles.fragment,
+          styles.fragmentTwo,
+          { fontSize: fragmentSize, right: size * 0.11 },
+        ]}
+      >
+        ◆
+      </Text>
+      <Text
+        style={[
+          styles.fragment,
+          styles.fragmentThree,
+          { fontSize: fragmentSize, left: size * 0.2 },
+        ]}
+      >
+        ▲
+      </Text>
+      <Text
+        style={[
+          styles.fragment,
+          styles.fragmentFour,
+          { fontSize: fragmentSize, right: size * 0.17 },
+        ]}
+      >
+        ●
+      </Text>
     </Animated.View>
   );
 }
@@ -142,6 +182,19 @@ export function BalloonCountingGame({
   const [feedback, setFeedback] = useState("");
   const [completed, setCompleted] = useState(false);
   const round = game.rounds[roundIndex];
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const balloonCount = round.balloons.length;
+  const columns = balloonCount <= 2 ? 2 : balloonCount <= 6 ? 3 : 4;
+  const rows = Math.ceil(balloonCount / columns);
+  const gridGap = windowWidth < 360 ? 6 : 9;
+  const gridWidth = Math.min(440, Math.max(260, windowWidth - 28));
+  const compactHeight = windowHeight < 720;
+  const gridHeightBudget = Math.max(220, windowHeight - (compactHeight ? 280 : 330));
+  const cellWidth = (gridWidth - gridGap * (columns - 1)) / columns;
+  const cellHeight = (gridHeightBudget - gridGap * (rows - 1)) / rows;
+  const balloonSize = Math.max(48, Math.min(145, cellWidth, cellHeight / 1.24));
+  const balloonHeight = Math.round(balloonSize * 1.24);
+  const gridHeight = rows * balloonHeight + Math.max(0, rows - 1) * gridGap;
 
   const speak = useCallback(
     (text: string, done?: () => void) => {
@@ -234,17 +287,12 @@ export function BalloonCountingGame({
     return (
       <SafeAreaView style={styles.safe}>
         <ImageBackground source={park} style={styles.finish}>
-          <View style={styles.finishCard}>
-            <Text style={styles.confetti}>✦ ✦ ✦</Text>
-            <Text style={styles.finishTitle}>Balon parkı tamamlandı!</Text>
-            <Text style={styles.finishCopy}>{game.presentation.closingNarration}</Text>
-            <Pressable onPress={onRestart} style={styles.exit}>
-              <Text style={styles.exitText}>Tekrar başlamak için dokun</Text>
-            </Pressable>
-            <Pressable onPress={onExit}>
-              <Text style={styles.finishCopy}>Oyunlara dön</Text>
-            </Pressable>
-          </View>
+          <GameCompletionCard
+            message={game.presentation.closingNarration}
+            onExit={onExit}
+            onRestart={onRestart}
+            title={game.title}
+          />
         </ImageBackground>
       </SafeAreaView>
     );
@@ -261,37 +309,50 @@ export function BalloonCountingGame({
         >
           <Text style={styles.closeText}>×</Text>
         </Pressable>
-        <View style={styles.dots}>
-          {game.rounds.map((item, index) => (
-            <View key={item.id} style={[styles.dot, index <= roundIndex && styles.dotOn]} />
-          ))}
-        </View>
-        <Text style={styles.level}>SEVİYE {adaptiveLevel}</Text>
-        <Text style={styles.title}>{game.title}</Text>
-        <View style={styles.prompt}>
-          <Text style={styles.promptText}>{round.prompt}</Text>
-          <Text style={styles.counter}>
-            {popped.length} / {round.targetCount}
+        <ScrollView
+          bounces={false}
+          contentContainerStyle={[styles.content, compactHeight && styles.contentCompact]}
+          showsVerticalScrollIndicator={false}
+          style={styles.scroll}
+        >
+          <View style={styles.dots}>
+            {game.rounds.map((item, index) => (
+              <View key={item.id} style={[styles.dot, index <= roundIndex && styles.dotOn]} />
+            ))}
+          </View>
+          <Text style={[styles.level, compactHeight && styles.levelCompact]}>
+            SEVİYE {adaptiveLevel}
           </Text>
-        </View>
-        <View style={styles.balloonGrid}>
-          {round.balloons.map((color, index) =>
-            popped.includes(index) ? (
-              <PopBurst itemCount={round.balloons.length} key={`${color}-${index}`} />
-            ) : (
-              <FloatingBalloon
-                color={color}
-                index={index}
-                key={`${color}-${index}`}
-                disabled={locked}
-                onPress={() => choose(color, index)}
-                highlighted={highlight === color}
-                itemCount={round.balloons.length}
-              />
-            ),
-          )}
-        </View>
-        <Text style={styles.feedback}>{locked && !feedback ? "Pofi anlatıyor…" : feedback}</Text>
+          <Text style={[styles.title, compactHeight && styles.titleCompact]}>{game.title}</Text>
+          <View style={[styles.prompt, compactHeight && styles.promptCompact]}>
+            <Text style={[styles.promptText, compactHeight && styles.promptTextCompact]}>
+              {round.prompt}
+            </Text>
+            <Text style={[styles.counter, compactHeight && styles.counterCompact]}>
+              {popped.length} / {round.targetCount}
+            </Text>
+          </View>
+          <View
+            style={[styles.balloonGrid, { gap: gridGap, minHeight: gridHeight, width: gridWidth }]}
+          >
+            {round.balloons.map((color, index) =>
+              popped.includes(index) ? (
+                <PopBurst key={`${color}-${index}`} size={balloonSize} />
+              ) : (
+                <FloatingBalloon
+                  color={color}
+                  index={index}
+                  key={`${color}-${index}`}
+                  disabled={locked}
+                  onPress={() => choose(color, index)}
+                  highlighted={highlight === color}
+                  size={balloonSize}
+                />
+              ),
+            )}
+          </View>
+          <Text style={styles.feedback}>{locked && !feedback ? "Pofi anlatıyor…" : feedback}</Text>
+        </ScrollView>
       </ImageBackground>
     </SafeAreaView>
   );
@@ -299,12 +360,20 @@ export function BalloonCountingGame({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#B9E5FF" },
-  screen: { flex: 1, alignItems: "center", paddingHorizontal: 18 },
+  screen: { flex: 1 },
   background: { resizeMode: "cover" },
   tint: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(221,246,255,0.68)" },
+  scroll: { flex: 1, width: "100%" },
+  content: {
+    flexGrow: 1,
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingBottom: 16,
+  },
+  contentCompact: { paddingBottom: 8 },
   close: {
     position: "absolute",
-    top: 28,
+    top: 14,
     left: 16,
     zIndex: 3,
     width: 52,
@@ -315,7 +384,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#E75252",
   },
   closeText: { fontSize: 32, lineHeight: 35, color: "#FFFFFF" },
-  dots: { flexDirection: "row", gap: 8, marginTop: 28 },
+  dots: { flexDirection: "row", gap: 8, marginTop: 20 },
   dot: { width: 13, height: 13, borderRadius: 7, backgroundColor: "#D7DBDF" },
   dotOn: { backgroundColor: "#F28E2B" },
   level: {
@@ -325,7 +394,9 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 2,
   },
+  levelCompact: { marginTop: 5, fontSize: 16 },
   title: { marginTop: 4, color: "#4B3C38", fontSize: 26, fontWeight: "900" },
+  titleCompact: { fontSize: 22 },
   prompt: {
     width: "100%",
     maxWidth: 440,
@@ -335,37 +406,34 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     backgroundColor: "rgba(255,255,255,0.94)",
   },
+  promptCompact: { marginTop: 8, paddingHorizontal: 12, paddingVertical: 9, borderRadius: 18 },
   promptText: { color: "#4B3C38", fontSize: 24, fontWeight: "900", textAlign: "center" },
+  promptTextCompact: { fontSize: 19 },
   counter: { marginTop: 5, color: "#E5722A", fontSize: 20, fontWeight: "900" },
+  counterCompact: { marginTop: 2, fontSize: 17 },
   balloonGrid: {
-    width: "100%",
-    maxWidth: 308,
-    minHeight: 430,
     flexDirection: "row",
     flexWrap: "wrap",
     alignContent: "center",
     justifyContent: "center",
-    gap: 12,
   },
   balloonButton: {
-    width: 145,
-    height: 180,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 70,
   },
   balloon: { width: 140, height: 175, resizeMode: "contain" },
   highlight: { backgroundColor: "#FFF29B", transform: [{ scale: 1.08 }] },
-  pop: { width: 145, height: 180, alignItems: "center", justifyContent: "center" },
-  compactPop: { width: 52, height: 64 },
+  pop: { alignItems: "center", justifyContent: "center" },
   popText: { color: "#FFD13D", fontSize: 50 },
   fragment: { position: "absolute", fontSize: 22 },
-  fragmentOne: { left: 18, top: 24, color: "#F45B69" },
-  fragmentTwo: { right: 17, top: 33, color: "#4D96FF" },
-  fragmentThree: { left: 29, bottom: 24, color: "#7BC950" },
-  fragmentFour: { right: 25, bottom: 20, color: "#A45DEB" },
+  fragmentOne: { top: "16%", color: "#F45B69" },
+  fragmentTwo: { top: "22%", color: "#4D96FF" },
+  fragmentThree: { bottom: "16%", color: "#7BC950" },
+  fragmentFour: { bottom: "13%", color: "#A45DEB" },
   feedback: {
     minHeight: 28,
+    marginTop: 8,
     color: "#754A2D",
     fontSize: 18,
     fontWeight: "900",

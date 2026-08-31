@@ -4,11 +4,29 @@ import { adaptRhythmRound } from "./miniChallengeEngine";
 type MiniChallengeContent = Extract<Game, { mechanic: "mini_challenge" }>;
 type BalloonGameContent = Extract<Game, { mechanic: "balloon_counting" }>;
 type BalloonColor = BalloonGameContent["rounds"][number]["balloons"][number];
+type FishGameContent = Extract<Game, { mechanic: "fish_patterns" }>;
+type FishColor = Extract<
+  FishGameContent["rounds"][number],
+  { kind: "sequence_memory" }
+>["fish"][number];
 
 const DURU_EMOTION_GAME_ID = "mino-emotion-detective-001";
 export const POFI_BALLOON_GAME_ID = "pofi-balloon-counting-001";
 export const POFI_BALLOON_MAX_LEVEL = 150;
 export const POFI_BALLOON_MAX_COUNT = 12;
+export const BOBI_FISH_PATTERN_GAME_ID = "bobi-fish-patterns-2-4-001";
+export const BOBI_FISH_MEMORY_GAME_ID = "bobi-fish-memory-4-7-001";
+export const BOBI_FISH_MAX_LEVEL = 150;
+export const BOBI_FISH_MAX_COUNT = 8;
+export const TOKO_MAP_GAME_ID = "toko-little-map-001";
+export const TOKO_MAP_MAX_LEVEL = 60;
+export const TOKO_MAP_MAX_MOVES = 8;
+export const LILA_LIGHT_GAME_ID = "color-lights-001";
+export const LILA_LIGHT_MAX_LEVEL = 5;
+export const MAYA_MORNING_GAME_ID = "maya-morning-order-001";
+export const MAYA_MORNING_MAX_LEVEL = 20;
+export const KIKI_SHOP_GAME_ID = "kiki-big-small-shop-001";
+export const KIKI_SHOP_MAX_LEVEL = 20;
 const levels: readonly GameDifficultyLevel[] = ["starter", "growing", "advanced"];
 const balloonColorNames: Record<BalloonColor, string> = {
   red: "kırmızı",
@@ -38,6 +56,31 @@ const pofiBalloonColors: readonly BalloonColor[] = [
   "gray",
   "white",
 ];
+const bobiFishColors: readonly FishColor[] = [
+  "red",
+  "blue",
+  "yellow",
+  "teal",
+  "green",
+  "purple",
+  "pink",
+  "orange",
+];
+const tokoDirections = ["up", "right", "down", "left"] as const;
+type TokoDirection = (typeof tokoDirections)[number];
+const tokoDirectionLabels: Record<TokoDirection, string> = {
+  up: "yukarı",
+  right: "sağa",
+  down: "aşağı",
+  left: "sola",
+};
+const tokoOppositeDirection: Record<TokoDirection, TokoDirection> = {
+  up: "down",
+  right: "left",
+  down: "up",
+  left: "right",
+};
+const tokoRouteCache = new Map<number, TokoDirection[][]>();
 
 const turkishObjectCounts: Record<number, string> = {
   1: "bir",
@@ -261,6 +304,21 @@ export function pofiBalloonCountForLevel(adaptiveLevel: number): number {
   return Math.min(POFI_BALLOON_MAX_COUNT, MIN_ADAPTIVE_ITEM_COUNT + normalizedLevel - 1);
 }
 
+export function bobiFishCountForLevel(adaptiveLevel: number): number {
+  const normalizedLevel = Math.max(1, Math.min(BOBI_FISH_MAX_LEVEL, adaptiveLevel));
+  return Math.min(BOBI_FISH_MAX_COUNT, MIN_ADAPTIVE_ITEM_COUNT + normalizedLevel - 1);
+}
+
+export function tokoMovementCountForLevel(adaptiveLevel: number): number {
+  const normalizedLevel = Math.max(1, Math.min(TOKO_MAP_MAX_LEVEL, adaptiveLevel));
+  return Math.min(TOKO_MAP_MAX_MOVES, normalizedLevel + 1);
+}
+
+export function lilaRoundCountForLevel(adaptiveLevel: number): number {
+  const normalizedLevel = Math.max(1, Math.min(LILA_LIGHT_MAX_LEVEL, adaptiveLevel));
+  return normalizedLevel + 1;
+}
+
 export function difficultyForLevel(adaptiveLevel: number): GameDifficultyLevel {
   if (adaptiveLevel <= 50) return "starter";
   if (adaptiveLevel <= 100) return "growing";
@@ -285,7 +343,13 @@ export function requiredRunsForGame(game: Game, ageBand: AgeBand): number {
     game.id === "rule-changed-garden-001" ||
     game.id === "mino-routine-path-001" ||
     game.id === DURU_EMOTION_GAME_ID ||
-    game.id === POFI_BALLOON_GAME_ID
+    game.id === POFI_BALLOON_GAME_ID ||
+    game.id === BOBI_FISH_PATTERN_GAME_ID ||
+    game.id === BOBI_FISH_MEMORY_GAME_ID ||
+    game.id === TOKO_MAP_GAME_ID ||
+    game.id === LILA_LIGHT_GAME_ID ||
+    game.id === MAYA_MORNING_GAME_ID ||
+    game.id === KIKI_SHOP_GAME_ID
     ? 1
     : requiredRunsToAdvance(ageBand);
 }
@@ -326,6 +390,18 @@ export function maxAdaptiveLevelForGame(game: Game): number {
       combinations = game.id === DURU_EMOTION_GAME_ID ? game.rounds.length : game.rounds.length * 2;
       break;
     case "mini_challenge":
+      if (game.id === MAYA_MORNING_GAME_ID) {
+        combinations = MAYA_MORNING_MAX_LEVEL;
+        break;
+      }
+      if (game.id === KIKI_SHOP_GAME_ID) {
+        combinations = KIKI_SHOP_MAX_LEVEL;
+        break;
+      }
+      if (game.id === TOKO_MAP_GAME_ID) {
+        combinations = TOKO_MAP_MAX_LEVEL;
+        break;
+      }
       if (game.id === "zuzu-missing-piece-001") {
         combinations = 60;
         break;
@@ -372,6 +448,10 @@ export function maxAdaptiveLevelForGame(game: Game): number {
       );
       break;
     case "fish_patterns":
+      if (game.id === BOBI_FISH_PATTERN_GAME_ID || game.id === BOBI_FISH_MEMORY_GAME_ID) {
+        combinations = BOBI_FISH_MAX_LEVEL;
+        break;
+      }
       combinations = game.rounds.reduce(
         (total, round) =>
           total +
@@ -392,6 +472,10 @@ export function maxAdaptiveLevelForGame(game: Game): number {
       );
       break;
     case "tap_or_wait":
+      if (game.id === LILA_LIGHT_GAME_ID) {
+        combinations = LILA_LIGHT_MAX_LEVEL;
+        break;
+      }
       combinations = Array.from(
         { length: MAX_ADAPTIVE_ITEM_COUNT - MIN_ADAPTIVE_ITEM_COUNT + 1 },
         (_, index) => {
@@ -461,6 +545,79 @@ function pofiBalloonOrder(levelNumber: number, itemCount: number): BalloonColor[
     if (color) result.push(color);
   }
   return result.slice(0, itemCount);
+}
+
+function bobiFishOrder(levelNumber: number, itemCount = BOBI_FISH_MAX_COUNT): FishColor[] {
+  const pool = [...bobiFishColors];
+  const result: FishColor[] = [];
+  let permutationIndex = levelNumber - 1;
+  while (pool.length > 0) {
+    const choiceIndex = permutationIndex % pool.length;
+    permutationIndex = Math.floor(permutationIndex / pool.length);
+    const [color] = pool.splice(choiceIndex, 1);
+    if (color) result.push(color);
+  }
+  return result.slice(0, itemCount);
+}
+
+function bobiFishPatternPlan(levelNumber: number): {
+  colorCount: number;
+  template: readonly number[];
+} {
+  if (levelNumber <= 20) return { colorCount: 2, template: [0, 1] };
+  if (levelNumber < 40) {
+    return {
+      colorCount: 2,
+      template: (levelNumber - 21) % 2 === 0 ? [0, 0, 1] : [1, 1, 0],
+    };
+  }
+  if (levelNumber < 60) return { colorCount: 3, template: [0, 1, 2, 0] };
+  return { colorCount: 8, template: [0, 1, 2, 3, 4, 5, 6, 7] };
+}
+
+function moveTokoPosition(
+  position: { column: number; row: number },
+  direction: TokoDirection,
+): { column: number; row: number } {
+  return {
+    column: position.column + (direction === "right" ? 1 : direction === "left" ? -1 : 0),
+    row: position.row + (direction === "down" ? 1 : direction === "up" ? -1 : 0),
+  };
+}
+
+function tokoRoutesForLength(length: number): TokoDirection[][] {
+  const cached = tokoRouteCache.get(length);
+  if (cached) return cached;
+  const routes: TokoDirection[][] = [];
+  const visit = (position: { column: number; row: number }, route: TokoDirection[]): void => {
+    if (route.length === length) {
+      routes.push(route);
+      return;
+    }
+    const previous = route.at(-1);
+    for (const direction of tokoDirections) {
+      if (previous && direction === tokoOppositeDirection[previous]) continue;
+      const next = moveTokoPosition(position, direction);
+      if (next.column < 0 || next.column > 2 || next.row < 0 || next.row > 2) continue;
+      visit(next, [...route, direction]);
+    }
+  };
+  visit({ column: 1, row: 1 }, []);
+  tokoRouteCache.set(length, routes);
+  return routes;
+}
+
+function tokoRouteForLevel(levelNumber: number, movementCount: number): TokoDirection[] {
+  const routes = tokoRoutesForLength(movementCount);
+  const firstLevelAtLength = Math.max(1, movementCount - 1);
+  return routes[(levelNumber - firstLevelAtLength) % routes.length] ?? routes[0] ?? ["right"];
+}
+
+function tokoRoutePrompt(route: readonly TokoDirection[]): string {
+  const labels = route.map((direction) => tokoDirectionLabels[direction]);
+  const last = labels.at(-1);
+  const beginning = labels.slice(0, -1).join(", ");
+  return `Sırayla ${beginning}${beginning ? " ve " : ""}${last} git.`;
 }
 
 function answerSignature(round: unknown): string {
@@ -577,6 +734,125 @@ export function adaptGameComplexity(
     );
     const adaptiveRound = adaptiveRounds[0];
     if (!adaptiveRound) return game;
+    if (game.id === MAYA_MORNING_GAME_ID) {
+      const levelNumber = Math.max(
+        1,
+        Math.min(MAYA_MORNING_MAX_LEVEL, Math.floor(challengeIndex) + 1),
+      );
+      const sourceRound = game.rounds[(levelNumber - 1) % game.rounds.length];
+      if (!sourceRound) return game;
+      return {
+        ...game,
+        rounds: [
+          {
+            ...sourceRound,
+            id: `maya-morning-level-${levelNumber}`,
+            choices: rotate(
+              sourceRound.choices,
+              Math.floor((levelNumber - 1) / game.rounds.length),
+            ),
+            levelNumber,
+            levelCount: MAYA_MORNING_MAX_LEVEL,
+          },
+        ],
+      };
+    }
+    if (game.id === KIKI_SHOP_GAME_ID) {
+      const levelNumber = Math.max(
+        1,
+        Math.min(KIKI_SHOP_MAX_LEVEL, Math.floor(challengeIndex) + 1),
+      );
+      const sourceRound = game.rounds[0];
+      if (!sourceRound) return game;
+      const choiceByIcon = new Map(
+        game.rounds.flatMap((round) => round.choices).map((choice) => [choice.icon, choice]),
+      );
+      const choicePlan = [
+        {
+          id: "large-apple",
+          icon: "kiki-large-apple",
+          label: "Büyük elma",
+          prompt: "Büyük elmayı bul.",
+        },
+        {
+          id: "small-apple",
+          icon: "kiki-small-apple",
+          label: "Küçük elma",
+          prompt: "Küçük elmayı bul.",
+        },
+        {
+          id: "large-acorn",
+          icon: "kiki-large-acorn",
+          label: "Büyük palamut",
+          prompt: "Büyük palamudu bul.",
+        },
+        {
+          id: "small-acorn",
+          icon: "kiki-small-acorn",
+          label: "Küçük palamut",
+          prompt: "Küçük palamudu bul.",
+        },
+      ] as const;
+      const allChoices = choicePlan.map(({ id, icon, label }) => ({
+        ...(choiceByIcon.get(icon) ?? sourceRound.choices[0]),
+        id,
+        icon,
+        label,
+      }));
+      const targetIndex = (levelNumber - 1) % allChoices.length;
+      const target = allChoices[targetIndex];
+      const targetPlan = choicePlan[targetIndex];
+      if (!target || !targetPlan) return game;
+      const optionCount = levelNumber <= 4 ? 2 : levelNumber <= 12 ? 3 : 4;
+      const variation = Math.floor((levelNumber - 1) / allChoices.length);
+      const distractors = rotate(
+        allChoices.filter((choice) => choice.id !== target.id),
+        variation,
+      );
+      const choices = rotate([target, ...distractors.slice(0, optionCount - 1)], variation);
+      return {
+        ...game,
+        rounds: [
+          {
+            ...sourceRound,
+            id: `kiki-shop-level-${levelNumber}`,
+            prompt: `${levelNumber === KIKI_SHOP_MAX_LEVEL ? "Son görev! " : ""}${targetPlan.prompt}`,
+            choices,
+            correctSequence: [target.id],
+            levelNumber,
+            levelCount: KIKI_SHOP_MAX_LEVEL,
+          },
+        ],
+      };
+    }
+    if (game.id === TOKO_MAP_GAME_ID) {
+      const levelNumber = Math.max(1, Math.min(TOKO_MAP_MAX_LEVEL, Math.floor(challengeIndex) + 1));
+      const movementCount = tokoMovementCountForLevel(levelNumber);
+      const correctSequence = tokoRouteForLevel(levelNumber, movementCount);
+      const allChoices = Array.from(
+        new Map(
+          game.rounds.flatMap((round) => round.choices).map((choice) => [choice.id, choice]),
+        ).values(),
+      );
+      const choices = tokoDirections
+        .map((direction) => allChoices.find((choice) => choice.id === direction))
+        .filter((choice): choice is NonNullable<typeof choice> => Boolean(choice));
+      return {
+        ...game,
+        rounds: [
+          {
+            ...adaptiveRound,
+            id: `toko-map-level-${levelNumber}`,
+            prompt: tokoRoutePrompt(correctSequence),
+            choices,
+            correctSequence,
+            demoSequence: undefined,
+            levelNumber,
+            levelCount: TOKO_MAP_MAX_LEVEL,
+          },
+        ],
+      };
+    }
     if (game.id === "zuzu-missing-piece-001") {
       const zuzuLevel = Math.min(60, challengeIndex + 1);
       const isLevelTwenty = zuzuLevel === 20;
@@ -735,6 +1011,72 @@ export function adaptGameComplexity(
   }
 
   if (game.mechanic === "fish_patterns") {
+    if (game.id === BOBI_FISH_PATTERN_GAME_ID) {
+      const levelNumber = Math.max(
+        1,
+        Math.min(BOBI_FISH_MAX_LEVEL, Math.floor(challengeIndex) + 1),
+      );
+      const visibleCount = bobiFishCountForLevel(levelNumber);
+      const orderedColors = bobiFishOrder(levelNumber);
+      const patternPlan = bobiFishPatternPlan(levelNumber);
+      const patternColors = orderedColors.slice(0, patternPlan.colorCount);
+      const patternTemplate = patternPlan.template;
+      const sequence = Array.from(
+        { length: visibleCount },
+        (_, index) => patternColors[patternTemplate[index % patternTemplate.length] ?? 0],
+      ).filter((color): color is FishColor => Boolean(color));
+      const correctColor =
+        patternColors[patternTemplate[visibleCount % patternTemplate.length] ?? 0];
+      const distractors = orderedColors.filter((color) => color !== correctColor);
+      const choices = rotate(
+        [correctColor, ...distractors.slice(0, patternPlan.colorCount - 1)].filter(
+          (color): color is FishColor => Boolean(color),
+        ),
+        levelNumber,
+      );
+      const sourceRound = game.rounds.find((round) => round.kind === "color_prediction");
+      if (!sourceRound || !correctColor) return game;
+      return {
+        ...game,
+        rounds: [
+          {
+            ...sourceRound,
+            id: `bobi-pattern-level-${levelNumber}`,
+            sequence,
+            choices,
+            correctColor,
+            prompt: "Balık desenine bak. Sıradaki rengi bul.",
+          },
+        ],
+      };
+    }
+
+    if (game.id === BOBI_FISH_MEMORY_GAME_ID) {
+      const levelNumber = Math.max(
+        1,
+        Math.min(BOBI_FISH_MAX_LEVEL, Math.floor(challengeIndex) + 1),
+      );
+      const visibleCount = bobiFishCountForLevel(levelNumber);
+      const fish = bobiFishOrder(levelNumber, visibleCount);
+      const sequenceLength = Math.min(visibleCount, 2 + Math.floor((levelNumber - 1) / 20));
+      const sequence = rotate(fish, Math.floor((levelNumber - 1) / 8)).slice(0, sequenceLength);
+      const sourceRound = game.rounds.find((round) => round.kind === "sequence_memory");
+      if (!sourceRound) return game;
+      return {
+        ...game,
+        rounds: [
+          {
+            ...sourceRound,
+            id: `bobi-memory-level-${levelNumber}`,
+            fish,
+            sequence,
+            prompt: `${sequenceLength} balığın parlama sırasını hatırla.`,
+            revealMs: Math.max(500, 950 - Math.floor((levelNumber - 1) / 10) * 30),
+          },
+        ],
+      };
+    }
+
     if (game.ageBand === "2-4") {
       const rounds = game.rounds.filter((round) => round.kind === "color_prediction");
       const sourceRound = rounds[challengeIndex % rounds.length];

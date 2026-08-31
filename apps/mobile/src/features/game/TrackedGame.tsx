@@ -7,9 +7,16 @@ import {
   type AdaptiveProgressionState,
   adaptGameComplexity,
   applyDifficultyLevel,
+  BOBI_FISH_MEMORY_GAME_ID,
+  BOBI_FISH_PATTERN_GAME_ID,
+  bobiFishCountForLevel,
   continuesAfterMaximumLevel,
   createInitialAdaptiveState,
   findGameVariant,
+  KIKI_SHOP_GAME_ID,
+  LILA_LIGHT_GAME_ID,
+  lilaRoundCountForLevel,
+  MAYA_MORNING_GAME_ID,
   maxAdaptiveLevelForGame,
   nextDifficultyAfterCompletion,
   POFI_BALLOON_GAME_ID,
@@ -18,6 +25,7 @@ import {
   previousZuzuProgression,
   requiredRunsForGame,
   shouldAnnounceGameIntro,
+  TOKO_MAP_GAME_ID,
 } from "./adaptiveGameProgression";
 import { BalloonCountingGame } from "./BalloonCountingGame";
 import { ClassifyAndSortGame } from "./ClassifyAndSortGame";
@@ -35,7 +43,13 @@ function adaptationIndexForRun(game: Game, progression: AdaptiveProgressionState
   return game.id === "rule-changed-garden-001" ||
     game.id === "mino-routine-path-001" ||
     game.id === "mino-emotion-detective-001" ||
-    game.id === POFI_BALLOON_GAME_ID
+    game.id === POFI_BALLOON_GAME_ID ||
+    game.id === BOBI_FISH_PATTERN_GAME_ID ||
+    game.id === BOBI_FISH_MEMORY_GAME_ID ||
+    game.id === TOKO_MAP_GAME_ID ||
+    game.id === LILA_LIGHT_GAME_ID ||
+    game.id === MAYA_MORNING_GAME_ID ||
+    game.id === KIKI_SHOP_GAME_ID
     ? progression.adaptiveLevel - 1
     : progression.challengeIndex;
 }
@@ -44,10 +58,25 @@ function progressionForGame(
   game: Game,
   progression: AdaptiveProgressionState,
 ): AdaptiveProgressionState {
+  if (
+    game.mechanic === "fish_patterns" &&
+    (game.id === BOBI_FISH_PATTERN_GAME_ID || game.id === BOBI_FISH_MEMORY_GAME_ID)
+  ) {
+    return {
+      ...progression,
+      itemCount: bobiFishCountForLevel(progression.adaptiveLevel),
+    };
+  }
   if (game.id === POFI_BALLOON_GAME_ID && game.mechanic === "balloon_counting") {
     return {
       ...progression,
       itemCount: pofiBalloonCountForLevel(progression.adaptiveLevel),
+    };
+  }
+  if (game.id === LILA_LIGHT_GAME_ID && game.mechanic === "tap_or_wait") {
+    return {
+      ...progression,
+      itemCount: lilaRoundCountForLevel(progression.adaptiveLevel),
     };
   }
   if (game.id !== "mino-routine-path-001" || game.mechanic !== "sequence_and_place") {
@@ -316,6 +345,7 @@ export function TrackedGame({
       />
     ) : activeGame.mechanic === "fish_patterns" ? (
       <FishPatternsGame
+        adaptiveLevel={progression.adaptiveLevel}
         announceIntro={shouldAnnounceGameIntro(runKey)}
         game={activeGame}
         key={runKey}
@@ -353,6 +383,7 @@ export function TrackedGame({
       />
     ) : (
       <TapOrWaitGame
+        adaptiveLevel={progression.adaptiveLevel}
         announceIntro={shouldAnnounceGameIntro(runKey)}
         game={activeGame}
         key={runKey}
