@@ -14,6 +14,7 @@ import {
   Vibration,
   View,
 } from "react-native";
+import { zuzuBoardCellColor } from "./adaptiveGameProgression";
 import { useGameObservation } from "./GameObservationContext";
 import { choicesAfterCorrectAnswer, expectedChoiceId } from "./miniChallengeEngine";
 
@@ -310,17 +311,26 @@ const blockPieces: Record<string, [number, number][]> = {
   ],
 };
 
-function BlockPiece({ icon, compact = false }: { icon: string; compact?: boolean }) {
+function BlockPiece({
+  icon,
+  compact = false,
+  palette,
+}: {
+  icon: string;
+  compact?: boolean;
+  palette?: readonly string[];
+}) {
   const cells = blockPieces[icon] ?? [];
   const cellOffset = compact ? 20 : 27;
   return (
     <View style={[styles.pieceCanvas, compact && styles.compactPieceCanvas]}>
-      {cells.map(([column, row]) => (
+      {cells.map(([column, row], index) => (
         <View
           key={`${column}-${row}`}
           style={[
             styles.pieceCell,
             compact && styles.compactPieceCell,
+            palette?.length ? { backgroundColor: palette[index % palette.length] } : null,
             { left: column * cellOffset, top: row * cellOffset },
           ]}
         />
@@ -336,22 +346,66 @@ const blockPieceOffsets: Record<string, [number, number]> = {
   "zuzu-star": [0, 1],
 };
 
-function BlockBoard({ pieceIcon, solved }: { pieceIcon: string; solved: boolean }) {
-  const [offsetColumn, offsetRow] = blockPieceOffsets[pieceIcon] ?? [0, 0];
+function BlockBoard({
+  pieceIcon,
+  solved,
+  boardSize = 4,
+  palette = ["#65A7F3"],
+  holePalette,
+  pieceOffsetColumn,
+  pieceOffsetRow,
+}: {
+  pieceIcon: string;
+  solved: boolean;
+  boardSize?: 4 | 8 | 16;
+  palette?: readonly string[];
+  holePalette?: readonly string[];
+  pieceOffsetColumn?: number;
+  pieceOffsetRow?: number;
+}) {
+  const [baseOffsetColumn, baseOffsetRow] = blockPieceOffsets[pieceIcon] ?? [0, 0];
+  const boardCenterShift = (boardSize - 4) / 2;
+  const offsetColumn = pieceOffsetColumn ?? baseOffsetColumn + boardCenterShift;
+  const offsetRow = pieceOffsetRow ?? baseOffsetRow + boardCenterShift;
   const holes = new Set(
     (blockPieces[pieceIcon] ?? []).map(
       ([column, row]) => `${column + offsetColumn}-${row + offsetRow}`,
     ),
   );
+  const cellSize = boardSize === 4 ? 42 : boardSize === 8 ? 19 : 7.5;
+  const boardGap = boardSize === 4 ? 0 : boardSize === 8 ? 28 : 22;
   return (
-    <View style={styles.blockBoard}>
-      {Array.from({ length: 16 }, (_, index) => {
-        const key = `${index % 4}-${Math.floor(index / 4)}`;
+    <View style={[styles.blockBoard, { marginBottom: boardGap }]}>
+      {Array.from({ length: boardSize * boardSize }, (_, index) => {
+        const column = index % boardSize;
+        const row = Math.floor(index / boardSize);
+        const key = `${column}-${row}`;
         const hole = holes.has(key);
         return (
           <View
             key={key}
-            style={[styles.boardCell, hole && !solved ? styles.boardHole : styles.boardFilled]}
+            style={[
+              styles.boardCell,
+              {
+                width: cellSize,
+                height: cellSize,
+                borderRadius: boardSize === 4 ? 9 : boardSize === 8 ? 5 : 2,
+                borderWidth: boardSize === 16 ? 1 : 2,
+              },
+              hole && !solved
+                ? styles.boardHole
+                : hole && holePalette
+                  ? {
+                      borderColor: "#3D6FB8",
+                      backgroundColor:
+                        holePalette[Array.from(holes).findIndex((holeKey) => holeKey === key)] ??
+                        palette[0],
+                    }
+                  : {
+                      borderColor: "#3D6FB8",
+                      backgroundColor: zuzuBoardCellColor(column, row, palette),
+                    },
+            ]}
           />
         );
       })}
@@ -550,6 +604,12 @@ export function MiniChallengeGame({
     report({ type: "attempt", stepId: round.id, correct: id === expected });
     if (id !== expected) {
       if (wrong >= 1) {
+        if (isZuzu) {
+          setLocked(true);
+          setFeedback("İki seviye kolaylaştırılıyor.");
+          report({ type: "retry", stepId: round.id });
+          return;
+        }
         setHighlight(expected ?? null);
         const label = round.choices.find((choice) => choice.id === expected)?.label;
         const message =
@@ -624,6 +684,13 @@ export function MiniChallengeGame({
         style={styles.gameScroll}
       >
         <Text style={styles.title}>{game.title}</Text>
+        {round.levelNumber ? (
+          <View style={styles.levelBadge}>
+            <Text style={styles.levelBadgeText}>
+              Seviye {round.levelNumber} / {round.levelCount ?? 60}
+            </Text>
+          </View>
+        ) : null}
         <View style={styles.prompt}>
           <Text style={styles.promptText}>{round.prompt}</Text>
           <Text style={styles.step}>
@@ -667,7 +734,15 @@ export function MiniChallengeGame({
         ) : null}
         {isToko ? <DirectionMap entered={entered} /> : null}
         {isZuzu ? (
-          <BlockBoard pieceIcon={correctChoice?.icon ?? ""} solved={entered.length > 0} />
+          <BlockBoard
+            pieceIcon={correctChoice?.icon ?? ""}
+            solved={entered.length > 0}
+            boardSize={round.boardSize}
+            palette={round.boardPalette}
+            holePalette={entered.length > 0 ? round.holePalette : undefined}
+            pieceOffsetColumn={round.pieceOffsetColumn}
+            pieceOffsetRow={round.pieceOffsetRow}
+          />
         ) : null}
         <View
           style={[
@@ -680,70 +755,91 @@ export function MiniChallengeGame({
             isExpandedRhythm && styles.expandedRhythmChoices,
           ]}
         >
-          {round.choices.map((choice) => (
-            <Pressable
-              key={choice.id}
-              disabled={locked}
-              onPress={() => choose(choice.id)}
-              style={({ pressed }) => [
-                styles.choice,
-                isZuzu && styles.puzzleChoice,
-                isZuzuFourChoices && styles.zuzuFourChoice,
-                (round.previewIcon || round.soundCue || isToko || isRiko) && styles.compactChoice,
-                isToko && styles.tokoChoice,
-                isExpandedRhythm && styles.expandedRhythmChoice,
-                highlight === choice.id && styles.highlight,
-                tappedChoice === choice.id && styles.tappedChoice,
-                pressed && styles.choicePressed,
-              ]}
-            >
-              {tappedChoice === choice.id ? (
-                <View pointerEvents="none" style={styles.sparkles}>
-                  <MaterialCommunityIcons
-                    name="star-four-points"
-                    color="#FFD54F"
-                    size={30}
-                    style={styles.sparkleTop}
-                  />
-                  <MaterialCommunityIcons
-                    name="star-four-points"
-                    color="#FFFFFF"
-                    size={22}
-                    style={styles.sparkleRight}
-                  />
-                  <MaterialCommunityIcons
-                    name="star-four-points"
-                    color="#FFB74D"
-                    size={18}
-                    style={styles.sparkleBottom}
-                  />
-                </View>
-              ) : null}
-              {isZuzu ? (
-                <BlockPiece compact={isZuzuFourChoices} icon={choice.icon} />
-              ) : isRiko ? (
-                <SpatialAnswerIcon position={choice.id} />
-              ) : (
-                <MiniVisual
-                  icon={choice.icon}
-                  rotationDegrees={choice.rotationDegrees}
-                  silhouette={choice.silhouette}
-                  size={isToko || isExpandedRhythm ? 54 : 72}
-                />
-              )}
-              <Text
-                style={[
-                  styles.label,
-                  isZuzuFourChoices && styles.zuzuFourLabel,
-                  isExpandedRhythm && styles.expandedRhythmLabel,
+          {round.choices.map((choice, choiceIndex) => {
+            const distractorPalette = round.boardPalette?.length
+              ? [
+                  ...round.boardPalette.slice((choiceIndex + 1) % round.boardPalette.length),
+                  ...round.boardPalette.slice(0, (choiceIndex + 1) % round.boardPalette.length),
+                ]
+              : undefined;
+            return (
+              <Pressable
+                key={choice.id}
+                disabled={locked}
+                onPress={() => choose(choice.id)}
+                style={({ pressed }) => [
+                  styles.choice,
+                  isZuzu && styles.puzzleChoice,
+                  isZuzuFourChoices && styles.zuzuFourChoice,
+                  (round.previewIcon || round.soundCue || isToko || isRiko) && styles.compactChoice,
+                  isToko && styles.tokoChoice,
+                  isExpandedRhythm && styles.expandedRhythmChoice,
+                  highlight === choice.id && styles.highlight,
+                  tappedChoice === choice.id && styles.tappedChoice,
+                  pressed && styles.choicePressed,
                 ]}
               >
-                {choice.label}
-              </Text>
-            </Pressable>
-          ))}
+                {tappedChoice === choice.id ? (
+                  <View pointerEvents="none" style={styles.sparkles}>
+                    <MaterialCommunityIcons
+                      name="star-four-points"
+                      color="#FFD54F"
+                      size={30}
+                      style={styles.sparkleTop}
+                    />
+                    <MaterialCommunityIcons
+                      name="star-four-points"
+                      color="#FFFFFF"
+                      size={22}
+                      style={styles.sparkleRight}
+                    />
+                    <MaterialCommunityIcons
+                      name="star-four-points"
+                      color="#FFB74D"
+                      size={18}
+                      style={styles.sparkleBottom}
+                    />
+                  </View>
+                ) : null}
+                {isZuzu ? (
+                  <BlockPiece
+                    compact={isZuzuFourChoices}
+                    icon={choice.icon}
+                    palette={
+                      choice.cellPalette ??
+                      (choice.id === round.correctSequence[0]
+                        ? (round.piecePalette ?? round.holePalette)
+                        : round.piecePalette
+                          ? distractorPalette
+                          : undefined)
+                    }
+                  />
+                ) : isRiko ? (
+                  <SpatialAnswerIcon position={choice.id} />
+                ) : (
+                  <MiniVisual
+                    icon={choice.icon}
+                    rotationDegrees={choice.rotationDegrees}
+                    silhouette={choice.silhouette}
+                    size={isToko || isExpandedRhythm ? 54 : 72}
+                  />
+                )}
+                <Text
+                  style={[
+                    styles.label,
+                    isZuzuFourChoices && styles.zuzuFourLabel,
+                    isExpandedRhythm && styles.expandedRhythmLabel,
+                  ]}
+                >
+                  {choice.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
-        <Text style={styles.feedback}>{locked && !feedback ? "Dinle ve izle…" : feedback}</Text>
+        <Text style={styles.feedback}>
+          {locked && !feedback ? (isZuzu ? "" : "Dinle ve izle…") : feedback}
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -777,6 +873,14 @@ const styles = StyleSheet.create({
   dot: { width: 13, height: 13, borderRadius: 7, backgroundColor: "#DDD6CA" },
   dotOn: { backgroundColor: "#F08A5D" },
   title: { marginTop: 16, color: "#493C38", fontSize: 27, fontWeight: "900", textAlign: "center" },
+  levelBadge: {
+    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 18,
+    backgroundColor: "#DCEEF2",
+  },
+  levelBadgeText: { color: "#356C7A", fontSize: 16, fontWeight: "900" },
   prompt: {
     width: "100%",
     maxWidth: 440,
@@ -975,9 +1079,11 @@ const styles = StyleSheet.create({
   },
   puzzleChoices: { marginTop: 18 },
   puzzleChoice: { width: "30%", minHeight: 128, paddingHorizontal: 5 },
-  zuzuFourChoices: { flexWrap: "nowrap", gap: 6, marginTop: 14 },
+  zuzuFourChoices: { flexWrap: "nowrap", gap: 4, marginTop: 14 },
   zuzuFourChoice: {
-    width: "22%",
+    width: undefined,
+    flex: 1,
+    minWidth: 0,
     minHeight: 112,
     paddingHorizontal: 2,
     paddingVertical: 6,
@@ -1004,12 +1110,14 @@ const styles = StyleSheet.create({
   illustratedImage: { width: 142, height: 112, resizeMode: "contain" },
   blockBoard: {
     width: 196,
+    maxWidth: "100%",
     height: 196,
     flexDirection: "row",
     flexWrap: "wrap",
     marginTop: 22,
     padding: 6,
     borderRadius: 22,
+    overflow: "hidden",
     backgroundColor: "#313F63",
   },
   boardCell: { width: 42, height: 42, margin: 2, borderRadius: 9, borderWidth: 2 },

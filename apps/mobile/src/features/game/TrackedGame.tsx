@@ -12,6 +12,7 @@ import {
   maxAdaptiveLevelForGame,
   nextDifficultyAfterCompletion,
   previousProgression,
+  previousZuzuProgression,
   requiredRunsForGame,
   shouldAnnounceGameIntro,
 } from "./adaptiveGameProgression";
@@ -130,7 +131,10 @@ export function TrackedGame({
         );
       } else if (observation.type === "retry") {
         void recorder.record("retry_requested", { stepId: observation.stepId });
-        const easierProgression = previousProgression(progression);
+        const easierProgression =
+          activeGame.id === "zuzu-missing-piece-001"
+            ? previousZuzuProgression(progression)
+            : previousProgression(progression);
         const easierGame = applyDifficultyLevel(
           findGameVariant(games, activeGame, easierProgression.difficulty) ?? activeGame,
           easierProgression.difficulty,
@@ -143,6 +147,9 @@ export function TrackedGame({
           ),
           easierProgression,
         );
+        if (activeGame.id === "zuzu-missing-piece-001") {
+          onProgress?.(easierProgression, false);
+        }
       } else if (observation.type === "wait") {
         void recorder.record("inactivity_help_shown", {
           stepId: observation.stepId,

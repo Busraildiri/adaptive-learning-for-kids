@@ -1930,7 +1930,7 @@
       "presentation": {
         "introNarration": "Zuzu'nun blok tablosundaki boşluğu tamamlayalım.",
         "closingNarration": "Bütün blok tablolarını tamamladın!",
-        "playAudioInstructions": true
+        "playAudioInstructions": false
       },
       "rounds": [
         {

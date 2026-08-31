@@ -851,6 +851,7 @@ const miniChoiceSchema = z.strictObject({
   id: z.string().trim().min(1).max(50),
   label: z.string().trim().min(1).max(60),
   icon: miniIconSchema,
+  cellPalette: z.array(z.string().trim().min(1).max(20)).min(1).max(8).optional(),
   rotationDegrees: z
     .union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)])
     .optional(),
@@ -866,6 +867,14 @@ const miniRoundSchema = z.strictObject({
   displaySequence: z.array(miniIconSchema).min(2).max(6).optional(),
   previewIcon: miniIconSchema.optional(),
   soundCue: z.string().trim().min(1).max(80).optional(),
+  boardSize: z.union([z.literal(4), z.literal(8), z.literal(16)]).optional(),
+  boardPalette: z.array(z.string().trim().min(1).max(20)).min(1).max(8).optional(),
+  piecePalette: z.array(z.string().trim().min(1).max(20)).min(1).max(8).optional(),
+  holePalette: z.array(z.string().trim().min(1).max(20)).min(1).max(8).optional(),
+  levelNumber: z.number().int().min(1).max(150).optional(),
+  levelCount: z.number().int().min(1).max(150).optional(),
+  pieceOffsetColumn: z.number().int().min(0).max(15).optional(),
+  pieceOffsetRow: z.number().int().min(0).max(15).optional(),
 });
 export const miniChallengeGameSchema = z.strictObject({
   schemaVersion: z.literal("game-v1"),

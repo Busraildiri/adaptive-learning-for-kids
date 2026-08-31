@@ -12,6 +12,7 @@ export type GameProgress = {
   currentDifficulty: GameDifficultyLevel;
   updatedAt: string;
   rhythmProgressionVersion?: number;
+  zuzuProgressionVersion?: number;
 };
 
 export type GameProgressMap = Record<string, GameProgress>;
@@ -19,6 +20,8 @@ export type GameProgressMap = Record<string, GameProgress>;
 const keyForChild = (childId: string) => `adaptive.game-progress.${childId}`;
 const NINO_GAME_ID = "nino-sound-rhythm-001";
 const NINO_RHYTHM_PROGRESSION_VERSION = 1;
+const ZUZU_GAME_ID = "zuzu-missing-piece-001";
+const ZUZU_PROGRESSION_VERSION = 6;
 
 export function shouldRestartGameOnLaunch(gameId: string, progress?: GameProgress): boolean {
   return gameId === NINO_GAME_ID || Boolean(progress?.completed);
@@ -46,6 +49,19 @@ export function normalizeGameProgress(gameId: string, progress: GameProgress): G
       completedRunsAtLevel: 0,
       currentDifficulty: "starter",
       rhythmProgressionVersion: NINO_RHYTHM_PROGRESSION_VERSION,
+    };
+  }
+
+  if (gameId === ZUZU_GAME_ID && progress.zuzuProgressionVersion !== ZUZU_PROGRESSION_VERSION) {
+    return {
+      ...normalized,
+      maxItemCount: 2,
+      completed: false,
+      adaptiveLevel: 1,
+      challengeIndex: 0,
+      completedRunsAtLevel: 0,
+      currentDifficulty: "starter",
+      zuzuProgressionVersion: ZUZU_PROGRESSION_VERSION,
     };
   }
 
@@ -79,7 +95,9 @@ export async function saveGameProgress(
           ...progress,
           rhythmProgressionVersion: NINO_RHYTHM_PROGRESSION_VERSION,
         }
-      : progress;
+      : progress.gameId === ZUZU_GAME_ID
+        ? { ...progress, zuzuProgressionVersion: ZUZU_PROGRESSION_VERSION }
+        : progress;
   const next = { ...current, [progress.gameId]: versionedProgress };
   await SecureStore.setItemAsync(keyForChild(childId), JSON.stringify(next), {
     keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
@@ -99,7 +117,8 @@ export async function restartCompletedGame(
     completed: false,
     replayCount: (previous?.replayCount ?? 0) + (previous?.completed ? 1 : 0),
     adaptiveLevel: 1,
-    challengeIndex: gameId === NINO_GAME_ID ? 0 : (previous?.challengeIndex ?? 0) + 1,
+    challengeIndex:
+      gameId === NINO_GAME_ID || gameId === ZUZU_GAME_ID ? 0 : (previous?.challengeIndex ?? 0) + 1,
     completedRunsAtLevel: 0,
     currentDifficulty: "starter",
     updatedAt: new Date().toISOString(),
