@@ -232,8 +232,8 @@ describe("adaptive game progression", () => {
     if (adapted.mechanic !== "sequence_and_place") throw new Error("Expected Tomo game");
 
     expect(adapted.rounds[0]?.items).toHaveLength(2);
-    expect(adapted.rounds[0]?.instruction).toBe("Önce hikâye kitabını, sonra yatağı.");
-    expect(adapted.rounds[0]?.instruction).not.toContain("diş fırçasını");
+    expect(adapted.rounds[0]?.instruction).toBe("Önce diş fırçasını, sonra pijamayı.");
+    expect(adapted.rounds[0]?.instruction).not.toContain("yatağı");
   });
 
   it("uses Pati's clearly colored source asset as the color-rule target", () => {

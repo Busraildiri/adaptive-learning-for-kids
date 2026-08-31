@@ -51,11 +51,16 @@ const routineStepNames: Record<string, string> = {
   "wash-hands": "ellerini yıkamayı",
   towel: "havluyu",
   coat: "montu",
+  shoes: "ayakkabılarını",
+  breakfast: "kahvaltıyı",
 };
 
 function routineInstructionFor(items: readonly { id: string; label: string }[]): string {
   const steps = items.map(
-    (item) => routineStepNames[item.id.replace(/-adaptive-\d+$/, "")] ?? item.label,
+    (item) =>
+      routineStepNames[
+        item.id.replace(/-adaptive-\d+$/, "").replace(/-(evening|night|morning)$/, "")
+      ] ?? item.label,
   );
   if (steps.length === 0) return "Kartları doğru sıraya koy.";
   if (steps.length === 1) return `Önce ${steps[0]}.`;
@@ -658,7 +663,7 @@ export function adaptGameComplexity(
   if (game.mechanic === "sequence_and_place") {
     const sourceRound = game.rounds[challengeIndex % game.rounds.length];
     if (!sourceRound) return game;
-    const sourceItems = rotate(sourceRound.items, challengeIndex);
+    const sourceItems = sourceRound.items;
     const items = repeatWithUniqueIds(sourceItems, itemCount);
     return {
       ...game,

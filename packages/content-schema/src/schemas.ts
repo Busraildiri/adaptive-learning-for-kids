@@ -431,6 +431,7 @@ export const routineItemSchema = z.strictObject({
     "towel",
     "coat",
     "shoes",
+    "breakfast",
   ]),
 });
 

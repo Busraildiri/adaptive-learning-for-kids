@@ -952,7 +952,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "color-lights-001",
-      "version": 4,
+      "version": 5,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "tap_or_wait",
@@ -1252,7 +1252,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "mino-routine-path-001",
-      "version": 4,
+      "version": 5,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "sequence_and_place",
@@ -1298,51 +1298,51 @@
           "correctOrder": ["toothbrush", "pajamas", "storybook", "bed"]
         },
         {
-          "id": "book-and-bed",
-          "instruction": "Tomo önce bloklarla oynuyor, oyuncaklarını topluyor, ellerini yıkıyor, kuruluyor ve pijamasını giyiyor.",
+          "id": "playtime-cleanup",
+          "instruction": "Tomo bloklarıyla oynuyor, oyuncaklarını topluyor, ellerini yıkıyor, ayakkabılarını giyiyor ve montunu alıyor.",
           "items": [
-            { "id": "blocks-evening", "label": "oyuncak blokları", "assetKey": "blocks" },
+            { "id": "blocks-play", "label": "oyuncak blokları", "assetKey": "blocks" },
             {
-              "id": "toy-basket-evening",
+              "id": "toy-basket-play",
               "label": "oyuncak sepeti",
               "assetKey": "toy-basket"
             },
             {
-              "id": "wash-hands-evening",
+              "id": "wash-hands-play",
               "label": "ellerini yıkayan Tomo",
               "assetKey": "wash-hands"
             },
-            { "id": "towel-evening", "label": "havlu", "assetKey": "towel" },
-            { "id": "pajamas-evening", "label": "pijama", "assetKey": "pajamas" }
+            { "id": "shoes-play", "label": "ayakkabılar", "assetKey": "shoes" },
+            { "id": "coat-play", "label": "mont", "assetKey": "coat" }
           ],
           "correctOrder": [
-            "blocks-evening",
-            "toy-basket-evening",
-            "wash-hands-evening",
-            "towel-evening",
-            "pajamas-evening"
+            "blocks-play",
+            "toy-basket-play",
+            "wash-hands-play",
+            "shoes-play",
+            "coat-play"
           ]
         },
         {
-          "id": "wash-dry-and-pajamas",
-          "instruction": "Son tur! Tomo ellerini yıkıyor, kuruluyor, pijamasını giyiyor, kitabını okuyor ve yatağına giriyor.",
+          "id": "morning-ready",
+          "instruction": "Tomo ellerini yıkıyor, kahvaltı yapıyor, dişlerini fırçalıyor, ayakkabılarını giyiyor ve montunu alıyor.",
           "items": [
             {
-              "id": "wash-hands-night",
+              "id": "wash-hands-morning",
               "label": "ellerini yıkayan Tomo",
               "assetKey": "wash-hands"
             },
-            { "id": "towel-night", "label": "havlu", "assetKey": "towel" },
-            { "id": "pajamas-night", "label": "pijama", "assetKey": "pajamas" },
-            { "id": "storybook-night", "label": "hikâye kitabı", "assetKey": "storybook" },
-            { "id": "bed-night", "label": "yatak", "assetKey": "bed" }
+            { "id": "breakfast-morning", "label": "kahvaltı", "assetKey": "breakfast" },
+            { "id": "toothbrush-morning", "label": "dişlerini fırçalayan Tomo", "assetKey": "toothbrush" },
+            { "id": "shoes-morning", "label": "ayakkabılar", "assetKey": "shoes" },
+            { "id": "coat-morning", "label": "mont", "assetKey": "coat" }
           ],
           "correctOrder": [
-            "wash-hands-night",
-            "towel-night",
-            "pajamas-night",
-            "storybook-night",
-            "bed-night"
+            "wash-hands-morning",
+            "breakfast-morning",
+            "toothbrush-morning",
+            "shoes-morning",
+            "coat-morning"
           ]
         }
       ],
