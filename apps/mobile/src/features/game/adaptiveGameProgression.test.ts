@@ -245,6 +245,25 @@ describe("adaptive game progression", () => {
     expect(adapted.rounds[0]?.instruction).toBe("Köpeği sepete sürükle ve bırak.");
   });
 
+  it("rotates Pati's rules rather than returning to the same color on adjacent levels", () => {
+    const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
+    if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
+
+    const instructions = Array.from({ length: 5 }, (_, index) => {
+      const adapted = adaptGameComplexity(pati, 12, index);
+      if (adapted.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
+      return adapted.rounds[0]?.instruction;
+    });
+
+    expect(instructions).toEqual([
+      "Kırmızı olanı sepete sürükle ve bırak.",
+      "Köpeği sepete sürükle ve bırak.",
+      "Şimdi 12 nesne var. Mavi olanı sepete sürükle ve bırak.",
+      "Yıldızı sepete sürükle ve bırak.",
+      "Arabayı sepete sürükle ve bırak.",
+    ]);
+  });
+
   it("does not select an unverified Pati animal visual as a target", () => {
     const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
     if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");

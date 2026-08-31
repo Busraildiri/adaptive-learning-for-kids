@@ -23,6 +23,15 @@ import { type GameObservation, GameObservationProvider } from "./GameObservation
 import { MiniChallengeGame } from "./MiniChallengeGame";
 import { MomoWorkshopGame } from "./MomoWorkshopGame";
 import { SequenceAndPlaceGame } from "./SequenceAndPlaceGame";
+
+function adaptationIndexForRun(game: Game, progression: AdaptiveProgressionState): number {
+  // Pati has a fixed rule curriculum. Its persisted challenge counter can
+  // include older retries, so use the visible level to keep the next rule
+  // distinct instead of accidentally returning to the same color rule.
+  return game.id === "rule-changed-garden-001"
+    ? progression.adaptiveLevel - 1
+    : progression.challengeIndex;
+}
 import { TapOrWaitGame } from "./TapOrWaitGame";
 
 export function TrackedGame({
@@ -51,7 +60,11 @@ export function TrackedGame({
     initialState.difficulty,
   );
   const [activeGame, setActiveGame] = useState(() =>
-    adaptGameComplexity(initialGame, initialState.itemCount, initialState.challengeIndex),
+    adaptGameComplexity(
+      initialGame,
+      initialState.itemCount,
+      adaptationIndexForRun(game, initialState),
+    ),
   );
   const [runKey, setRunKey] = useState(0);
   const [progression, setProgression] = useState<AdaptiveProgressionState>(initialState);
@@ -125,7 +138,7 @@ export function TrackedGame({
           adaptGameComplexity(
             nextVariant,
             nextProgression.itemCount,
-            nextProgression.challengeIndex,
+            adaptationIndexForRun(nextVariant, nextProgression),
           ),
           nextProgression,
         );
