@@ -22,6 +22,8 @@ const sceneAssets: Record<EmotionClueRound["sceneAssetKey"], ImageSourcePropType
   "sad-bear": require("../../../assets/game/emotion/sad-bear-v1.png"),
   "happy-rabbit": require("../../../assets/game/emotion/happy-rabbit-v2.png"),
   "angry-fox": require("../../../assets/game/emotion/angry-fox-v1.png"),
+  "scared-owl": require("../../../assets/game/emotion/scared-owl-v1.png"),
+  "sad-elephant": require("../../../assets/game/emotion/sad-elephant-v1.png"),
 };
 
 const emotionChoices = [

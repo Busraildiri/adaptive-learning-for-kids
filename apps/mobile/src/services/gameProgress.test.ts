@@ -53,4 +53,34 @@ describe("game progress migration", () => {
       true,
     );
   });
+
+  it("resets old Duru progress once for the finite emotion curriculum", () => {
+    const oldDuruProgress: GameProgress = {
+      ...savedProgress,
+      gameId: "mino-emotion-detective-001",
+      completed: false,
+    };
+
+    expect(normalizeGameProgress(oldDuruProgress.gameId, oldDuruProgress)).toMatchObject({
+      maxItemCount: 2,
+      completed: false,
+      replayCount: 2,
+      adaptiveLevel: 1,
+      challengeIndex: 0,
+      completedRunsAtLevel: 0,
+      currentDifficulty: "starter",
+      duruEmotionProgressionVersion: 1,
+    });
+  });
+
+  it("keeps Duru progress after the curriculum migration has been applied", () => {
+    const migratedDuru: GameProgress = {
+      ...savedProgress,
+      gameId: "mino-emotion-detective-001",
+      completed: false,
+      duruEmotionProgressionVersion: 1,
+    };
+
+    expect(normalizeGameProgress(migratedDuru.gameId, migratedDuru)).toEqual(migratedDuru);
+  });
 });

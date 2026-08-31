@@ -155,11 +155,16 @@ describe("Turkish content v1", () => {
       "sad-bear": { event: /dondurma/i, emotion: "sad" },
       "happy-rabbit": { event: /balon/i, emotion: "happy" },
       "angry-fox": { event: /blok|kule/i, emotion: "angry" },
+      "scared-owl": { event: /gölge/i, emotion: "scared" },
+      "sad-elephant": { event: /tren/i, emotion: "sad" },
     } as const;
     for (const round of duru.rounds) {
       expect(round.storyPrompt).toMatch(expectedScene[round.sceneAssetKey].event);
       expect(round.correctEmotion).toBe(expectedScene[round.sceneAssetKey].emotion);
     }
+    expect(new Set(duru.rounds.map((round) => round.sceneAssetKey)).size).toBe(
+      duru.rounds.length,
+    );
   });
 
   it("includes the four new progressive mini games without duplicating Zuzu", () => {

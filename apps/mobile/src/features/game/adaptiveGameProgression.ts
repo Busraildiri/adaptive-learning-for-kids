@@ -3,6 +3,7 @@ import { adaptRhythmRound } from "./miniChallengeEngine";
 
 type MiniChallengeContent = Extract<Game, { mechanic: "mini_challenge" }>;
 
+const DURU_EMOTION_GAME_ID = "mino-emotion-detective-001";
 const levels: readonly GameDifficultyLevel[] = ["starter", "growing", "advanced"];
 const balloonColorNames = {
   red: "kırmızı",
@@ -195,7 +196,8 @@ export function requiredRunsForGame(game: Game, ageBand: AgeBand): number {
   // completed combination should advance to the next visible level.
   return game.id === "riko-where-001" ||
     game.id === "rule-changed-garden-001" ||
-    game.id === "mino-routine-path-001"
+    game.id === "mino-routine-path-001" ||
+    game.id === DURU_EMOTION_GAME_ID
     ? 1
     : requiredRunsToAdvance(ageBand);
 }
@@ -233,7 +235,7 @@ export function maxAdaptiveLevelForGame(game: Game): number {
   let combinations: number;
   switch (game.mechanic) {
     case "emotion_clues":
-      combinations = game.rounds.length * 2;
+      combinations = game.id === DURU_EMOTION_GAME_ID ? game.rounds.length : game.rounds.length * 2;
       break;
     case "mini_challenge":
       if (game.id === "riko-where-001") {
@@ -686,15 +688,17 @@ export function adaptGameComplexity(
   }
 
   if (game.mechanic === "emotion_clues") {
-    const ordered = avoidAdjacentDuplicateAnswers(game.rounds, challengeIndex);
-    const sourceRound = ordered[0];
+    const sourceRound =
+      game.id === DURU_EMOTION_GAME_ID
+        ? game.rounds[challengeIndex % game.rounds.length]
+        : avoidAdjacentDuplicateAnswers(game.rounds, challengeIndex)[0];
     if (!sourceRound) return game;
     return {
       ...game,
       rounds: [{ ...sourceRound, id: `${sourceRound.id}-adaptive-${challengeIndex}` }],
       difficulty: {
         ...game.difficulty,
-        askClueQuestion: challengeIndex >= game.rounds.length,
+        askClueQuestion: game.id === DURU_EMOTION_GAME_ID || challengeIndex >= game.rounds.length,
       },
     };
   }

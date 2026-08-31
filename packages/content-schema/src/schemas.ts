@@ -575,7 +575,13 @@ export const sequenceAndPlaceGameSchema = z
 
 export const emotionClueRoundSchema = z.strictObject({
   id: z.string().trim().min(1).max(100),
-  sceneAssetKey: z.enum(["sad-bear", "happy-rabbit", "angry-fox"]),
+  sceneAssetKey: z.enum([
+    "sad-bear",
+    "happy-rabbit",
+    "angry-fox",
+    "scared-owl",
+    "sad-elephant",
+  ]),
   storyPrompt: z.string().trim().min(1).max(180),
   emotionPrompt: z.string().trim().min(1).max(140),
   correctEmotion: z.enum(["happy", "sad", "angry", "scared"]),

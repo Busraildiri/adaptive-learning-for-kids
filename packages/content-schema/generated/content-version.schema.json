@@ -1940,7 +1940,13 @@
                     },
                     "sceneAssetKey": {
                       "type": "string",
-                      "enum": ["sad-bear", "happy-rabbit", "angry-fox"]
+                      "enum": [
+                        "sad-bear",
+                        "happy-rabbit",
+                        "angry-fox",
+                        "scared-owl",
+                        "sad-elephant"
+                      ]
                     },
                     "storyPrompt": {
                       "type": "string",

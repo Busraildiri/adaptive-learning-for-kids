@@ -1037,7 +1037,7 @@
     {
       "schemaVersion": "game-v1",
       "id": "rule-changed-garden-001",
-      "version": 3,
+      "version": 4,
       "status": "published",
       "productionSource": "manual",
       "mechanic": "classify_and_sort",
@@ -1424,22 +1424,22 @@
           "correctClue": "body"
         },
         {
-          "id": "bear-sad-again",
-          "sceneAssetKey": "sad-bear",
-          "storyPrompt": "Ayının dondurması yere düştü ve ayı ağlıyor.",
-          "emotionPrompt": "Ayı şimdi nasıl hissediyor?",
-          "correctEmotion": "sad",
-          "cluePrompt": "Ayının üzgün olduğunu anlatan beden ipucunu bul.",
-          "correctClue": "body"
+          "id": "owl-scared",
+          "sceneAssetKey": "scared-owl",
+          "storyPrompt": "Baykuş odasında büyük bir gölge gördü.",
+          "emotionPrompt": "Sence baykuş nasıl hissediyor?",
+          "correctEmotion": "scared",
+          "cluePrompt": "Baykuşun korktuğunu nereden anladın?",
+          "correctClue": "eyes"
         },
         {
-          "id": "rabbit-happy-again",
-          "sceneAssetKey": "happy-rabbit",
-          "storyPrompt": "Tavşan kırmızı balonuyla neşeyle oynuyor.",
-          "emotionPrompt": "Tavşan balonuyla oynarken nasıl hissediyor?",
-          "correctEmotion": "happy",
-          "cluePrompt": "Tavşanın mutlu olduğunu anlatan yüz ipucunu bul.",
-          "correctClue": "mouth"
+          "id": "elephant-sad",
+          "sceneAssetKey": "sad-elephant",
+          "storyPrompt": "Filin kırmızı oyuncak treni kırıldı.",
+          "emotionPrompt": "Sence fil nasıl hissediyor?",
+          "correctEmotion": "sad",
+          "cluePrompt": "Filin üzgün olduğunu nereden anladın?",
+          "correctClue": "body"
         }
       ],
       "feedback": {

@@ -29,7 +29,9 @@ function adaptationIndexForRun(game: Game, progression: AdaptiveProgressionState
   // Pati has a fixed rule curriculum. Its persisted challenge counter can
   // include older retries, so use the visible level to keep the next rule
   // distinct instead of accidentally returning to the same color rule.
-  return game.id === "rule-changed-garden-001" || game.id === "mino-routine-path-001"
+  return game.id === "rule-changed-garden-001" ||
+    game.id === "mino-routine-path-001" ||
+    game.id === "mino-emotion-detective-001"
     ? progression.adaptiveLevel - 1
     : progression.challengeIndex;
 }
@@ -46,6 +48,7 @@ function progressionForGame(
     itemCount: game.rounds[progression.adaptiveLevel - 1]?.items.length ?? progression.itemCount,
   };
 }
+
 import { TapOrWaitGame } from "./TapOrWaitGame";
 
 export function TrackedGame({

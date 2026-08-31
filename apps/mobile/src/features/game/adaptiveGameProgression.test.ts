@@ -246,6 +246,25 @@ describe("adaptive game progression", () => {
     );
   });
 
+  it("shows Duru's five scenes once in order and always asks for the clue", () => {
+    const duru = publishedGames.find((game) => game.id === "mino-emotion-detective-001");
+    if (!duru || duru.mechanic !== "emotion_clues") {
+      throw new Error("Expected Duru game");
+    }
+
+    expect(requiredRunsForGame(duru, "2-4")).toBe(1);
+    expect(maxAdaptiveLevelForGame(duru)).toBe(duru.rounds.length);
+
+    const shownRoundIds = duru.rounds.map((_, index) => {
+      const adapted = adaptGameComplexity(duru, 2, index);
+      if (adapted.mechanic !== "emotion_clues") throw new Error("Expected Duru game");
+      expect(adapted.difficulty.askClueQuestion).toBe(true);
+      return adapted.rounds[0]?.id.replace(/-adaptive-\d+$/, "");
+    });
+
+    expect(shownRoundIds).toEqual(duru.rounds.map((round) => round.id));
+  });
+
   it("uses Pati's clearly colored source asset as the color-rule target", () => {
     const pati = publishedGames.find((game) => game.id === "rule-changed-garden-001");
     if (!pati || pati.mechanic !== "classify_and_sort") throw new Error("Expected Pati game");
