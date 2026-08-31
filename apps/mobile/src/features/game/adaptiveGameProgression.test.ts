@@ -228,12 +228,22 @@ describe("adaptive game progression", () => {
     const tomo = publishedGames.find((game) => game.id === "mino-routine-path-001");
     if (!tomo || tomo.mechanic !== "sequence_and_place") throw new Error("Expected Tomo game");
 
-    const adapted = adaptGameComplexity(tomo, 2, 2);
+    expect(requiredRunsForGame(tomo, "2-4")).toBe(1);
+    expect(maxAdaptiveLevelForGame(tomo)).toBe(5);
+    expect(
+      tomo.rounds.map((round, index) => {
+        const level = adaptGameComplexity(tomo, round.items.length, index);
+        return level.mechanic === "sequence_and_place" ? level.rounds[0]?.items.length : 0;
+      }),
+    ).toEqual([2, 3, 4, 5, 5]);
+
+    const adapted = adaptGameComplexity(tomo, 4, 2);
     if (adapted.mechanic !== "sequence_and_place") throw new Error("Expected Tomo game");
 
-    expect(adapted.rounds[0]?.items).toHaveLength(2);
-    expect(adapted.rounds[0]?.instruction).toBe("Önce diş fırçasını, sonra pijamayı.");
-    expect(adapted.rounds[0]?.instruction).not.toContain("yatağı");
+    expect(adapted.rounds[0]?.items).toHaveLength(4);
+    expect(adapted.rounds[0]?.instruction).toBe(
+      "Önce diş fırçasını, sonra pijamayı, sonra hikâye kitabını, en son yatağı.",
+    );
   });
 
   it("uses Pati's clearly colored source asset as the color-rule target", () => {

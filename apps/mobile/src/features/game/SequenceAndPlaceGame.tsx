@@ -125,11 +125,13 @@ function DraggableRoutineCard({
 }
 
 export function SequenceAndPlaceGame({
+  adaptiveLevel,
   announceIntro = true,
   game,
   onExit,
   onRestart,
 }: {
+  adaptiveLevel: number;
   announceIntro?: boolean;
   game: SequenceAndPlaceGameContent;
   onExit: () => void;
@@ -314,6 +316,7 @@ export function SequenceAndPlaceGame({
           ))}
         </View>
         <Image source={minoHappy} style={styles.mascot} />
+        <Text style={styles.levelLabel}>SEVİYE {adaptiveLevel}</Text>
         <Text style={styles.title}>{game.title}</Text>
         <Text style={styles.instruction}>{currentRound.instruction}</Text>
         <View style={[styles.sourceRow, itemCount >= 4 && styles.denseRow]}>
@@ -427,6 +430,12 @@ const styles = StyleSheet.create({
   bigStar: { width: 70, height: 70, resizeMode: "contain" },
   completedSmallStar: { width: 42, height: 42 },
   mascot: { width: 76, height: 76, resizeMode: "contain" },
+  levelLabel: {
+    color: "#A8CDB8",
+    fontSize: 15,
+    fontWeight: "900",
+    letterSpacing: 2,
+  },
   title: { color: "#FFF8E8", fontSize: 27, fontWeight: "900" },
   instruction: {
     minHeight: 64,
@@ -469,14 +478,14 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   compactSourceCard: { width: 104, height: 116, borderRadius: 20 },
-  denseSourceCard: { width: 78, height: 96, borderRadius: 17 },
-  tinySourceCard: { width: 52, height: 48, borderRadius: 12, borderWidth: 2 },
+  denseSourceCard: { width: 78, height: 100, borderRadius: 17 },
+  tinySourceCard: { width: 62, height: 86, borderRadius: 14, borderWidth: 2 },
   sourcePlaceholder: { width: 145, height: 145 },
   highlightedCard: { borderWidth: 6, borderColor: "#FFD95A", backgroundColor: "#FFF3B3" },
   sourceImage: { width: 106, height: 82, borderRadius: 14, resizeMode: "cover" },
-  compactSourceImage: { width: 76, height: 54, borderRadius: 10 },
-  denseSourceImage: { width: 58, height: 42, borderRadius: 8 },
-  tinySourceImage: { width: 36, height: 22, borderRadius: 5 },
+  compactSourceImage: { width: 90, height: 68, borderRadius: 10 },
+  denseSourceImage: { width: 70, height: 58, borderRadius: 8 },
+  tinySourceImage: { width: 54, height: 46, borderRadius: 7 },
   cardLabel: { color: "#4F443C", fontSize: 13, fontWeight: "900" },
   denseCardLabel: { maxWidth: 58, fontSize: 9, lineHeight: 10, textAlign: "center" },
   dragLabel: { color: "#83776E", fontSize: 10, fontWeight: "700" },
@@ -503,13 +512,13 @@ const styles = StyleSheet.create({
   },
   compactSlot: { width: 104, height: 124, borderRadius: 22 },
   denseSlot: { width: 78, height: 104, borderRadius: 18, borderWidth: 3 },
-  tinySlot: { width: 52, height: 54, borderRadius: 12, borderWidth: 2 },
+  tinySlot: { width: 62, height: 82, borderRadius: 14, borderWidth: 2 },
   slotLabel: { position: "absolute", top: 9, color: "#FFD95A", fontSize: 14, fontWeight: "900" },
   compactSlotLabel: { fontSize: 11 },
-  slotImage: { width: 110, height: 110, marginTop: 20, resizeMode: "contain" },
-  compactSlotImage: { width: 78, height: 78 },
-  denseSlotImage: { width: 56, height: 56 },
-  tinySlotImage: { width: 30, height: 28 },
+  slotImage: { width: 116, height: 92, marginTop: 20, borderRadius: 14, resizeMode: "cover" },
+  compactSlotImage: { width: 88, height: 70, borderRadius: 10 },
+  denseSlotImage: { width: 64, height: 58 },
+  tinySlotImage: { width: 52, height: 46 },
   slotArrow: { color: "#A7C7E8", fontSize: 42, fontWeight: "900" },
   feedback: {
     minHeight: 44,

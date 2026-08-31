@@ -28,9 +28,22 @@ function adaptationIndexForRun(game: Game, progression: AdaptiveProgressionState
   // Pati has a fixed rule curriculum. Its persisted challenge counter can
   // include older retries, so use the visible level to keep the next rule
   // distinct instead of accidentally returning to the same color rule.
-  return game.id === "rule-changed-garden-001"
+  return game.id === "rule-changed-garden-001" || game.id === "mino-routine-path-001"
     ? progression.adaptiveLevel - 1
     : progression.challengeIndex;
+}
+
+function progressionForGame(
+  game: Game,
+  progression: AdaptiveProgressionState,
+): AdaptiveProgressionState {
+  if (game.id !== "mino-routine-path-001" || game.mechanic !== "sequence_and_place") {
+    return progression;
+  }
+  return {
+    ...progression,
+    itemCount: game.rounds[progression.adaptiveLevel - 1]?.items.length ?? progression.itemCount,
+  };
 }
 import { TapOrWaitGame } from "./TapOrWaitGame";
 
@@ -53,7 +66,7 @@ export function TrackedGame({
   onExit: () => void;
   onProgress?: (progress: AdaptiveProgressionState, completed?: boolean) => void;
 }) {
-  const initialState = createInitialAdaptiveState(game, initialProgress);
+  const initialState = progressionForGame(game, createInitialAdaptiveState(game, initialProgress));
   const maximumLevel = maxAdaptiveLevelForGame(game);
   const initialGame = applyDifficultyLevel(
     findGameVariant(games, game, initialState.difficulty) ?? game,
@@ -117,11 +130,14 @@ export function TrackedGame({
         currentRunCompleted.current = true;
         void recorder.record("activity_completed", { stepId: observation.stepId });
 
-        const nextProgression = nextDifficultyAfterCompletion(
-          progression,
-          child.ageBand,
-          maximumLevel,
-          requiredRunsForGame(activeGame, child.ageBand),
+        const nextProgression = progressionForGame(
+          game,
+          nextDifficultyAfterCompletion(
+            progression,
+            child.ageBand,
+            maximumLevel,
+            requiredRunsForGame(activeGame, child.ageBand),
+          ),
         );
         const reachedFinalLevel =
           progression.adaptiveLevel === maximumLevel && nextProgression.completedRunsAtLevel === 0;
@@ -144,7 +160,7 @@ export function TrackedGame({
         );
       } else if (observation.type === "retry") {
         void recorder.record("retry_requested", { stepId: observation.stepId });
-        const easierProgression = previousProgression(progression);
+        const easierProgression = progressionForGame(game, previousProgression(progression));
         const easierGame = applyDifficultyLevel(
           findGameVariant(games, game, easierProgression.difficulty) ?? game,
           easierProgression.difficulty,
@@ -230,6 +246,7 @@ export function TrackedGame({
       />
     ) : activeGame.mechanic === "sequence_and_place" ? (
       <SequenceAndPlaceGame
+        adaptiveLevel={progression.adaptiveLevel}
         announceIntro={shouldAnnounceGameIntro(runKey)}
         game={activeGame}
         key={runKey}

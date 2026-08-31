@@ -59,7 +59,7 @@ function routineInstructionFor(items: readonly { id: string; label: string }[]):
   const steps = items.map(
     (item) =>
       routineStepNames[
-        item.id.replace(/-adaptive-\d+$/, "").replace(/-(evening|night|morning)$/, "")
+        item.id.replace(/-adaptive-\d+$/, "").replace(/-(evening|night|morning|play)$/, "")
       ] ?? item.label,
   );
   if (steps.length === 0) return "Kartları doğru sıraya koy.";
@@ -193,7 +193,9 @@ export function requiredRunsForGame(game: Game, ageBand: AgeBand): number {
   // to satisfy the slower 2–4 cadence would make a completed curriculum loop.
   // Pati also has a finite sequence of unique sorting combinations; each
   // completed combination should advance to the next visible level.
-  return game.id === "riko-where-001" || game.id === "rule-changed-garden-001"
+  return game.id === "riko-where-001" ||
+    game.id === "rule-changed-garden-001" ||
+    game.id === "mino-routine-path-001"
     ? 1
     : requiredRunsToAdvance(ageBand);
 }
@@ -265,6 +267,10 @@ export function maxAdaptiveLevelForGame(game: Game): number {
       );
       break;
     case "sequence_and_place":
+      if (game.id === "mino-routine-path-001") {
+        combinations = game.rounds.length;
+        break;
+      }
       combinations = game.rounds.reduce(
         (total, round) =>
           total + (MAX_ADAPTIVE_ITEM_COUNT - MIN_ADAPTIVE_ITEM_COUNT + 1) * round.items.length,
