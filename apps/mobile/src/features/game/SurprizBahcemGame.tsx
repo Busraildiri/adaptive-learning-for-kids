@@ -21,14 +21,13 @@ const emptyGardenLandscape = require("../../../assets/game/garden/surpriz-bahcem
 const soilGardenLandscape = require("../../../assets/game/garden/surpriz-bahcem-landscape-soil-v3.png");
 const seededGardenLandscape = require("../../../assets/game/garden/surpriz-bahcem-landscape-soil-seeds-v1.png");
 const sproutedGardenLandscape = require("../../../assets/game/garden/surpriz-bahcem-landscape-soil-sprouts-v1.png");
-const flowerGardenLandscape = require("../../../assets/game/garden/surpriz-bahcem-landscape-soil-flowers-v2.png");
-const fencedGardenLandscape = require("../../../assets/game/garden/surpriz-bahcem-landscape-v1.png");
+const flowerGardenLandscape = require("../../../assets/game/garden/surpriz-bahcem-landscape-soil-sprouts-flowers-v3.png");
+const fencedGardenLandscape = require("../../../assets/game/garden/surpriz-bahcem-landscape-soil-sprouts-flowers-fence-v2.png");
 const appleTreeArt = require("../../../assets/game/garden/apple-tree-painterly-v1.png");
 const appleTreeFruitingArt = require("../../../assets/game/garden/apple-tree-fruiting-painterly-v1.png");
 const appleSaplingArt = require("../../../assets/game/garden/apple-sapling-painterly-v1.png");
 const tomatoSeedsArt = require("../../../assets/game/garden/tomato-seeds-painterly-v1.png");
 const strawberrySeedsArt = require("../../../assets/game/garden/strawberry-seeds-painterly-v1.png");
-const vegetableSproutsArt = require("../../../assets/game/garden/vegetable-sprouts-painterly-v1.png");
 const gardenShedArt = require("../../../assets/game/garden/garden-shed-painterly-v1.png");
 const coopGroundArt = require("../../../assets/game/garden/coop-ground-painterly-v1.png");
 const chickenCoopArt = require("../../../assets/game/garden/chicken-coop-painterly-v1.png");
@@ -309,13 +308,6 @@ export function SurprizBahcemGame({ childId, onExit }: { childId: string; onExit
           {hasSun ? <Text style={styles.sun}>☀️</Text> : null}
           {hasTomatoSeeds ? <SeedPlot kind="tomato" /> : null}
           {hasStrawberrySeeds ? <SeedPlot kind="strawberry" /> : null}
-          {hasCarrotSeeds && hasFirstSprout && (hasFlowerBed || hasFence) ? (
-            <Image
-              accessibilityLabel="Ekim yatağındaki havuç filizleri"
-              source={vegetableSproutsArt}
-              style={styles.landscapeCarrotSprouts}
-            />
-          ) : null}
           {hasAppleSapling ? (
             <View
               accessibilityLabel={
@@ -657,27 +649,27 @@ const styles = StyleSheet.create({
   },
   pondArt: {
     position: "absolute",
-    zIndex: 2,
+    zIndex: 3,
     right: "0%",
-    bottom: 390,
+    bottom: 350,
     width: 190,
     height: 132,
     resizeMode: "contain",
   },
   duckArt: {
     position: "absolute",
-    zIndex: 3,
+    zIndex: 4,
     right: "15%",
-    bottom: 420,
+    bottom: 380,
     width: 83,
     height: 65,
     resizeMode: "contain",
   },
   frogArt: {
     position: "absolute",
-    zIndex: 4,
+    zIndex: 5,
     right: "31%",
-    bottom: 411,
+    bottom: 371,
     width: 61,
     height: 53,
     resizeMode: "contain",
@@ -817,15 +809,6 @@ const styles = StyleSheet.create({
   },
   dropGuideText: { color: "#315C37", fontSize: 14, fontWeight: "900" },
   dropGuideTextReady: { color: "#FFFFFF" },
-  landscapeCarrotSprouts: {
-    position: "absolute",
-    zIndex: 3,
-    left: "8%",
-    bottom: 91,
-    width: "29%",
-    height: 92,
-    resizeMode: "contain",
-  },
   itemCloud: {
     zIndex: 1,
     flexDirection: "row",
