@@ -18,6 +18,7 @@ interface StorySelectionScreenProps {
   games: Game[];
   gameProgress: GameProgressMap;
   onSelectGame: (gameId: string) => void;
+  onSelectGarden: () => void;
   publishedStories?: PublishedStoryExperience[];
 }
 
@@ -35,6 +36,7 @@ export function StorySelectionScreen({
   games,
   gameProgress,
   onSelectGame,
+  onSelectGarden,
   publishedStories = [],
 }: StorySelectionScreenProps) {
   return (
@@ -48,6 +50,7 @@ export function StorySelectionScreen({
       gameProgress={gameProgress}
       onRequestParentArea={onRequestParentArea}
       onSelectGame={onSelectGame}
+      onSelectGarden={onSelectGarden}
       onSelectStory={onSelectStory}
       publishedStories={publishedStories}
       recommendedGameId={recommendedGameId}

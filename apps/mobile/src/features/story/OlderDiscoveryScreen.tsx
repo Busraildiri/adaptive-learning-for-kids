@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Image,
   type ImageSourcePropType,
+  PanResponder,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -32,6 +33,37 @@ import {
   type PublishedStorySelectionCard,
 } from "./publishedStorySelection";
 import { createStorySelectionCards, type StorySelectionCard } from "./storySelection";
+
+const SWIPE_DISTANCE = 54;
+const SWIPE_VELOCITY = 0.28;
+
+function useHorizontalPageSwipe(
+  pageCount: number,
+  setPage: (update: (page: number) => number) => void,
+) {
+  const movePage = useCallback(
+    (direction: -1 | 1) => {
+      if (pageCount <= 1) return;
+      void Speech.stop();
+      setPage((current) => (current + direction + pageCount) % pageCount);
+    },
+    [pageCount, setPage],
+  );
+  return useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gesture) =>
+          Math.abs(gesture.dx) > 24 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.4,
+        onPanResponderRelease: (_, gesture) => {
+          const isSwipe =
+            Math.abs(gesture.dx) >= SWIPE_DISTANCE || Math.abs(gesture.vx) >= SWIPE_VELOCITY;
+          if (!isSwipe) return;
+          movePage(gesture.dx < 0 ? 1 : -1);
+        },
+      }).panHandlers,
+    [movePage],
+  );
+}
 
 const minoHappy = require("../../../assets/characters/mino-happy.png");
 const fishGameIcon = require("../../../assets/game/home/fish-patterns.png");
@@ -666,6 +698,30 @@ function BottomNavigation({
   );
 }
 
+function GardenInvitation({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityLabel="Sürpriz Bahçem oyununu aç"
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.gardenInvitation, pressed && styles.pressed]}
+    >
+      <View style={styles.gardenInvitationArt}>
+        <MaterialCommunityIcons color="#3D9454" name="flower-tulip" size={48} />
+        <MaterialCommunityIcons color="#E7A637" name="weather-sunny" size={30} />
+      </View>
+      <View style={styles.gardenInvitationCopy}>
+        <Text style={styles.gardenInvitationEyebrow}>Sakinlik ve Doğa · 4–7 yaş</Text>
+        <Text style={styles.gardenInvitationTitle}>Sürpriz Bahçem</Text>
+        <Text style={styles.gardenInvitationSubtitle}>Kutuları aç, bahçeni yavaş yavaş büyüt.</Text>
+      </View>
+      <View style={styles.gardenInvitationPlay}>
+        <MaterialCommunityIcons color="#FFFFFF" name="arrow-right" size={23} />
+      </View>
+    </Pressable>
+  );
+}
+
 export function DiscoveryScreen({
   ageBand,
   assets,
@@ -676,6 +732,7 @@ export function DiscoveryScreen({
   gameProgress,
   onRequestParentArea,
   onSelectGame,
+  onSelectGarden,
   onSelectStory,
   publishedStories,
   recommendedGameId,
@@ -691,6 +748,7 @@ export function DiscoveryScreen({
   gameProgress: GameProgressMap;
   onRequestParentArea: () => void;
   onSelectGame: (gameId: string) => void;
+  onSelectGarden: () => void;
   onSelectStory: (storyId: string) => void;
   publishedStories: PublishedStoryExperience[];
   recommendedGameId: string | null;
@@ -755,6 +813,8 @@ export function DiscoveryScreen({
   const visibleYoungerGames = getContentPage(orderedGames, youngerGamePage);
   const storyPageCount = getContentPageCount(orderedCards.length);
   const visibleStoryCards = getContentPage(orderedCards, storyPage);
+  const youngerGameSwipeHandlers = useHorizontalPageSwipe(youngerGamePageCount, setYoungerGamePage);
+  const storySwipeHandlers = useHorizontalPageSwipe(storyPageCount, setStoryPage);
   const replayGuidance = useCallback(() => {
     void Speech.stop().then(() => {
       Speech.speak(youngerGuidance[tab], { language: "tr-TR", rate: 0.82 });
@@ -820,6 +880,7 @@ export function DiscoveryScreen({
         {tab === "games" ? (
           ageBand === "4-7" ? (
             <View style={styles.worldList}>
+              <GardenInvitation onPress={onSelectGarden} />
               {themes.flatMap((theme) => {
                 const worldGames = groups.get(theme.id) ?? [];
                 return worldGames.length > 0
@@ -837,7 +898,7 @@ export function DiscoveryScreen({
               })}
             </View>
           ) : (
-            <View style={styles.youngerContent}>
+            <View {...youngerGameSwipeHandlers} style={styles.youngerContent}>
               <GuidedContextCard mode="games" onReplay={replayGuidance} />
               <View style={styles.smallGameGrid}>
                 {visibleYoungerGames.map((game) => {
@@ -867,7 +928,7 @@ export function DiscoveryScreen({
             </View>
           )
         ) : (
-          <View>
+          <View {...storySwipeHandlers}>
             {ageBand === "2-4" ? (
               <View style={styles.youngerStoryIntro}>
                 <GuidedContextCard mode="stories" onReplay={replayGuidance} />
@@ -958,6 +1019,48 @@ const styles = StyleSheet.create({
     shadowRadius: 7,
   },
   worldList: { gap: 28, marginTop: 24 },
+  gardenInvitation: {
+    minHeight: 122,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 11,
+    padding: 14,
+    borderWidth: 3,
+    borderColor: "#FFFFFF",
+    borderRadius: 28,
+    backgroundColor: "#E4F4D9",
+    shadowColor: "#4B7047",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+  },
+  gardenInvitationArt: {
+    width: 76,
+    height: 76,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: -8,
+    borderRadius: 24,
+    backgroundColor: "#FFFFFFB8",
+  },
+  gardenInvitationCopy: { flex: 1 },
+  gardenInvitationEyebrow: { color: "#5E8A57", fontSize: 11, fontWeight: "900" },
+  gardenInvitationTitle: { marginTop: 3, color: "#315C37", fontSize: 21, fontWeight: "900" },
+  gardenInvitationSubtitle: {
+    marginTop: 4,
+    color: "#617465",
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 17,
+  },
+  gardenInvitationPlay: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 20,
+    backgroundColor: "#4B9B5B",
+  },
   worldSection: { gap: 12 },
   worldBanner: {
     minHeight: 105,
