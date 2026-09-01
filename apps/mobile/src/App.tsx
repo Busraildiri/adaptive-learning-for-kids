@@ -22,6 +22,7 @@ import {
   PasswordUpdateScreen,
 } from "./features/account/PasswordUpdateScreen";
 import { SetupRequiredScreen } from "./features/account/SetupRequiredScreen";
+import { SurprizBahcemGame } from "./features/game/SurprizBahcemGame";
 import { TrackedGame } from "./features/game/TrackedGame";
 import { MinoStory } from "./features/story/MinoStory";
 import { StorySelectionScreen } from "./features/story/StorySelectionScreen";
@@ -83,6 +84,7 @@ export default function App() {
   const [showParentPinGate, setShowParentPinGate] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [showGarden, setShowGarden] = useState(false);
   const [discoveryTab, setDiscoveryTab] = useState<DiscoveryTab>("games");
   const [lastPlayedBktGameId, setLastPlayedBktGameId] = useState<string | null>(null);
   const [gameRecommendationRevision, setGameRecommendationRevision] = useState(0);
@@ -179,6 +181,7 @@ export default function App() {
         setShowParentPinGate(false);
         setSelectedStoryId(null);
         setSelectedGameId(null);
+        setShowGarden(false);
         setDiscoveryTab("games");
         void clearPersistedActiveChildId();
       }
@@ -451,6 +454,10 @@ export default function App() {
       eligiblePublishedStories,
     );
 
+    if (showGarden) {
+      return <SurprizBahcemGame childId={activeChild.id} onExit={() => setShowGarden(false)} />;
+    }
+
     if (selectedGame) {
       return (
         <TrackedGame
@@ -511,6 +518,12 @@ export default function App() {
             } else {
               setSelectedGameId(gameId);
             }
+          }}
+          onSelectGarden={() => {
+            setDiscoveryTab("games");
+            setSelectedStoryId(null);
+            setSelectedGameId(null);
+            setShowGarden(true);
           }}
           onSelectStory={(storyId) => {
             setDiscoveryTab("stories");
